@@ -5,6 +5,8 @@ import java.awt.event.*;
 public class Multifrac extends JFrame
 {
 	protected DisplayPanel rend = null;
+	protected Point mouseStart = null;
+	protected Point mouseEnd   = null;
 
 	/**
 	 * Dispatch a job which renders the fractal to the panel.
@@ -55,12 +57,47 @@ public class Multifrac extends JFrame
 			public void componentShown(ComponentEvent e) {}
 		});
 
+		MouseAdapter m = new MouseAdapter()
+		{
+			public void mousePressed(MouseEvent e)
+			{
+				System.out.println(e);
+				mouseStart = e.getPoint();
+			}
+
+			public void mouseReleased(MouseEvent e)
+			{
+				System.out.println(e);
+				mouseStart = null;
+				mouseEnd   = null;
+			}
+
+			public void mouseDragged(MouseEvent e)
+			{
+				System.out.println(e);
+				mouseEnd = e.getPoint();
+				repaint();
+			}
+		};
+		addMouseListener(m);
+		addMouseMotionListener(m);
+
 		// Properties of the window itself
 		setTitle("Multifrac");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		pack();
 		setVisible(true);
+	}
+
+	@Override
+	public void paint(Graphics g)
+	{
+		super.paint(g);
+
+		Graphics2D g2 = (Graphics2D)g;
+		g2.draw(new Rectangle2D.Double(mouseStart.x, mouseStart.y,
+					mouseEnd.x - mouseStart.x, mouseEnd.y - mouseStart.y));
 	}
 
 	public static void main(String[] args)

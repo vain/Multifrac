@@ -15,7 +15,7 @@ public class FractalRenderer extends Thread
 		public int[] pixels = null;
 		public int   width  = 0;
 		public int   height = 0;
-		public int   nmax   = 25;
+		public int   nmax   = 500;
 
 		public Job(Dimension s)
 		{
