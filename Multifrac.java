@@ -1,20 +1,21 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.*;
 
 public class Multifrac extends JFrame
 {
 	protected DisplayPanel rend = null;
-	protected Point mouseStart = null;
-	protected Point mouseEnd   = null;
+
+	protected FractalParameters param = new FractalParameters();
 
 	/**
 	 * Dispatch a job which renders the fractal to the panel.
 	 */
-	synchronized public void dispatchDrawToPanel(Dimension newSize)
+	public void dispatchDrawToPanel()
 	{
 		FractalRenderer.dispatchJob(4,
-				new FractalRenderer.Job(newSize),
+				new FractalRenderer.Job(param),
 				new FractalRenderer.Callback()
 				{
 					@Override
@@ -23,7 +24,7 @@ public class Multifrac extends JFrame
 						System.out.println("JOB DONE ON " + Thread.currentThread());
 
 						rend.drawIt = getJob();
-						rend.paintImmediately(0, 0, getJob().width, getJob().height);
+						rend.paintImmediately(0, 0, getJob().getWidth(), getJob().getHeight());
 					}
 				});
 	}
@@ -37,7 +38,7 @@ public class Multifrac extends JFrame
 		add(rend);
 
 		// Listeners
-		addComponentListener(new ComponentListener() 
+		rend.addComponentListener(new ComponentListener() 
 		{  
 			// This method is called after the component's size changes
 			public void componentResized(ComponentEvent evt)
@@ -49,7 +50,8 @@ public class Multifrac extends JFrame
 				System.out.println(newSize);
 
 				// A "resized" event will trigger a recalculation of the fractal
-				dispatchDrawToPanel(newSize);
+				param.updateSize(newSize);
+				dispatchDrawToPanel();
 			}
 		
 			public void componentHidden(ComponentEvent e) {}
@@ -57,30 +59,73 @@ public class Multifrac extends JFrame
 			public void componentShown(ComponentEvent e) {}
 		});
 
+		// Zoom-Box
 		MouseAdapter m = new MouseAdapter()
 		{
 			public void mousePressed(MouseEvent e)
 			{
-				System.out.println(e);
-				mouseStart = e.getPoint();
+				if (e.getButton() == MouseEvent.BUTTON1)
+				{
+					System.out.println(e);
+					rend.mouseStart = e.getPoint();
+				}
 			}
 
 			public void mouseReleased(MouseEvent e)
 			{
-				System.out.println(e);
-				mouseStart = null;
-				mouseEnd   = null;
+				if (e.getButton() == MouseEvent.BUTTON1)
+				{
+					System.out.println(e);
+
+					// Only update if the mouse has been dragged
+					if (rend.mouseEnd != null)
+					{
+						param.zoomBox(rend.mouseStart, rend.mouseEnd);
+						dispatchDrawToPanel();	
+					}
+
+					rend.mouseStart = null;
+					rend.mouseEnd   = null;
+					rend.repaint();
+				}
 			}
 
 			public void mouseDragged(MouseEvent e)
 			{
-				System.out.println(e);
-				mouseEnd = e.getPoint();
-				repaint();
+				if (rend.mouseStart != null)
+				{
+					System.out.println(e);
+					rend.mouseEnd = e.getPoint();
+					rend.repaint();
+				}
 			}
 		};
-		addMouseListener(m);
-		addMouseMotionListener(m);
+		rend.addMouseListener(m);
+		rend.addMouseMotionListener(m);
+
+		// Keyboard
+		addKeyListener(new KeyAdapter()
+		{
+			public void keyTyped(KeyEvent e)
+			{
+				boolean changed = false;
+
+				System.out.println(e.getKeyChar());
+				if (e.getKeyChar() == '+')
+				{
+					changed = true;
+					param.zoom *= 0.9;
+				}
+				else if (e.getKeyChar() == '-')
+				{
+					changed = true;
+					param.zoom /= 0.9;
+				}
+				
+				if (changed)
+					dispatchDrawToPanel();	
+			}
+		});
 
 		// Properties of the window itself
 		setTitle("Multifrac");
@@ -88,16 +133,6 @@ public class Multifrac extends JFrame
 
 		pack();
 		setVisible(true);
-	}
-
-	@Override
-	public void paint(Graphics g)
-	{
-		super.paint(g);
-
-		Graphics2D g2 = (Graphics2D)g;
-		g2.draw(new Rectangle2D.Double(mouseStart.x, mouseStart.y,
-					mouseEnd.x - mouseStart.x, mouseEnd.y - mouseStart.y));
 	}
 
 	public static void main(String[] args)

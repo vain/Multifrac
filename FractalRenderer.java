@@ -13,21 +13,35 @@ public class FractalRenderer extends Thread
 	static public class Job
 	{
 		public int[] pixels = null;
-		public int   width  = 0;
-		public int   height = 0;
-		public int   nmax   = 500;
+		public FractalParameters param = null;
 
-		public Job(Dimension s)
+		public Job(FractalParameters p)
 		{
-			width  = s.width;
-			height = s.height;
-			pixels = new int[width * height];
+			param = p;
+			pixels = new int[param.getWidth() * param.getHeight()];
+		}
+
+		public int[] getPixels()
+		{
+			return pixels;
+		}
+		public int getWidth()
+		{
+			return param.getWidth();
+		}
+		public int getHeight()
+		{
+			return param.getHeight();
+		}
+		public int getNmax()
+		{
+			return param.getNmax();
 		}
 
 		@Override
 		public String toString()
 		{
-			return "Job[" + width + "x" + height  + "]";
+			return "Job[" + getWidth() + "x" + getHeight() + "]";
 		}
 	}
 
@@ -94,27 +108,26 @@ public class FractalRenderer extends Thread
 		System.out.println("Executing " + myJob + " (" + myToken + ") on " + Thread.currentThread());
 		
 		// Mandelbrot Parameters
-		double zeichX, zeichY, x, y;
+		double x, y;
 		double Re_c, Im_c;
 		double Re_z, Im_z, Re_z2, Im_z2;
 		double sqr_abs_z;
-		double resrezi = 1.0 / (double)myJob.width;
 		double escape = 32.0;
 		int n = 0;
-		int nmax = myJob.nmax;
+		int nmax = myJob.getNmax();
+		double w = myJob.getWidth();
 
-		int index = myToken.start * myJob.width;
+		int index = myToken.start * myJob.getWidth();
 		for (int coord_y = myToken.start; coord_y < myToken.end; coord_y++)
 		{
-			zeichY = (-1.0 + 2.0 * (double)coord_y * resrezi);
-			for (int coord_x = 0; coord_x < myJob.width; coord_x++)
+			//zeichY = (-1.0 + 2.0 * (double)coord_y * resrezi);
+			y = myJob.param.YtoWorld(coord_y);
+			for (int coord_x = 0; coord_x < w; coord_x++)
 			{
-				zeichX = (-1.0 + 2.0 * (double)coord_x * resrezi);
+				//zeichX = (-1.0 + 2.0 * (double)coord_x * resrezi);
+				x = myJob.param.XtoWorld(coord_x);
 
 				// Prerequisites
-				x = zeichX;
-				y = zeichY;
-
 				Re_c = x;
 				Im_c = y;
 				Re_z = Im_z = Re_z2 = Im_z2 = sqr_abs_z = 0.0;
@@ -162,18 +175,18 @@ public class FractalRenderer extends Thread
 			{
 				// Manage
 				FractalRenderer[] run = new FractalRenderer[numthreads];
-				int bunch = job.height / numthreads;
+				int bunch = job.param.getHeight() / numthreads;
 				int a = 0, b = bunch;
 				
 				// Divide and Spawn
-				Token params = null;
+				Token toktok = null;
 				for (int i = 0; i < run.length - 1; i++)
 				{
-					params = new Token();
-					params.start = a;
-					params.end   = b;
+					toktok = new Token();
+					toktok.start = a;
+					toktok.end   = b;
 
-					run[i] = new FractalRenderer(job, params);
+					run[i] = new FractalRenderer(job, toktok);
 					run[i].start();
 
 					a += bunch;
@@ -181,10 +194,10 @@ public class FractalRenderer extends Thread
 				}
 
 				// Last job
-				params = new Token();
-				params.start = a;
-				params.end   = job.height;
-				run[run.length - 1] = new FractalRenderer(job, params);
+				toktok = new Token();
+				toktok.start = a;
+				toktok.end   = job.param.getHeight();
+				run[run.length - 1] = new FractalRenderer(job, toktok);
 				run[run.length - 1].start();
 
 				// Join
