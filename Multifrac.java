@@ -156,6 +156,15 @@ public class Multifrac extends JFrame
 				rend.dispatchRedraw();
 			}
 		});
+		c_zoom.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				rend.getParams().setZoom(new Double(c_zoom.getText()));
+				rend.dispatchRedraw();
+			}
+		});
 
 		addComp(cont, loc, gbl, 0, 1, 1, 1, 1.0, 0.0);
 

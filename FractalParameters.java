@@ -51,7 +51,7 @@ public class FractalParameters
 
 	public void setDefaults()
 	{
-		type = TYPE_MANDELBROT;
+		type = TYPE_JULIA;
 		nmax = DEF_NMAX;
 		zoom = DEF_ZOOM;
 		escape = 32.0;
@@ -165,6 +165,11 @@ public class FractalParameters
 	public void zoomOut()
 	{
 		zoom /= ZOOM_STEP;
+		adjustAdaptive();
+	}
+	public void setZoom(double z)
+	{
+		zoom = z;
 		adjustAdaptive();
 	}
 

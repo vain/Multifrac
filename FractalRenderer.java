@@ -189,23 +189,26 @@ public class FractalRenderer extends Thread
 					// Linear interpolation between marks
 					if (muh >= 1.0)
 					{
+						// If muh is greater than or equal to 1, just use the last color.
 						myJob.pixels[index++] = myJob.param.gradient.get(myJob.param.gradient.size() - 1).color.getRGB();
 					}
 					else
 					{
 						int i = 1;
 
-						//System.out.println("muh = " + muh + ", i = " + i);
-
+						// Find the first index where muh will be less than get(i).
+						// This will be (i + 1), so decrease i afterwards.
 						while (i < myJob.param.gradient.size() && muh > myJob.param.gradient.get(i).pos)
 							i++;
 
 						i--;
 
+						// Scale muh from 0 to 1 in the given interval.
 						double span = myJob.param.gradient.get(i + 1).pos - myJob.param.gradient.get(i).pos;
 						muh -= myJob.param.gradient.get(i).pos;
 						muh /= span;
 
+						// Get the 2 colors and interpolate them linearly.
 						Color c1 = myJob.param.gradient.get(i).color;
 						Color c2 = myJob.param.gradient.get(i + 1).color;
 
@@ -213,6 +216,7 @@ public class FractalRenderer extends Thread
 						int g = (int)(c1.getGreen() * (1.0 - muh)) + (int)(c2.getGreen() * muh);
 						int b = (int)(c1.getBlue() * (1.0 - muh))  + (int)(c2.getBlue() * muh);
 
+						// Convert it back to an RGB-integer.
 						myJob.pixels[index++] = 0xFF000000 + (r << 16) + (g << 8) + b;
 					}
 				}
