@@ -57,6 +57,7 @@ public class DisplayPanel extends JPanel
 		// Mouse Events
 		MouseAdapter m = new MouseAdapter()
 		{
+			@Override
 			public void mousePressed(MouseEvent e)
 			{
 				if (e.getButton() == MouseEvent.BUTTON1)
@@ -84,6 +85,7 @@ public class DisplayPanel extends JPanel
 				}
 			}
 
+			@Override
 			public void mouseReleased(MouseEvent e)
 			{
 				// Zoom-Box
@@ -106,6 +108,7 @@ public class DisplayPanel extends JPanel
 				repaint();
 			}
 
+			@Override
 			public void mouseDragged(MouseEvent e)
 			{
 				// Zoom-Box
@@ -126,6 +129,7 @@ public class DisplayPanel extends JPanel
 				}
 			}
 
+			@Override
 			public void mouseWheelMoved(MouseWheelEvent e)
 			{
 				//System.out.println(e.getWheelRotation());

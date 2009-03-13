@@ -97,7 +97,7 @@ public class Multifrac extends JFrame
 				setCompValues(rend.getParams());
 			}
 		});
-		addComp(cont, rend, gbl, 0, 3, 1, 1, 1.0, 1.0);
+		addComp(cont, rend, gbl, 0, 3, 2, 1, 1.0, 1.0);
 
 		// OptionPanel
 		JPanel opts = new JPanel();
@@ -121,7 +121,7 @@ public class Multifrac extends JFrame
 		g.add(c_mandel);
 		g.add(c_julia);
 
-		addComp(cont, opts, gbl, 0, 0, 1, 1, 1.0, 0.0);
+		addComp(cont, opts, gbl, 0, 0, 2, 1, 1.0, 0.0);
 
 		// LocationPanel
 		JPanel loc = new JPanel();
@@ -166,7 +166,7 @@ public class Multifrac extends JFrame
 			}
 		});
 
-		addComp(cont, loc, gbl, 0, 1, 1, 1, 1.0, 0.0);
+		addComp(cont, loc, gbl, 0, 1, 2, 1, 1.0, 0.0);
 
 		// PanicPanel
 		JPanel panicpanel = new JPanel();
@@ -183,13 +183,28 @@ public class Multifrac extends JFrame
 		});
 		panicpanel.add(panic);
 		
-		addComp(cont, panicpanel, gbl, 0, 2, 1, 1, 1.0, 0.0);
+		addComp(cont, panicpanel, gbl, 0, 2, 2, 1, 1.0, 0.0);
 
 		// ColorChooser Panel
 		colorizer = new ColorizerPanel();
 		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		colorizer.setBorder(commonBorder);
 		addComp(cont, colorizer, gbl, 0, 4, 1, 1, 1.0, 0.0);
+
+		// Attach this to the display panel
+		rend.attachColorizerPanel(colorizer);
+
+		// ColorUpdateButton
+		JButton upd = new JButton("Set");
+		upd.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				rend.dispatchRedraw();
+			}
+		});
+		addComp(cont, upd, gbl, 1, 4, 1, 1, 0.0, 0.0);
 
 		// Listener: TYPE
 		ItemListener typeChanged = new ItemListener()
