@@ -33,9 +33,9 @@ public class FractalParameters
 		zoom = DEF_ZOOM;
 		escape = 32.0;
 		adaptive = true;
-		julia_re = 0.2;
-		julia_im = 0.5;
-		centerOffset = new Point2D.Double(-0.5, 0.0);
+		julia_re = -0.46;
+		julia_im = 0.58;
+		centerOffset = new Point2D.Double(0.0, 0.0);
 	}
 
 	public void updateSize(Dimension s)
@@ -129,7 +129,7 @@ public class FractalParameters
 		if (adaptive)
 		{
 			double zehnerpotenz = -Math.log10(zoom);
-			nmax = (int)(zehnerpotenz * 200);
+			nmax = (int)(zehnerpotenz * 95);
 			nmax = (nmax < DEF_NMAX ? DEF_NMAX : nmax);
 		}
 	}
