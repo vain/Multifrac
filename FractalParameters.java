@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.geom.*;
+import java.util.*;
 
 public class FractalParameters
 {
@@ -19,11 +20,13 @@ public class FractalParameters
 	public double julia_re;
 	public double julia_im;
 	public Point2D centerOffset;
+	public ArrayList<ColorStep> gradient;
 	public Dimension size = new Dimension(100, 100);
 
 	public FractalParameters()
 	{
 		setDefaults();
+		gradient = ColorizerPanel.getDefaultGradient();
 	}
 
 	public FractalParameters(FractalParameters p)
@@ -43,6 +46,7 @@ public class FractalParameters
 				p.centerOffset.getY());
 
 		size = new Dimension(p.size);
+		gradient = new ArrayList<ColorStep>(p.gradient);
 	}
 
 	public void setDefaults()

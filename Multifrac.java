@@ -7,6 +7,7 @@ import java.text.*;
 public class Multifrac extends JFrame
 {
 	protected DisplayPanel rend = null;
+	protected ColorizerPanel colorizer = null;
 	protected JCheckBox c_adaptive = new JCheckBox("Adaptive");
 	protected JTextField c_nmax = new JTextField();
 	protected JTextField c_escape = new JTextField();
@@ -174,6 +175,12 @@ public class Multifrac extends JFrame
 		panicpanel.add(panic);
 		
 		addComp(cont, panicpanel, gbl, 0, 2, 1, 1, 1.0, 0.0);
+
+		// ColorChooser Panel
+		colorizer = new ColorizerPanel();
+		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
+		colorizer.setBorder(commonBorder);
+		addComp(cont, colorizer, gbl, 0, 4, 1, 1, 1.0, 0.0);
 
 		// Listener: TYPE
 		ItemListener typeChanged = new ItemListener()

@@ -25,6 +25,7 @@ public class DisplayPanel extends JPanel
 	protected int runningJobs = 0;
 
 	protected Runnable callbackOnChange = null;
+	protected ColorizerPanel colorizer = null;
 
 	/**
 	 * Build the component and register listeners
@@ -175,6 +176,11 @@ public class DisplayPanel extends JPanel
 		callbackOnChange = r;
 	}
 
+	public void attachColorizerPanel(ColorizerPanel p)
+	{
+		colorizer = p;
+	}
+
 	/**
 	 * Get the next stamp. No need for sync as this is always executed on the EDT.
 	 */
@@ -211,6 +217,9 @@ public class DisplayPanel extends JPanel
 
 		if (callbackOnChange != null)
 			callbackOnChange.run();
+
+		if (colorizer != null)
+			param.gradient = colorizer.grad;
 
 		FractalRenderer.dispatchJob(2,
 				new FractalRenderer.Job(param, nextStamp()),
@@ -300,6 +309,8 @@ public class DisplayPanel extends JPanel
 		if (runningJobs > 0)
 		{
 			int wid = 10;
+			g2.setPaint(Color.black);
+			g.fillRect(getWidth() - wid - 2, getHeight() - wid - 2, wid + 2, wid + 2);
 			g2.setPaint(Color.red);
 			g.fillRect(getWidth() - wid, getHeight() - wid, wid, wid);
 		}

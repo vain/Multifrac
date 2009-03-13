@@ -6,6 +6,8 @@ import javax.swing.*;
  */
 public class FractalRenderer extends Thread
 {
+	private static final double logTwoBaseTen = Math.log10(2.0);
+
 	/**
 	 * Describes a whole job, i.e. the complete image.
 	 * A job can consist out of one or more tokens.
@@ -115,6 +117,7 @@ public class FractalRenderer extends Thread
 		int n = 0;
 		int nmax = myJob.param.nmax;
 		double w = myJob.getWidth();
+		double muh = 0.0;
 
 		int index = myToken.start * myJob.getWidth();
 		for (int coord_y = myToken.start; coord_y < myToken.end; coord_y++)
@@ -167,11 +170,51 @@ public class FractalRenderer extends Thread
 				// Decision
 				if (n == nmax)
 				{
+					// Inside
 					myJob.pixels[index++] = 0xFF000000;
 				}
 				else
 				{
-					myJob.pixels[index++] = 0xFFFFFFFF;
+					// Outside
+					// Idee: http://linas.org/art-gallery/escape/smooth.html
+					// Leider müssen diese teuren Funktionen hier tatsächlich ausgeführt werden.
+					muh = (double)n + 1.0f - Math.log10(Math.log10(Math.sqrt(sqr_abs_z))) / logTwoBaseTen;
+					muh /= nmax;
+
+					// Diese zusätzliche Wurzel sorgt dafür, dass die kleinen Werte nicht so
+					// nah beieinander sind. Dadurch kann man die Farben im Colorizer gleich-
+					// mäßiger verteilen.
+					muh = Math.sqrt(muh);
+
+					// Linear interpolation between marks
+					if (muh >= 1.0)
+					{
+						myJob.pixels[index++] = myJob.param.gradient.get(myJob.param.gradient.size() - 1).color.getRGB();
+					}
+					else
+					{
+						int i = 1;
+
+						//System.out.println("muh = " + muh + ", i = " + i);
+
+						while (i < myJob.param.gradient.size() && muh > myJob.param.gradient.get(i).pos)
+							i++;
+
+						i--;
+
+						double span = myJob.param.gradient.get(i + 1).pos - myJob.param.gradient.get(i).pos;
+						muh -= myJob.param.gradient.get(i).pos;
+						muh /= span;
+
+						Color c1 = myJob.param.gradient.get(i).color;
+						Color c2 = myJob.param.gradient.get(i + 1).color;
+
+						int r = (int)(c1.getRed() * (1.0 - muh))   + (int)(c2.getRed() * muh);
+						int g = (int)(c1.getGreen() * (1.0 - muh)) + (int)(c2.getGreen() * muh);
+						int b = (int)(c1.getBlue() * (1.0 - muh))  + (int)(c2.getBlue() * muh);
+
+						myJob.pixels[index++] = 0xFF000000 + (r << 16) + (g << 8) + b;
+					}
 				}
 			}
 		}
