@@ -22,6 +22,8 @@ public class DisplayPanel extends JPanel
 	protected long displayStamp = 0;
 	protected long lastStamp = -1;
 
+	protected int runningJobs = 0;
+
 	protected Runnable callbackOnChange = null;
 
 	/**
@@ -204,6 +206,9 @@ public class DisplayPanel extends JPanel
 	 */
 	public void dispatchRedraw()
 	{
+		runningJobs++;
+		repaint();
+
 		if (callbackOnChange != null)
 			callbackOnChange.run();
 
@@ -217,6 +222,8 @@ public class DisplayPanel extends JPanel
 						FractalRenderer.Job result = getJob();
 						if (checkStamp(result.stamp))
 							drawIt = result;
+
+						runningJobs--;
 
 						paintImmediately(0, 0, result.getWidth(), result.getHeight());
 					}
@@ -288,6 +295,14 @@ public class DisplayPanel extends JPanel
 		g2.setStroke(new BasicStroke(1.0f));
 		g2.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2);
 		g2.drawLine(getWidth() / 2, 0, getWidth() / 2, getHeight());
+
+		// Status
+		if (runningJobs > 0)
+		{
+			int wid = 10;
+			g2.setPaint(Color.red);
+			g.fillRect(getWidth() - wid, getHeight() - wid, wid, wid);
+		}
 	}
 
 	private void stackTrace()

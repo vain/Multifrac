@@ -78,7 +78,8 @@ public class Multifrac extends JFrame
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
 		Container cont = getContentPane();
-		Border commonBorder = BorderFactory.createLoweredBevelBorder(); //(EtchedBorder.RAISED);
+		//Border commonBorder = BorderFactory.createLoweredBevelBorder();
+		Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
 		// Instantiate RenderPanel
 		rend = new DisplayPanel();
