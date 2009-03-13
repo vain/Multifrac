@@ -3,11 +3,13 @@ import java.awt.geom.*;
 
 public class FractalParameters
 {
+	protected final double ZOOM_STEP = 0.9;
+
 	public int nmax = 25;
 	public double zoom = 1.0;
-	public Point2D center = new Point2D.Double(0.0, 0.0);
+	public double escape = 32.0;
+	public Point2D centerOffset = new Point2D.Double(-0.5, 0.0);
 	public Dimension size = new Dimension(100, 100);
-
 
 	public void updateSize(Dimension s)
 	{
@@ -20,15 +22,6 @@ public class FractalParameters
 	public int getHeight()
 	{
 		return size.height;
-	}
-
-	public int getNmax()
-	{
-		return nmax;
-	}
-	public void setNmax(int n)
-	{
-		nmax = n;
 	}
 
 	public void zoomBox(Point a, Point b)
@@ -57,20 +50,48 @@ public class FractalParameters
 		dh = YtoWorld(y + h) - YtoWorld(y);
 
 		// Update center: This will be the center of the drawn box.
-		center.setLocation(XtoWorld(x + (int)(0.5 * w)), YtoWorld(y + (int)(0.5 * h)));
+		centerOffset.setLocation(XtoWorld(x + (int)(0.5 * w)), YtoWorld(y + (int)(0.5 * h)));
 
 		// Update zoom:
 		if (w > h)
 		{
 			zoom /= cw / dw;
-			System.out.println("Zoom: cw / dw = " + cw + " / " + dw + " = " + (cw / dw) + ", " + zoom);
+			//System.out.println("Zoom: cw / dw = " + cw + " / " + dw + " = " + (cw / dw) + ", " + zoom);
 		}
 		else
 		{
 			zoom /= ch / dh;
-			System.out.println("Zoom: ch / dh = " + ch + " / " + dh + " = " + (ch / dh) + ", " + zoom);
+			//System.out.println("Zoom: ch / dh = " + ch + " / " + dh + " = " + (ch / dh) + ", " + zoom);
 		}
+	}
 
+	public void updateCenter(Point from, Point to)
+	{
+		double dx = XtoWorld(to.x) - XtoWorld(from.x);
+		double dy = YtoWorld(to.y) - YtoWorld(from.y);
+
+		//System.out.println(dx + ", " + dy);
+
+		centerOffset.setLocation(centerOffset.getX() - dx, centerOffset.getY() - dy);
+	}
+
+	public void updateCenter(Point p)
+	{
+		double dx = XtoWorld(p.x);
+		double dy = YtoWorld(p.y);
+
+		//System.out.println(dx + ", " + dy);
+
+		centerOffset.setLocation(dx, dy);
+	}
+
+	public void zoomIn()
+	{
+		zoom *= ZOOM_STEP;
+	}
+	public void zoomOut()
+	{
+		zoom /= ZOOM_STEP;
 	}
 
 	public double XtoWorld(int coord_x)
@@ -82,7 +103,7 @@ public class FractalParameters
 		t -= ((double)getWidth() / getHeight());
 
 		t *= zoom;
-		t += center.getX();
+		t += centerOffset.getX();
 		return t;
 	}
 	public double YtoWorld(int coord_y)
@@ -91,7 +112,7 @@ public class FractalParameters
 		double t = 2.0 * (double)coord_y / getHeight();
 		t -= 1.0;
 		t *= zoom;
-		t += center.getY();
+		t += centerOffset.getY();
 		return t;
 	}
 }

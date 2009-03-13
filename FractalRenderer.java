@@ -14,11 +14,14 @@ public class FractalRenderer extends Thread
 	{
 		public int[] pixels = null;
 		public FractalParameters param = null;
+		public long stamp = 0;
 
-		public Job(FractalParameters p)
+		public Job(FractalParameters p, long s)
 		{
 			param = p;
 			pixels = new int[param.getWidth() * param.getHeight()];
+
+			stamp = s;
 		}
 
 		public int[] getPixels()
@@ -32,10 +35,6 @@ public class FractalRenderer extends Thread
 		public int getHeight()
 		{
 			return param.getHeight();
-		}
-		public int getNmax()
-		{
-			return param.getNmax();
 		}
 
 		@Override
@@ -105,16 +104,16 @@ public class FractalRenderer extends Thread
 	public void run()
 	{
 		// This is where the magic happens.
-		System.out.println("Executing " + myJob + " (" + myToken + ") on " + Thread.currentThread());
+		//System.out.println("Executing " + myJob + " (" + myToken + ") on " + Thread.currentThread());
 		
 		// Mandelbrot Parameters
 		double x, y;
 		double Re_c, Im_c;
 		double Re_z, Im_z, Re_z2, Im_z2;
 		double sqr_abs_z;
-		double escape = 32.0;
+		double escape = myJob.param.escape;
 		int n = 0;
-		int nmax = myJob.getNmax();
+		int nmax = myJob.param.nmax;
 		double w = myJob.getWidth();
 
 		int index = myToken.start * myJob.getWidth();
