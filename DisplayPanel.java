@@ -22,6 +22,8 @@ public class DisplayPanel extends JPanel
 	protected long displayStamp = 0;
 	protected long lastStamp = -1;
 
+	protected Runnable callbackOnChange = null;
+
 	/**
 	 * Build the component and register listeners
 	 */
@@ -161,6 +163,16 @@ public class DisplayPanel extends JPanel
 		});
 	}
 
+	public FractalParameters getParams()
+	{
+		return param;
+	}
+
+	public void setCallbackOnChange(Runnable r)
+	{
+		callbackOnChange = r;
+	}
+
 	/**
 	 * Get the next stamp. No need for sync as this is always executed on the EDT.
 	 */
@@ -192,7 +204,7 @@ public class DisplayPanel extends JPanel
 	 */
 	public void dispatchRedraw()
 	{
-		FractalRenderer.dispatchJob(4,
+		FractalRenderer.dispatchJob(2,
 				new FractalRenderer.Job(param, nextStamp()),
 				new FractalRenderer.Callback()
 				{
@@ -204,6 +216,9 @@ public class DisplayPanel extends JPanel
 							drawIt = result;
 
 						paintImmediately(0, 0, result.getWidth(), result.getHeight());
+
+						if (callbackOnChange != null)
+							callbackOnChange.run();
 					}
 				});
 	}

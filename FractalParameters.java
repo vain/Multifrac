@@ -3,13 +3,40 @@ import java.awt.geom.*;
 
 public class FractalParameters
 {
-	protected final double ZOOM_STEP = 0.9;
+	protected static final double ZOOM_STEP = 0.9;
 
-	public int nmax = 25;
-	public double zoom = 1.0;
-	public double escape = 32.0;
-	public Point2D centerOffset = new Point2D.Double(-0.5, 0.0);
+	public static final int TYPE_MANDELBROT = 0;
+	public static final int TYPE_JULIA      = 1;
+
+	public static final int DEF_NMAX = 100;
+	public static final double DEF_ZOOM = 1.0;
+
+	public int type;
+	public int nmax;
+	public double zoom;
+	public double escape;
+	public boolean adaptive;
+	public double julia_re;
+	public double julia_im;
+	public Point2D centerOffset;
 	public Dimension size = new Dimension(100, 100);
+
+	public FractalParameters()
+	{
+		setDefaults();
+	}
+
+	public void setDefaults()
+	{
+		type = TYPE_MANDELBROT;
+		nmax = DEF_NMAX;
+		zoom = DEF_ZOOM;
+		escape = 32.0;
+		adaptive = true;
+		julia_re = 0.2;
+		julia_im = 0.5;
+		centerOffset = new Point2D.Double(-0.5, 0.0);
+	}
 
 	public void updateSize(Dimension s)
 	{
@@ -22,6 +49,12 @@ public class FractalParameters
 	public int getHeight()
 	{
 		return size.height;
+	}
+
+	public void setAdaptive(boolean b)
+	{
+		adaptive = b;
+		adjustAdaptive();
 	}
 
 	public void zoomBox(Point a, Point b)
@@ -63,6 +96,8 @@ public class FractalParameters
 			zoom /= ch / dh;
 			//System.out.println("Zoom: ch / dh = " + ch + " / " + dh + " = " + (ch / dh) + ", " + zoom);
 		}
+
+		adjustAdaptive();
 	}
 
 	public void updateCenter(Point from, Point to)
@@ -85,13 +120,29 @@ public class FractalParameters
 		centerOffset.setLocation(dx, dy);
 	}
 
+	public void adjustAdaptive()
+	{
+		// Eine schöne Darstellung ergibt sich, wenn man nmax auf
+		// m * E setzt, wobei E der negative Exponent des Zooms
+		// ist und m ein magischer Faktor. Mindestens sollte es
+		// aber DEF_NMAX sein, zum Beispiel 100.
+		if (adaptive)
+		{
+			double zehnerpotenz = -Math.log10(zoom);
+			nmax = (int)(zehnerpotenz * 200);
+			nmax = (nmax < DEF_NMAX ? DEF_NMAX : nmax);
+		}
+	}
+
 	public void zoomIn()
 	{
 		zoom *= ZOOM_STEP;
+		adjustAdaptive();
 	}
 	public void zoomOut()
 	{
 		zoom /= ZOOM_STEP;
+		adjustAdaptive();
 	}
 
 	public double XtoWorld(int coord_x)

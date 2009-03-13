@@ -131,6 +131,22 @@ public class FractalRenderer extends Thread
 				Im_c = y;
 				Re_z = Im_z = Re_z2 = Im_z2 = sqr_abs_z = 0.0;
 
+				switch (myJob.param.type)
+				{
+					case FractalParameters.TYPE_MANDELBROT:
+						// z_{n+1} = z_n^2 + c ,  z_0 = 0 ,  c die Koordinate
+						Re_c = x;
+						Im_c = y;
+						break;
+					case FractalParameters.TYPE_JULIA:
+						// z_{n+1} = z_n^2 + k ,  z_0 = c ,  c Koord., k Julia-Param.
+						Re_c = myJob.param.julia_re;
+						Im_c = myJob.param.julia_im;
+						Re_z = x;
+						Im_z = y;
+						break;
+				}
+
 				n = 0;
 
 				// Loop
