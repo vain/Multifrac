@@ -186,7 +186,7 @@ public class Multifrac extends JFrame
 		addComp(cont, panicpanel, gbl, 0, 2, 2, 1, 1.0, 0.0);
 
 		// ColorChooser Panel
-		colorizer = new ColorizerPanel();
+		colorizer = new ColorizerPanel(this);
 		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		colorizer.setBorder(commonBorder);
 		addComp(cont, colorizer, gbl, 0, 4, 1, 1, 1.0, 0.0);

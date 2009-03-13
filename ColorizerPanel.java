@@ -14,7 +14,7 @@ public class ColorizerPanel extends JPanel
 
 	public ArrayList<ColorStep> grad;
 
-	public ColorizerPanel()
+	public ColorizerPanel(final Component parent)
 	{
 		super();
 		grad = ColorizerPanel.getDefaultGradient();
@@ -69,13 +69,41 @@ public class ColorizerPanel extends JPanel
 					}
 				}
 
-				// Was there something selected and now there's something new selected?
-				// If this has been done with the middle button, then swap colors.
 				if (lastSelected != -1 && selectedHandle != -1 && e.getButton() == MouseEvent.BUTTON2)
 				{
-					Color temp = grad.get(lastSelected).color;
-					grad.get(lastSelected).color = grad.get(selectedHandle).color;
-					grad.get(selectedHandle).color = temp;
+					if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
+					{
+						// Same as below but with CTRL pressed, so *copy* the color from "last" to "now".
+						grad.get(selectedHandle).color = new Color(grad.get(lastSelected).color.getRGB());
+					}
+					else
+					{
+						// Was there something selected and now there's something new selected?
+						// If this has been done with the middle button, then swap colors.
+						Color temp = grad.get(lastSelected).color;
+						grad.get(lastSelected).color = grad.get(selectedHandle).color;
+						grad.get(selectedHandle).color = temp;
+					}
+				}
+
+				repaint();
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				System.out.println("Click: " + e.getClickCount());
+				if (e.getClickCount() == 2 && selectedHandle != -1)
+				{
+					Color temp = JColorChooser.showDialog(
+							parent,
+							"Edit color",
+							grad.get(selectedHandle).color);
+
+					if (temp != null)
+					{
+						grad.get(selectedHandle).color = temp;
+					}
 				}
 
 				repaint();
