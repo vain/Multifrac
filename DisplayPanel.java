@@ -204,6 +204,9 @@ public class DisplayPanel extends JPanel
 	 */
 	public void dispatchRedraw()
 	{
+		if (callbackOnChange != null)
+			callbackOnChange.run();
+
 		FractalRenderer.dispatchJob(2,
 				new FractalRenderer.Job(param, nextStamp()),
 				new FractalRenderer.Callback()
@@ -216,9 +219,6 @@ public class DisplayPanel extends JPanel
 							drawIt = result;
 
 						paintImmediately(0, 0, result.getWidth(), result.getHeight());
-
-						if (callbackOnChange != null)
-							callbackOnChange.run();
 					}
 				});
 	}

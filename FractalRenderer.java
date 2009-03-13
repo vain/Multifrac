@@ -18,7 +18,7 @@ public class FractalRenderer extends Thread
 
 		public Job(FractalParameters p, long s)
 		{
-			param = p;
+			param = new FractalParameters(p);
 			pixels = new int[param.getWidth() * param.getHeight()];
 
 			stamp = s;

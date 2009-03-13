@@ -67,7 +67,7 @@ public class Multifrac extends JFrame
 
 		DecimalFormat df = new DecimalFormat("###.########");
 		c_loc_re.setText(df.format(p.centerOffset.getX()));
-		c_loc_im.setText(df.format(-p.centerOffset.getY()));
+		c_loc_im.setText(df.format(-p.centerOffset.getY())); // Y has to be mirrored...
 
 		df = new DecimalFormat("##0.#####E0");
 		c_zoom.setText(df.format(p.zoom));
@@ -150,7 +150,7 @@ public class Multifrac extends JFrame
 			{
 				rend.getParams().centerOffset.setLocation(
 					rend.getParams().centerOffset.getX(),
-					(new Double(c_loc_im.getText())) * (-1.0));
+					(new Double(c_loc_im.getText())) * (-1.0)); // Y has to be mirrored...
 				rend.dispatchRedraw();
 			}
 		});

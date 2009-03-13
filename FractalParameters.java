@@ -26,6 +26,25 @@ public class FractalParameters
 		setDefaults();
 	}
 
+	public FractalParameters(FractalParameters p)
+	{
+		// Copy primitives
+		type = p.type;
+		nmax = p.nmax;
+		zoom = p.zoom;
+		escape = p.escape;
+		adaptive = p.adaptive;
+		julia_re = p.julia_re;
+		julia_im = p.julia_im;
+
+		// Copy objects
+		centerOffset = new Point2D.Double(
+				p.centerOffset.getX(),
+				p.centerOffset.getY());
+
+		size = new Dimension(p.size);
+	}
+
 	public void setDefaults()
 	{
 		type = TYPE_MANDELBROT;
