@@ -24,12 +24,26 @@ public class FractalParameters
 	public Color colorInside;
 	public Dimension size = new Dimension(100, 100);
 
+	@Override
+	public String toString()
+	{
+		String out = "\n";
+		out += "\t" + zoom + "\n";
+		out += "\t" + centerOffset + "\n";
+		return out;
+	}
+
+
 	public FractalParameters()
 	{
 		setDefaults();
 
 		// It is *not* needed to set default colors!
 		// Those are set explicitely, when dispatching a job.
+		// -- Wrong!
+		// TODO: Set explicit defaults
+		colorInside = Color.black;
+		gradient = ColorizerPanel.getDefaultGradient();
 	}
 
 	public FractalParameters(FractalParameters p)

@@ -9,7 +9,7 @@ import java.awt.geom.*;
  */
 public class DisplayPanel extends JPanel
 {
-	protected FractalParameters param = new FractalParameters();
+	protected ParameterStack paramStack = null;
 	protected FractalRenderer.Job drawIt = null;
 	protected Point mouseStart = null;
 	protected Point mouseEnd   = null;
@@ -31,9 +31,12 @@ public class DisplayPanel extends JPanel
 	/**
 	 * Build the component and register listeners
 	 */
-	public DisplayPanel()
+	public DisplayPanel(ParameterStack p)
 	{
 		super();
+
+		// This will be the place where our settings live.
+		paramStack = p;
 
 		// onResize
 		addComponentListener(new ComponentListener() 
@@ -45,8 +48,9 @@ public class DisplayPanel extends JPanel
 				// Get new size
 				Dimension newSize = c.getSize();
 
-				// A "resized" event will trigger a recalculation of the fractal
-				param.updateSize(newSize);
+				// A "resized" event will trigger a recalculation of the fractal.
+				// This does *NOT* create an undo record.
+				paramStack.get().updateSize(newSize);
 				dispatchRedraw();
 			}
 		
@@ -77,7 +81,8 @@ public class DisplayPanel extends JPanel
 				}
 				else if (e.getButton() == MouseEvent.BUTTON3)
 				{
-					param.updateCenter(e.getPoint());
+					paramStack.push();
+					paramStack.get().updateCenter(e.getPoint());
 					dispatchRedraw();
 				}
 				else
@@ -97,7 +102,8 @@ public class DisplayPanel extends JPanel
 					// Only update if the mouse has been dragged
 					if (mouseEnd != null)
 					{
-						param.zoomBox(mouseStart, mouseEnd);
+						paramStack.push();
+						paramStack.get().zoomBox(mouseStart, mouseEnd);
 						dispatchRedraw();	
 					}
 				}
@@ -123,7 +129,8 @@ public class DisplayPanel extends JPanel
 				// Pan/Move
 				else if (typeOfDrag == DRAG_PAN)
 				{
-					param.updateCenter(mouseStart, e.getPoint());
+					paramStack.push();
+					paramStack.get().updateCenter(mouseStart, e.getPoint());
 					dispatchRedraw();
 
 					mouseStart = e.getPoint();
@@ -133,11 +140,13 @@ public class DisplayPanel extends JPanel
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e)
 			{
+				paramStack.push();
+
 				//System.out.println(e.getWheelRotation());
 				if (e.getWheelRotation() == 1)
-					param.zoomIn();
+					paramStack.get().zoomIn();
 				else
-					param.zoomOut();
+					paramStack.get().zoomOut();
 
 				dispatchRedraw();
 			}
@@ -157,23 +166,20 @@ public class DisplayPanel extends JPanel
 				if (e.getKeyChar() == '+')
 				{
 					changed = true;
-					param.zoomIn();
+					paramStack.push();
+					paramStack.get().zoomIn();
 				}
 				else if (e.getKeyChar() == '-')
 				{
 					changed = true;
-					param.zoomOut();
+					paramStack.push();
+					paramStack.get().zoomOut();
 				}
 				
 				if (changed)
 					dispatchRedraw();	
 			}
 		});
-	}
-
-	public FractalParameters getParams()
-	{
-		return param;
 	}
 
 	public void setCallbackOnChange(Runnable r)
@@ -224,13 +230,8 @@ public class DisplayPanel extends JPanel
 		if (callbackOnChange != null)
 			callbackOnChange.run();
 
-		if (colorizer != null)
-			param.gradient = colorizer.grad;
-		if (colorInside != null)
-			param.colorInside = colorInside.getBackground();
-
 		FractalRenderer.dispatchJob(2,
-				new FractalRenderer.Job(param, nextStamp()),
+				new FractalRenderer.Job(paramStack.get(), nextStamp()),
 				new FractalRenderer.Callback()
 				{
 					@Override

@@ -20,6 +20,8 @@ public class Multifrac extends JFrame
 	protected JTextField c_loc_im = new JTextField(10);
 	protected JTextField c_zoom = new JTextField(10);
 
+	protected ParameterStack paramStack = new ParameterStack();
+
 	private void addComp(Container cont, Component c, GridBagLayout gbl, int x, int y, int w, int h, double wx, double wy)
 	{
 		GridBagConstraints gbc = new GridBagConstraints(); 
@@ -84,7 +86,7 @@ public class Multifrac extends JFrame
 		Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
 		// Instantiate RenderPanel
-		rend = new DisplayPanel();
+		rend = new DisplayPanel(paramStack);
 		rend.setPreferredSize(new Dimension(512, 384));
 		rend.setBorder(commonBorder);
 		rend.setVisible(true);
@@ -95,7 +97,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void run()
 			{
-				setCompValues(rend.getParams());
+				setCompValues(paramStack.get());
 			}
 		});
 		addComp(cont, rend, gbl, 0, 3, 3, 1, 1.0, 1.0);
@@ -140,9 +142,10 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().centerOffset.setLocation(
+				paramStack.push();
+				paramStack.get().centerOffset.setLocation(
 					new Double(c_loc_re.getText()),
-					rend.getParams().centerOffset.getY());
+					paramStack.get().centerOffset.getY());
 				rend.dispatchRedraw();
 			}
 		});
@@ -151,8 +154,9 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().centerOffset.setLocation(
-					rend.getParams().centerOffset.getX(),
+				paramStack.push();
+				paramStack.get().centerOffset.setLocation(
+					paramStack.get().centerOffset.getX(),
 					(new Double(c_loc_im.getText())) * (-1.0)); // Y has to be mirrored...
 				rend.dispatchRedraw();
 			}
@@ -162,7 +166,8 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().setZoom(new Double(c_zoom.getText()));
+				paramStack.push();
+				paramStack.get().setZoom(new Double(c_zoom.getText()));
 				rend.dispatchRedraw();
 			}
 		});
@@ -172,13 +177,26 @@ public class Multifrac extends JFrame
 		// PanicPanel
 		JPanel panicpanel = new JPanel();
 		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
+		JButton undo  = new JButton("Undo");
+		undo.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				paramStack.pop();
+				rend.dispatchRedraw();
+			}
+		});
+		panicpanel.add(undo);
+
 		JButton panic = new JButton("Reset");
 		panic.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().setDefaults();
+				paramStack.push();
+				paramStack.get().setDefaults();
 				rend.dispatchRedraw();
 			}
 		});
@@ -228,6 +246,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				// TODO: Set new colors and push()
 				rend.dispatchRedraw();
 			}
 		});
@@ -245,14 +264,16 @@ public class Multifrac extends JFrame
 				{
 					if (c_mandel.isSelected())
 					{
+						paramStack.push();
 						setActiveType(FractalParameters.TYPE_MANDELBROT);
-						rend.getParams().type = FractalParameters.TYPE_MANDELBROT;
+						paramStack.get().type = FractalParameters.TYPE_MANDELBROT;
 						rend.dispatchRedraw();
 					}
 					else if (c_julia.isSelected())
 					{
+						paramStack.push();
 						setActiveType(FractalParameters.TYPE_JULIA);
-						rend.getParams().type = FractalParameters.TYPE_JULIA;
+						paramStack.get().type = FractalParameters.TYPE_JULIA;
 						rend.dispatchRedraw();
 					}
 				}
@@ -275,7 +296,8 @@ public class Multifrac extends JFrame
 					else
 						c_nmax.setEnabled(true);
 
-					rend.getParams().setAdaptive(c_adaptive.isSelected());
+					paramStack.push();
+					paramStack.get().setAdaptive(c_adaptive.isSelected());
 					rend.dispatchRedraw();
 				}
 			}
@@ -287,7 +309,8 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().nmax = new Integer(c_nmax.getText());
+				paramStack.push();
+				paramStack.get().nmax = new Integer(c_nmax.getText());
 				rend.dispatchRedraw();
 			}
 		});
@@ -296,7 +319,8 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().escape = new Double(c_escape.getText());
+				paramStack.push();
+				paramStack.get().escape = new Double(c_escape.getText());
 				rend.dispatchRedraw();
 			}
 		});
@@ -305,7 +329,8 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().julia_re = new Double(c_julia_re.getText());
+				paramStack.push();
+				paramStack.get().julia_re = new Double(c_julia_re.getText());
 				rend.dispatchRedraw();
 			}
 		});
@@ -314,7 +339,8 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				rend.getParams().julia_im = new Double(c_julia_im.getText());
+				paramStack.push();
+				paramStack.get().julia_im = new Double(c_julia_im.getText());
 				rend.dispatchRedraw();
 			}
 		});
