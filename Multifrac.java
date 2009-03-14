@@ -223,9 +223,24 @@ public class Multifrac extends JFrame
 		c_mandel.addItemListener(typeChanged);
 		c_julia.addItemListener(typeChanged);
 		
-		// PanicPanel
+		// PanicPanel - well, it's more like a "ButtonPanel" now...
 		JPanel panicpanel = new JPanel();
 		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
+
+		final Frame parent = this;
+		JButton renderToFile = new JButton("Render ...");
+		renderToFile.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				new RenderDialog(parent, paramStack);
+			}
+		});
+		panicpanel.add(renderToFile);
+
+		panicpanel.add(new JLabel(" "));
+
 		JButton undo = new JButton("Undo");
 		undo.addActionListener(new ActionListener()
 		{
@@ -255,6 +270,8 @@ public class Multifrac extends JFrame
 			}
 		});
 		panicpanel.add(redo);
+
+		panicpanel.add(new JLabel(" "));
 
 		JButton panic = new JButton("Reset");
 		panic.addActionListener(new ActionListener()
@@ -342,6 +359,7 @@ public class Multifrac extends JFrame
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		pack();
+		setLocationRelativeTo(null);
 		setVisible(true);
 	}
 
