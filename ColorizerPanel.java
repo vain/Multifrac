@@ -38,7 +38,7 @@ public class ColorizerPanel extends JPanel
 
 				// Picking, this is done on *every* mouse down event
 				float relative = (float)e.getPoint().x / getWidth();
-				System.out.println(relative);
+				//System.out.println(relative);
 
 				int lastSelected = selectedHandle;
 				selectedHandle = -1;
@@ -47,7 +47,7 @@ public class ColorizerPanel extends JPanel
 					if (Math.abs(gg().get(i).pos - relative) < PICKING_EPSILON)
 					{
 						selectedHandle = i;
-						System.out.println("Selected: " + i);
+						//System.out.println("Selected: " + i);
 						break;
 					}
 				}
@@ -57,12 +57,12 @@ public class ColorizerPanel extends JPanel
 					// Right mouse and nothing selected? Then insert a new handle.
 					if (selectedHandle == -1)
 					{
-						System.out.println("INSERT");
+						//System.out.println("INSERT");
 						int i = 1;
 						while (i < gg().size() && relative > gg().get(i).pos)
 							i++;
 
-						System.out.println("Insert with index: " + i);
+						//System.out.println("Insert with index: " + i);
 						paramStack.push();
 						gg().add(i, new ColorStep(relative, Color.red));
 						selectedHandle = i;
@@ -75,7 +75,7 @@ public class ColorizerPanel extends JPanel
 					{
 						if (selectedHandle > 0 && selectedHandle != gg().size() - 1)
 						{
-							System.out.println("DELETE");
+							//System.out.println("DELETE");
 							paramStack.push();
 							gg().remove(selectedHandle);
 							selectedHandle = -1;
@@ -112,10 +112,9 @@ public class ColorizerPanel extends JPanel
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				System.out.println("Released: " + selectedHandle);
+				//System.out.println("Released: " + selectedHandle);
 				if (triggerCallback)
 				{
-					System.out.println("CALLBACK!!!!");
 					onChange.run();
 				}
 			}
@@ -123,7 +122,7 @@ public class ColorizerPanel extends JPanel
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				System.out.println("Click: " + e.getClickCount() + ", " + selectedHandle);
+				//System.out.println("Click: " + e.getClickCount() + ", " + selectedHandle);
 				if (e.getClickCount() == 2 && selectedHandle != -1)
 				{
 					Color temp = JColorChooser.showDialog(
@@ -138,7 +137,6 @@ public class ColorizerPanel extends JPanel
 
 						// As there won't be any mouseReleased in this case,
 						// fire the callback direclty
-						System.out.println("CALLBACK!!!!!");
 						onChange.run();
 					}
 				}

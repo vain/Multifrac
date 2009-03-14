@@ -226,7 +226,7 @@ public class Multifrac extends JFrame
 		// PanicPanel
 		JPanel panicpanel = new JPanel();
 		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
-		JButton undo  = new JButton("Undo");
+		JButton undo = new JButton("Undo");
 		undo.addActionListener(new ActionListener()
 		{
 			@Override
@@ -240,6 +240,21 @@ public class Multifrac extends JFrame
 			}
 		});
 		panicpanel.add(undo);
+
+		JButton redo = new JButton("Redo");
+		redo.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				paramStack.unpop();
+				setCompValues(paramStack.get());
+				rend.dispatchRedraw();
+				colorizer.repaint();
+				colorInside.repaint();
+			}
+		});
+		panicpanel.add(redo);
 
 		JButton panic = new JButton("Reset");
 		panic.addActionListener(new ActionListener()

@@ -4,12 +4,12 @@ import java.util.ArrayDeque;
 public class ParameterStack
 {
 	private FractalParameters current = new FractalParameters();
-	private Deque<FractalParameters> stack = new ArrayDeque<FractalParameters>();
-	private Deque<FractalParameters> redo  = new ArrayDeque<FractalParameters>();
+	private Deque<FractalParameters> undo = new ArrayDeque<FractalParameters>();
+	private Deque<FractalParameters> redo = new ArrayDeque<FractalParameters>();
 
 	public FractalParameters get()
 	{
-		dump();
+		//dump();
 
 		return current;
 	}
@@ -17,41 +17,50 @@ public class ParameterStack
 	public void push()
 	{
 		// Save current element
-		stack.offerFirst(current);
+		undo.offerFirst(current);
 
-		// Clear redo stack
-		//redo.clear();
+		// Clear redo stack, when the user makes a change
+		redo.clear();
 
 		// Create a copy of it and set this copy as the current element
 		current = new FractalParameters(current);
 
-		dump();
+		//dump();
 	}
 
 	public void pop()
 	{
-		if (stack.isEmpty())
+		if (undo.isEmpty())
 			return;
 
 		// Save the current element onto the redo stack
-		//redo.offerFirst(current);
+		redo.offerFirst(current);
 
 		// Restore the last saved element
-		current = stack.pollFirst();
+		current = undo.pollFirst();
 
-		dump();
+		//dump();
 	}
 
 	public void unpop()
 	{
-		dump();
+		if (redo.isEmpty())
+			return;
+
+		// Re-place the current item on the undo-stack
+		undo.offerFirst(current);
+		
+		// Re-activate first redo-item
+		current = redo.pollFirst();
+
+		//dump();
 	}
 
 	private void dump()
 	{
 		System.out.println("CURRENT:" + current);
 		System.out.println("UNDO STACK:");
-		System.out.println(stack);
+		System.out.println(undo);
 		System.out.println("REDO STACK:");
 		System.out.println(redo);
 		System.out.println();

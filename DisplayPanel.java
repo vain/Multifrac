@@ -330,12 +330,4 @@ public class DisplayPanel extends JPanel
 			g.fillRect(getWidth() - wid, getHeight() - wid, wid, wid);
 		}
 	}
-
-	private void stackTrace()
-	{
-		System.out.println("Stack trace on " + Thread.currentThread());
-		for ( StackTraceElement trace : Thread.currentThread().getStackTrace() ) 
-			System.out.println( trace ); 
-		System.out.println();
-	}
 }

@@ -28,6 +28,7 @@ public class FractalParameters
 	public String toString()
 	{
 		String out = "\n"
+			+ "\tID: " + hashCode() + "\n"
 			+ "\t" + zoom + "\n"
 			+ "\t" + centerOffset + "\n"
 			+ "\t" + colorInside + "\n"

@@ -30,7 +30,6 @@ public class SingleColorPanel extends JLabel
 					paramStack.get().colorInside = temp;
 					repaint();
 
-					System.out.println("CALLBACK!!!!!!!");
 					onChange.run();
 				}
 			}
