@@ -9,12 +9,14 @@ public class RenderDialog extends JDialog
 {
 	private static Dimension lastSize = null;
 	private static String    lastFile = null;
+	private static int       lastSuper = 2;
 
 	private JTextField c_width  = new JTextField();
 	private JTextField c_height = new JTextField();
 	private JTextField c_file   = new JTextField(20);
 	private JButton    c_ok     = new JButton("OK");
 	private JButton    c_cancel = new JButton("Cancel");
+	private JComboBox  c_super  = null;
 
 	public RenderDialog(final Frame parent, ParameterStack paramStack)
 	{
@@ -41,12 +43,17 @@ public class RenderDialog extends JDialog
 			c_file.setText(lastFile);
 		}
 
-		setLayout(new GridLayout(4, 2, 5, 5));
+		setLayout(new GridLayout(5, 2, 5, 5));
+
+		c_super = new JComboBox(new String[] { "None", "2x", "4x", "8x" });
+		c_super.setSelectedIndex(lastSuper);
 
 		add(new JLabel("Width:"));
 		add(c_width);
 		add(new JLabel("Height:"));
 		add(c_height);
+		add(new JLabel("Supersampling:"));
+		add(c_super);
 		add(new JLabel("File:"));
 		add(c_file);
 
@@ -68,9 +75,15 @@ public class RenderDialog extends JDialog
 				// Save a copy
 				lastSize = new Dimension(param.size);
 				lastFile = c_file.getText();
+				lastSuper = c_super.getSelectedIndex();
 
 				// Dispatch job and wait until it's finished
-				new RenderExecutionDialog(subparent, param, tfile);
+				RenderSettings rset = new RenderSettings();
+				rset.param = param;
+				rset.tfile = tfile;
+				rset.supersampling = (int)Math.pow(2, lastSuper);
+
+				new RenderExecutionDialog(subparent, rset);
 				dispose();
 			}
 		});
@@ -105,19 +118,28 @@ public class RenderDialog extends JDialog
 		which.setLocation(loc);
 	}
 
+	private static class RenderSettings
+	{
+		public FractalParameters param;
+		public File tfile;
+		public int supersampling;
+	}
 
 	private static class RenderExecutionDialog extends JDialog
 	{
-		public RenderExecutionDialog(final Dialog parent, final FractalParameters param, final File tfile)
+		public RenderExecutionDialog(final Dialog parent, final RenderSettings rset)
 		{
 			super(parent, "Rendering ...", true);
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
 			add(new JLabel("Please wait. Rendering in progress."));
 
+			rset.param.size.width  *= rset.supersampling;
+			rset.param.size.height *= rset.supersampling;
+
 			final JDialog me = this;
-			FractalRenderer.dispatchJob(2,
-					new FractalRenderer.Job(param, -1),
+			FractalRenderer.dispatchJob(Multifrac.numthreads,
+					new FractalRenderer.Job(rset.param, -1),
 					new FractalRenderer.Callback()
 					{
 						@Override
@@ -128,19 +150,33 @@ public class RenderDialog extends JDialog
 							// Create an image from the int-array
 							int w = result.getWidth();
 							int h = result.getHeight();
+							int[] px = result.getPixels();
 
 							BufferedImage img = (BufferedImage)createImage(w, h);
-
-							Image buf = createImage(
-										new MemoryImageSource(w, h, result.getPixels(), 0, w));
-
+							Image buf = createImage(new MemoryImageSource(w, h, px, 0, w));
 							Graphics2D g2 = (Graphics2D)img.getGraphics();
+							g2.drawImage(buf,
+								new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
 
-							g2.drawImage(buf, new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
+							if (rset.supersampling > 0)
+							{
+								w /= rset.supersampling;
+								h /= rset.supersampling;
+
+								Image temp = img.getScaledInstance(
+									w,
+									h,
+									Image.SCALE_SMOOTH);
+
+								img = (BufferedImage)createImage(w, h);
+								g2  = (Graphics2D)img.getGraphics();
+								g2.drawImage(temp,
+									new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
+							}
 
 							try
 							{
-								ImageIO.write(img, "PNG", tfile);
+								ImageIO.write(img, "PNG", rset.tfile);
 							}
 							catch (Exception e)
 							{

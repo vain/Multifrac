@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd build
-java Multifrac
+java -Xmx1800m Multifrac

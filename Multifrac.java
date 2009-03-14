@@ -6,6 +6,8 @@ import java.text.*;
 
 public class Multifrac extends JFrame
 {
+	public static int numthreads = Runtime.getRuntime().availableProcessors();
+
 	protected DisplayPanel rend = null;
 	protected ColorizerPanel colorizer = null;
 	protected JLabel colorInside = null;

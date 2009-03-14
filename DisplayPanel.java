@@ -236,7 +236,7 @@ public class DisplayPanel extends JPanel
 		runningJobs++;
 		repaint();
 
-		FractalRenderer.dispatchJob(2,
+		FractalRenderer.dispatchJob(Multifrac.numthreads,
 				new FractalRenderer.Job(paramStack.get(), nextStamp()),
 				new FractalRenderer.Callback()
 				{
