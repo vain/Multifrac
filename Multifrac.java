@@ -77,6 +77,17 @@ public class Multifrac extends JFrame
 		c_zoom.setText(df.format(p.zoom));
 	}
 
+	protected void updateColors()
+	{
+		paramStack.push();
+		paramStack.get().colorInside = colorInside.getBackground();
+	}
+
+	protected void readColors()
+	{
+		colorInside.setBackground(paramStack.get().colorInside);
+	}
+
 	public Multifrac()
 	{
 		GridBagLayout gbl = new GridBagLayout();
@@ -184,6 +195,7 @@ public class Multifrac extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				paramStack.pop();
+				readColors();
 				rend.dispatchRedraw();
 			}
 		});
@@ -205,7 +217,7 @@ public class Multifrac extends JFrame
 		addComp(cont, panicpanel, gbl, 0, 2, 3, 1, 1.0, 0.0);
 
 		// ColorChooser Panel
-		colorizer = new ColorizerPanel(this);
+		colorizer = new ColorizerPanel(this, paramStack);
 		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		colorizer.setBorder(commonBorder);
 		addComp(cont, colorizer, gbl, 0, 4, 1, 1, 1.0, 0.0);
@@ -216,7 +228,7 @@ public class Multifrac extends JFrame
 		colorInside.setBorder(commonBorder);
 		colorInside.setPreferredSize(new Dimension(50, 50));
 		colorInside.setOpaque(true);
-		colorInside.setBackground(Color.black);
+		colorInside.setBackground(ColorizerPanel.getDefaultInside());
 		colorInside.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -231,13 +243,13 @@ public class Multifrac extends JFrame
 				{
 					colorInside.setBackground(temp);
 					colorInside.repaint();
+
+					updateColors();
+					rend.dispatchRedraw();
 				}
 			}
 		});
 		addComp(cont, colorInside, gbl, 1, 4, 1, 1, 0.0, 0.0);
-
-		// Attach those to the display panel
-		rend.attachColorizers(colorizer, colorInside);
 
 		// ColorUpdateButton
 		JButton upd = new JButton("Set");
@@ -246,7 +258,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				// TODO: Set new colors and push()
+				updateColors();
 				rend.dispatchRedraw();
 			}
 		});

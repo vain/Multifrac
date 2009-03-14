@@ -27,9 +27,12 @@ public class FractalParameters
 	@Override
 	public String toString()
 	{
-		String out = "\n";
-		out += "\t" + zoom + "\n";
-		out += "\t" + centerOffset + "\n";
+		String out = "\n"
+			+ "\t" + zoom + "\n"
+			+ "\t" + centerOffset + "\n"
+			+ "\t" + colorInside + "\n"
+			+ "\t" + gradient + "\n"
+			;
 		return out;
 	}
 
@@ -38,11 +41,9 @@ public class FractalParameters
 	{
 		setDefaults();
 
-		// It is *not* needed to set default colors!
-		// Those are set explicitely, when dispatching a job.
-		// -- Wrong!
-		// TODO: Set explicit defaults
-		colorInside = Color.black;
+		// Those are not meant to be affected by setDefaults(),
+		// so they have to be initialized separately.
+		colorInside = ColorizerPanel.getDefaultInside();
 		gradient = ColorizerPanel.getDefaultGradient();
 	}
 
@@ -63,8 +64,11 @@ public class FractalParameters
 				p.centerOffset.getY());
 
 		size = new Dimension(p.size);
-		gradient = new ArrayList<ColorStep>(p.gradient);
 		colorInside = new Color(p.colorInside.getRGB());
+
+		gradient = new ArrayList<ColorStep>();
+		for (ColorStep cs : p.gradient)
+			gradient.add(new ColorStep(cs));
 	}
 
 	public void setDefaults()

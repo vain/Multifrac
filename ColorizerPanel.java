@@ -12,12 +12,17 @@ public class ColorizerPanel extends JPanel
 	private static final double PICKING_EPSILON = 0.01;
 	private int selectedHandle = -1;
 
-	public ArrayList<ColorStep> grad;
+	private ParameterStack paramStack = null;
 
-	public ColorizerPanel(final Component parent)
+	private ArrayList<ColorStep> gg()
+	{
+		return paramStack.get().gradient;
+	}
+
+	public ColorizerPanel(final Component parent, ParameterStack p)
 	{
 		super();
-		grad = ColorizerPanel.getDefaultGradient();
+		paramStack = p;
 		setPreferredSize(new Dimension(1, 50));
 
 		// Mouse Events
@@ -32,9 +37,9 @@ public class ColorizerPanel extends JPanel
 
 				int lastSelected = selectedHandle;
 				selectedHandle = -1;
-				for (int i = 0; i < grad.size(); i++)
+				for (int i = 0; i < gg().size(); i++)
 				{
-					if (Math.abs(grad.get(i).pos - relative) < PICKING_EPSILON)
+					if (Math.abs(gg().get(i).pos - relative) < PICKING_EPSILON)
 					{
 						selectedHandle = i;
 						System.out.println("Selected: " + i);
@@ -49,21 +54,21 @@ public class ColorizerPanel extends JPanel
 					{
 						System.out.println("INSERT");
 						int i = 1;
-						while (i < grad.size() && relative > grad.get(i).pos)
+						while (i < gg().size() && relative > gg().get(i).pos)
 							i++;
 
 						System.out.println("Insert with index: " + i);
-						grad.add(i, new ColorStep(relative, Color.red));
+						gg().add(i, new ColorStep(relative, Color.red));
 						selectedHandle = i;
 					}
 
 					// Right mouse with CTRL? Then delete.
 					if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
 					{
-						if (selectedHandle > 0 && selectedHandle != grad.size() - 1)
+						if (selectedHandle > 0 && selectedHandle != gg().size() - 1)
 						{
 							System.out.println("DELETE");
-							grad.remove(selectedHandle);
+							gg().remove(selectedHandle);
 							selectedHandle = -1;
 						}
 					}
@@ -74,15 +79,15 @@ public class ColorizerPanel extends JPanel
 					if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
 					{
 						// Same as below but with CTRL pressed, so *copy* the color from "last" to "now".
-						grad.get(selectedHandle).color = new Color(grad.get(lastSelected).color.getRGB());
+						gg().get(selectedHandle).color = new Color(gg().get(lastSelected).color.getRGB());
 					}
 					else
 					{
 						// Was there something selected and now there's something new selected?
 						// If this has been done with the middle button, then swap colors.
-						Color temp = grad.get(lastSelected).color;
-						grad.get(lastSelected).color = grad.get(selectedHandle).color;
-						grad.get(selectedHandle).color = temp;
+						Color temp = gg().get(lastSelected).color;
+						gg().get(lastSelected).color = gg().get(selectedHandle).color;
+						gg().get(selectedHandle).color = temp;
 					}
 				}
 
@@ -98,11 +103,11 @@ public class ColorizerPanel extends JPanel
 					Color temp = JColorChooser.showDialog(
 							parent,
 							"Edit color",
-							grad.get(selectedHandle).color);
+							gg().get(selectedHandle).color);
 
 					if (temp != null)
 					{
-						grad.get(selectedHandle).color = temp;
+						gg().get(selectedHandle).color = temp;
 					}
 				}
 
@@ -113,15 +118,15 @@ public class ColorizerPanel extends JPanel
 			public void mouseDragged(MouseEvent e)
 			{
 				// Dragging Handles
-				if (selectedHandle > 0 && selectedHandle < grad.size() - 1)
+				if (selectedHandle > 0 && selectedHandle < gg().size() - 1)
 				{
 					float relative = (float)e.getPoint().x / getWidth();
-					if (relative >= grad.get(selectedHandle + 1).pos)
-						grad.get(selectedHandle).pos = grad.get(selectedHandle + 1).pos - (float)PICKING_EPSILON;
-					else if (relative <= grad.get(selectedHandle - 1).pos)
-						grad.get(selectedHandle).pos = grad.get(selectedHandle - 1).pos + (float)PICKING_EPSILON;
+					if (relative >= gg().get(selectedHandle + 1).pos)
+						gg().get(selectedHandle).pos = gg().get(selectedHandle + 1).pos - (float)PICKING_EPSILON;
+					else if (relative <= gg().get(selectedHandle - 1).pos)
+						gg().get(selectedHandle).pos = gg().get(selectedHandle - 1).pos + (float)PICKING_EPSILON;
 					else
-						grad.get(selectedHandle).pos = relative;
+						gg().get(selectedHandle).pos = relative;
 
 					repaint();
 				}
@@ -142,6 +147,11 @@ public class ColorizerPanel extends JPanel
 		return g;
 	}
 
+	public static Color getDefaultInside()
+	{
+		return Color.black;
+	}
+
 	@Override
 	public void paintComponent(Graphics g)
 	{
@@ -151,27 +161,27 @@ public class ColorizerPanel extends JPanel
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 		// Gradient
-		for (int i = 0; i < grad.size() - 1; i++)
+		for (int i = 0; i < gg().size() - 1; i++)
 		{
-			float x1 = grad.get(i).pos * (float)getWidth();
+			float x1 = gg().get(i).pos * (float)getWidth();
 			float y1 = 0.0f;
 
-			float x2 = grad.get(i + 1).pos * (float)getWidth();
+			float x2 = gg().get(i + 1).pos * (float)getWidth();
 			float y2 = (float)getHeight();
 
 			GradientPaint cur = new GradientPaint(
-					x1, y1, grad.get(i).color,
-					x2, y1, grad.get(i + 1).color);
+					x1, y1, gg().get(i).color,
+					x2, y1, gg().get(i + 1).color);
 			g2.setPaint(cur);
 			g2.fill(new Rectangle2D.Double(x1, y1, x2, y2));
 		}
 
 		// Inner Handles
-		for (int i = 1; i < grad.size() - 1; i++)
+		for (int i = 1; i < gg().size() - 1; i++)
 		{
 			g2.setPaint(Color.black);
 			g2.fill(new Rectangle2D.Double(
-						grad.get(i).pos * getWidth() - wid - mar, 0.0,
+						gg().get(i).pos * getWidth() - wid - mar, 0.0,
 						2.0 * (wid + mar), getHeight()));
 
 			if (i == selectedHandle)
@@ -179,7 +189,7 @@ public class ColorizerPanel extends JPanel
 			else
 				g2.setPaint(Color.yellow);
 			g2.fill(new Rectangle2D.Double(
-						grad.get(i).pos * getWidth() - wid, 0.0,
+						gg().get(i).pos * getWidth() - wid, 0.0,
 						2.0 * wid, getHeight()));
 		}
 
@@ -202,7 +212,7 @@ public class ColorizerPanel extends JPanel
 					getWidth() - 3.0 * wid - mar, 0.0,
 					(3.0 * wid) + mar, getHeight()));
 
-		if (grad.size() - 1 == selectedHandle)
+		if (gg().size() - 1 == selectedHandle)
 			g2.setPaint(Color.red);
 		else
 			g2.setPaint(Color.yellow);

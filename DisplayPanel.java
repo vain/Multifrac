@@ -25,8 +25,6 @@ public class DisplayPanel extends JPanel
 	protected int runningJobs = 0;
 
 	protected Runnable callbackOnChange = null;
-	protected ColorizerPanel colorizer = null;
-	protected Component colorInside = null;
 
 	/**
 	 * Build the component and register listeners
@@ -185,12 +183,6 @@ public class DisplayPanel extends JPanel
 	public void setCallbackOnChange(Runnable r)
 	{
 		callbackOnChange = r;
-	}
-
-	public void attachColorizers(ColorizerPanel p, Component bg)
-	{
-		colorizer = p;
-		colorInside = bg;
 	}
 
 	/**

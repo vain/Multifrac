@@ -10,4 +10,19 @@ public class ColorStep
 		pos = p;
 		color = c;
 	}
+
+	public ColorStep(ColorStep c)
+	{
+		pos = c.pos;
+		color = new Color(c.color.getRGB());
+	}
+
+	/*
+	@Override
+	public String toString()
+	{
+		//return "CS[" + pos + ", " + color + "]";
+		return "CS[" + pos + "]";
+	}
+	*/
 }
