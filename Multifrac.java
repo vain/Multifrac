@@ -99,7 +99,7 @@ public class Multifrac extends JFrame
 		rend.setPreferredSize(new Dimension(512, 384));
 		rend.setBorder(commonBorder);
 		rend.setVisible(true);
-		addComp(cont, rend, gbl, 0, 3, 3, 1, 1.0, 1.0);
+		addComp(cont, rend, gbl, 0, 2, 3, 1, 1.0, 1.0);
 
 		// OptionPanel
 		JPanel opts = new JPanel();
@@ -129,9 +129,9 @@ public class Multifrac extends JFrame
 		JPanel loc = new JPanel();
 		loc.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		loc.setBorder(BorderFactory.createTitledBorder(commonBorder, "Location"));
-		loc.add(new JLabel("Real:"));
+		loc.add(new JLabel("re:"));
 		loc.add(c_loc_re);
-		loc.add(new JLabel(", Imaginary: "));
+		loc.add(new JLabel(", im: "));
 		loc.add(c_loc_im);
 		loc.add(new JLabel(", Zoom: "));
 		loc.add(c_zoom);
@@ -173,38 +173,6 @@ public class Multifrac extends JFrame
 
 		addComp(cont, loc, gbl, 0, 1, 3, 1, 1.0, 0.0);
 
-		// PanicPanel
-		JPanel panicpanel = new JPanel();
-		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
-		JButton undo  = new JButton("Undo");
-		undo.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				paramStack.pop();
-				setCompValues(paramStack.get());
-				rend.dispatchRedraw();
-			}
-		});
-		panicpanel.add(undo);
-
-		JButton panic = new JButton("Reset");
-		panic.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				paramStack.push();
-				paramStack.get().setDefaults();
-				setCompValues(paramStack.get());
-				rend.dispatchRedraw();
-			}
-		});
-		panicpanel.add(panic);
-		
-		addComp(cont, panicpanel, gbl, 0, 2, 3, 1, 1.0, 0.0);
-
 		// ColorChooser Panel
 		Runnable colorOnChange = new Runnable()
 		{
@@ -217,25 +185,13 @@ public class Multifrac extends JFrame
 		colorizer = new ColorizerPanel(this, paramStack, colorOnChange);
 		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		colorizer.setBorder(commonBorder);
-		addComp(cont, colorizer, gbl, 0, 4, 1, 1, 1.0, 0.0);
+		addComp(cont, colorizer, gbl, 0, 3, 1, 1, 1.0, 0.0);
 
 		// BackgroundColorPanel
 		colorInside = new SingleColorPanel("Inside", this, paramStack, colorOnChange);
 		colorInside.setBorder(commonBorder);
 		colorInside.setPreferredSize(new Dimension(50, 50));
-		addComp(cont, colorInside, gbl, 1, 4, 1, 1, 0.0, 0.0);
-
-		// ColorUpdateButton
-		JButton upd = new JButton("Set");
-		upd.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				rend.dispatchRedraw();
-			}
-		});
-		//addComp(cont, upd, gbl, 2, 4, 1, 1, 0.0, 0.0);
+		addComp(cont, colorInside, gbl, 1, 3, 1, 1, 0.0, 0.0);
 
 		// Listener: TYPE
 		ItemListener typeChanged = new ItemListener()
@@ -266,6 +222,42 @@ public class Multifrac extends JFrame
 		};
 		c_mandel.addItemListener(typeChanged);
 		c_julia.addItemListener(typeChanged);
+		
+		// PanicPanel
+		JPanel panicpanel = new JPanel();
+		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
+		JButton undo  = new JButton("Undo");
+		undo.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				paramStack.pop();
+				setCompValues(paramStack.get());
+				rend.dispatchRedraw();
+				colorizer.repaint();
+				colorInside.repaint();
+			}
+		});
+		panicpanel.add(undo);
+
+		JButton panic = new JButton("Reset");
+		panic.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				paramStack.push();
+				paramStack.get().setDefaults();
+				setCompValues(paramStack.get());
+				rend.dispatchRedraw();
+				colorizer.repaint();
+				colorInside.repaint();
+			}
+		});
+		panicpanel.add(panic);
+		
+		addComp(cont, panicpanel, gbl, 0, 4, 3, 1, 1.0, 0.0);
 
 		// Listener: ADAPTIVE
 		c_adaptive.addItemListener(new ItemListener()

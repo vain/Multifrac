@@ -9,7 +9,7 @@ public class ParameterStack
 
 	public FractalParameters get()
 	{
-		//dump();
+		dump();
 
 		return current;
 	}
@@ -25,7 +25,7 @@ public class ParameterStack
 		// Create a copy of it and set this copy as the current element
 		current = new FractalParameters(current);
 
-		//dump();
+		dump();
 	}
 
 	public void pop()

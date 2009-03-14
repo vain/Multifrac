@@ -24,6 +24,8 @@ public class DisplayPanel extends JPanel
 
 	protected int runningJobs = 0;
 
+	private boolean dragHasPushed = false;
+
 	/**
 	 * Build the component and register listeners
 	 */
@@ -62,6 +64,8 @@ public class DisplayPanel extends JPanel
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
+				dragHasPushed = false;
+
 				if (e.getButton() == MouseEvent.BUTTON1)
 				{
 					// Start creating a zooming-box.
@@ -79,9 +83,6 @@ public class DisplayPanel extends JPanel
 					mouseStart = e.getPoint();
 
 					typeOfDrag = DRAG_PAN;
-
-					// Note: Undo record for panning is set right here.
-					paramStack.push();
 				}
 				else if (e.getButton() == MouseEvent.BUTTON3)
 				{
@@ -137,8 +138,13 @@ public class DisplayPanel extends JPanel
 				// Pan/Move
 				else if (typeOfDrag == DRAG_PAN)
 				{
-					// Note: No undo record here, this is only done
-					// when dragging is initiated.
+					// Only save the first change
+					if (!dragHasPushed)
+					{
+						dragHasPushed = true;
+						paramStack.push();
+					}
+
 					paramStack.get().updateCenter(mouseStart, e.getPoint());
 					onChange.run();
 					dispatchRedraw();

@@ -14,6 +14,7 @@ public class ColorizerPanel extends JPanel
 	private boolean triggerCallback = false;
 
 	private ParameterStack paramStack = null;
+	private boolean dragHasPushed = false;
 
 	private ArrayList<ColorStep> gg()
 	{
@@ -33,6 +34,7 @@ public class ColorizerPanel extends JPanel
 			public void mousePressed(MouseEvent e)
 			{
 				triggerCallback = false;
+				dragHasPushed = false;
 
 				// Picking, this is done on *every* mouse down event
 				float relative = (float)e.getPoint().x / getWidth();
@@ -61,6 +63,7 @@ public class ColorizerPanel extends JPanel
 							i++;
 
 						System.out.println("Insert with index: " + i);
+						paramStack.push();
 						gg().add(i, new ColorStep(relative, Color.red));
 						selectedHandle = i;
 
@@ -73,6 +76,7 @@ public class ColorizerPanel extends JPanel
 						if (selectedHandle > 0 && selectedHandle != gg().size() - 1)
 						{
 							System.out.println("DELETE");
+							paramStack.push();
 							gg().remove(selectedHandle);
 							selectedHandle = -1;
 
@@ -86,6 +90,7 @@ public class ColorizerPanel extends JPanel
 					if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
 					{
 						// Same as below but with CTRL pressed, so *copy* the color from "last" to "now".
+						paramStack.push();
 						gg().get(selectedHandle).color = new Color(gg().get(lastSelected).color.getRGB());
 						triggerCallback = true;
 					}
@@ -93,6 +98,7 @@ public class ColorizerPanel extends JPanel
 					{
 						// Was there something selected and now there's something new selected?
 						// If this has been done with the middle button, then swap colors.
+						paramStack.push();
 						Color temp = gg().get(lastSelected).color;
 						gg().get(lastSelected).color = gg().get(selectedHandle).color;
 						gg().get(selectedHandle).color = temp;
@@ -127,6 +133,7 @@ public class ColorizerPanel extends JPanel
 
 					if (temp != null)
 					{
+						paramStack.push();
 						gg().get(selectedHandle).color = temp;
 
 						// As there won't be any mouseReleased in this case,
@@ -145,6 +152,13 @@ public class ColorizerPanel extends JPanel
 				// Dragging Handles
 				if (selectedHandle > 0 && selectedHandle < gg().size() - 1)
 				{
+					// Only save the first change
+					if (!dragHasPushed)
+					{
+						dragHasPushed = true;
+						paramStack.push();
+					}
+
 					float relative = (float)e.getPoint().x / getWidth();
 					if (relative >= gg().get(selectedHandle + 1).pos)
 						gg().get(selectedHandle).pos = gg().get(selectedHandle + 1).pos - (float)PICKING_EPSILON;
