@@ -171,7 +171,7 @@ public class FractalRenderer extends Thread
 				if (n == nmax)
 				{
 					// Inside
-					myJob.pixels[index++] = 0xFF000000;
+					myJob.pixels[index++] = myJob.param.colorInside.getRGB();
 				}
 				else
 				{

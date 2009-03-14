@@ -26,6 +26,7 @@ public class DisplayPanel extends JPanel
 
 	protected Runnable callbackOnChange = null;
 	protected ColorizerPanel colorizer = null;
+	protected Component colorInside = null;
 
 	/**
 	 * Build the component and register listeners
@@ -180,9 +181,10 @@ public class DisplayPanel extends JPanel
 		callbackOnChange = r;
 	}
 
-	public void attachColorizerPanel(ColorizerPanel p)
+	public void attachColorizers(ColorizerPanel p, Component bg)
 	{
 		colorizer = p;
+		colorInside = bg;
 	}
 
 	/**
@@ -224,6 +226,8 @@ public class DisplayPanel extends JPanel
 
 		if (colorizer != null)
 			param.gradient = colorizer.grad;
+		if (colorInside != null)
+			param.colorInside = colorInside.getBackground();
 
 		FractalRenderer.dispatchJob(2,
 				new FractalRenderer.Job(param, nextStamp()),

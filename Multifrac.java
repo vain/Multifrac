@@ -8,6 +8,7 @@ public class Multifrac extends JFrame
 {
 	protected DisplayPanel rend = null;
 	protected ColorizerPanel colorizer = null;
+	protected JLabel colorInside = null;
 	protected JCheckBox c_adaptive = new JCheckBox("Adaptive");
 	protected JTextField c_nmax = new JTextField();
 	protected JTextField c_escape = new JTextField();
@@ -97,7 +98,7 @@ public class Multifrac extends JFrame
 				setCompValues(rend.getParams());
 			}
 		});
-		addComp(cont, rend, gbl, 0, 3, 2, 1, 1.0, 1.0);
+		addComp(cont, rend, gbl, 0, 3, 3, 1, 1.0, 1.0);
 
 		// OptionPanel
 		JPanel opts = new JPanel();
@@ -121,7 +122,7 @@ public class Multifrac extends JFrame
 		g.add(c_mandel);
 		g.add(c_julia);
 
-		addComp(cont, opts, gbl, 0, 0, 2, 1, 1.0, 0.0);
+		addComp(cont, opts, gbl, 0, 0, 3, 1, 1.0, 0.0);
 
 		// LocationPanel
 		JPanel loc = new JPanel();
@@ -166,7 +167,7 @@ public class Multifrac extends JFrame
 			}
 		});
 
-		addComp(cont, loc, gbl, 0, 1, 2, 1, 1.0, 0.0);
+		addComp(cont, loc, gbl, 0, 1, 3, 1, 1.0, 0.0);
 
 		// PanicPanel
 		JPanel panicpanel = new JPanel();
@@ -183,7 +184,7 @@ public class Multifrac extends JFrame
 		});
 		panicpanel.add(panic);
 		
-		addComp(cont, panicpanel, gbl, 0, 2, 2, 1, 1.0, 0.0);
+		addComp(cont, panicpanel, gbl, 0, 2, 3, 1, 1.0, 0.0);
 
 		// ColorChooser Panel
 		colorizer = new ColorizerPanel(this);
@@ -191,8 +192,34 @@ public class Multifrac extends JFrame
 		colorizer.setBorder(commonBorder);
 		addComp(cont, colorizer, gbl, 0, 4, 1, 1, 1.0, 0.0);
 
-		// Attach this to the display panel
-		rend.attachColorizerPanel(colorizer);
+		// BackgroundColorPanel
+		final Component parent = this;
+		colorInside = new JLabel("Inside", SwingConstants.CENTER);
+		colorInside.setBorder(commonBorder);
+		colorInside.setPreferredSize(new Dimension(50, 50));
+		colorInside.setOpaque(true);
+		colorInside.setBackground(Color.black);
+		colorInside.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				Color temp = JColorChooser.showDialog(
+					parent,
+					"Edit color: \"Inside the set\"",
+					colorInside.getBackground());
+
+				if (temp != null)
+				{
+					colorInside.setBackground(temp);
+					colorInside.repaint();
+				}
+			}
+		});
+		addComp(cont, colorInside, gbl, 1, 4, 1, 1, 0.0, 0.0);
+
+		// Attach those to the display panel
+		rend.attachColorizers(colorizer, colorInside);
 
 		// ColorUpdateButton
 		JButton upd = new JButton("Set");
@@ -204,7 +231,7 @@ public class Multifrac extends JFrame
 				rend.dispatchRedraw();
 			}
 		});
-		addComp(cont, upd, gbl, 1, 4, 1, 1, 0.0, 0.0);
+		addComp(cont, upd, gbl, 2, 4, 1, 1, 0.0, 0.0);
 
 		// Listener: TYPE
 		ItemListener typeChanged = new ItemListener()

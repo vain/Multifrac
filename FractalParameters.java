@@ -21,12 +21,15 @@ public class FractalParameters
 	public double julia_im;
 	public Point2D centerOffset;
 	public ArrayList<ColorStep> gradient;
+	public Color colorInside;
 	public Dimension size = new Dimension(100, 100);
 
 	public FractalParameters()
 	{
 		setDefaults();
-		gradient = ColorizerPanel.getDefaultGradient();
+
+		// It is *not* needed to set default colors!
+		// Those are set explicitely, when dispatching a job.
 	}
 
 	public FractalParameters(FractalParameters p)
@@ -47,6 +50,7 @@ public class FractalParameters
 
 		size = new Dimension(p.size);
 		gradient = new ArrayList<ColorStep>(p.gradient);
+		colorInside = new Color(p.colorInside.getRGB());
 	}
 
 	public void setDefaults()
