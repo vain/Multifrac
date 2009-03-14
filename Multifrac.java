@@ -77,17 +77,6 @@ public class Multifrac extends JFrame
 		c_zoom.setText(df.format(p.zoom));
 	}
 
-	protected void updateColors()
-	{
-		paramStack.push();
-		paramStack.get().colorInside = colorInside.getBackground();
-	}
-
-	protected void readColors()
-	{
-		colorInside.setBackground(paramStack.get().colorInside);
-	}
-
 	public Multifrac()
 	{
 		GridBagLayout gbl = new GridBagLayout();
@@ -97,11 +86,7 @@ public class Multifrac extends JFrame
 		Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
 		// Instantiate RenderPanel
-		rend = new DisplayPanel(paramStack);
-		rend.setPreferredSize(new Dimension(512, 384));
-		rend.setBorder(commonBorder);
-		rend.setVisible(true);
-		rend.setCallbackOnChange(new Runnable()
+		rend = new DisplayPanel(paramStack, new Runnable()
 		{
 			// Note: This is also used for init of the component values.
 			//       Will run on the EDT.
@@ -111,6 +96,9 @@ public class Multifrac extends JFrame
 				setCompValues(paramStack.get());
 			}
 		});
+		rend.setPreferredSize(new Dimension(512, 384));
+		rend.setBorder(commonBorder);
+		rend.setVisible(true);
 		addComp(cont, rend, gbl, 0, 3, 3, 1, 1.0, 1.0);
 
 		// OptionPanel
@@ -195,7 +183,7 @@ public class Multifrac extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				paramStack.pop();
-				readColors();
+				setCompValues(paramStack.get());
 				rend.dispatchRedraw();
 			}
 		});
@@ -209,6 +197,7 @@ public class Multifrac extends JFrame
 			{
 				paramStack.push();
 				paramStack.get().setDefaults();
+				setCompValues(paramStack.get());
 				rend.dispatchRedraw();
 			}
 		});
@@ -217,38 +206,23 @@ public class Multifrac extends JFrame
 		addComp(cont, panicpanel, gbl, 0, 2, 3, 1, 1.0, 0.0);
 
 		// ColorChooser Panel
-		colorizer = new ColorizerPanel(this, paramStack);
+		Runnable colorOnChange = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				rend.dispatchRedraw();
+			}
+		};
+		colorizer = new ColorizerPanel(this, paramStack, colorOnChange);
 		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		colorizer.setBorder(commonBorder);
 		addComp(cont, colorizer, gbl, 0, 4, 1, 1, 1.0, 0.0);
 
 		// BackgroundColorPanel
-		final Component parent = this;
-		colorInside = new JLabel("Inside", SwingConstants.CENTER);
+		colorInside = new SingleColorPanel("Inside", this, paramStack, colorOnChange);
 		colorInside.setBorder(commonBorder);
 		colorInside.setPreferredSize(new Dimension(50, 50));
-		colorInside.setOpaque(true);
-		colorInside.setBackground(ColorizerPanel.getDefaultInside());
-		colorInside.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				Color temp = JColorChooser.showDialog(
-					parent,
-					"Edit color: \"Inside the set\"",
-					colorInside.getBackground());
-
-				if (temp != null)
-				{
-					colorInside.setBackground(temp);
-					colorInside.repaint();
-
-					updateColors();
-					rend.dispatchRedraw();
-				}
-			}
-		});
 		addComp(cont, colorInside, gbl, 1, 4, 1, 1, 0.0, 0.0);
 
 		// ColorUpdateButton
@@ -258,11 +232,10 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				updateColors();
 				rend.dispatchRedraw();
 			}
 		});
-		addComp(cont, upd, gbl, 2, 4, 1, 1, 0.0, 0.0);
+		//addComp(cont, upd, gbl, 2, 4, 1, 1, 0.0, 0.0);
 
 		// Listener: TYPE
 		ItemListener typeChanged = new ItemListener()

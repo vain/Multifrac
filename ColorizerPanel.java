@@ -11,6 +11,7 @@ public class ColorizerPanel extends JPanel
 
 	private static final double PICKING_EPSILON = 0.01;
 	private int selectedHandle = -1;
+	private boolean triggerCallback = false;
 
 	private ParameterStack paramStack = null;
 
@@ -19,7 +20,7 @@ public class ColorizerPanel extends JPanel
 		return paramStack.get().gradient;
 	}
 
-	public ColorizerPanel(final Component parent, ParameterStack p)
+	public ColorizerPanel(final Component parent, ParameterStack p, final Runnable onChange)
 	{
 		super();
 		paramStack = p;
@@ -31,6 +32,8 @@ public class ColorizerPanel extends JPanel
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
+				triggerCallback = false;
+
 				// Picking, this is done on *every* mouse down event
 				float relative = (float)e.getPoint().x / getWidth();
 				System.out.println(relative);
@@ -60,6 +63,8 @@ public class ColorizerPanel extends JPanel
 						System.out.println("Insert with index: " + i);
 						gg().add(i, new ColorStep(relative, Color.red));
 						selectedHandle = i;
+
+						triggerCallback = true;
 					}
 
 					// Right mouse with CTRL? Then delete.
@@ -70,6 +75,8 @@ public class ColorizerPanel extends JPanel
 							System.out.println("DELETE");
 							gg().remove(selectedHandle);
 							selectedHandle = -1;
+
+							triggerCallback = true;
 						}
 					}
 				}
@@ -80,6 +87,7 @@ public class ColorizerPanel extends JPanel
 					{
 						// Same as below but with CTRL pressed, so *copy* the color from "last" to "now".
 						gg().get(selectedHandle).color = new Color(gg().get(lastSelected).color.getRGB());
+						triggerCallback = true;
 					}
 					else
 					{
@@ -88,6 +96,7 @@ public class ColorizerPanel extends JPanel
 						Color temp = gg().get(lastSelected).color;
 						gg().get(lastSelected).color = gg().get(selectedHandle).color;
 						gg().get(selectedHandle).color = temp;
+						triggerCallback = true;
 					}
 				}
 
@@ -95,9 +104,20 @@ public class ColorizerPanel extends JPanel
 			}
 
 			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				System.out.println("Released: " + selectedHandle);
+				if (triggerCallback)
+				{
+					System.out.println("CALLBACK!!!!");
+					onChange.run();
+				}
+			}
+
+			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				System.out.println("Click: " + e.getClickCount());
+				System.out.println("Click: " + e.getClickCount() + ", " + selectedHandle);
 				if (e.getClickCount() == 2 && selectedHandle != -1)
 				{
 					Color temp = JColorChooser.showDialog(
@@ -108,6 +128,11 @@ public class ColorizerPanel extends JPanel
 					if (temp != null)
 					{
 						gg().get(selectedHandle).color = temp;
+
+						// As there won't be any mouseReleased in this case,
+						// fire the callback direclty
+						System.out.println("CALLBACK!!!!!");
+						onChange.run();
 					}
 				}
 
@@ -128,6 +153,7 @@ public class ColorizerPanel extends JPanel
 					else
 						gg().get(selectedHandle).pos = relative;
 
+					triggerCallback = true;
 					repaint();
 				}
 			}

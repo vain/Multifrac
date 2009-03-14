@@ -24,12 +24,10 @@ public class DisplayPanel extends JPanel
 
 	protected int runningJobs = 0;
 
-	protected Runnable callbackOnChange = null;
-
 	/**
 	 * Build the component and register listeners
 	 */
-	public DisplayPanel(ParameterStack p)
+	public DisplayPanel(ParameterStack p, final Runnable onChange)
 	{
 		super();
 
@@ -49,6 +47,7 @@ public class DisplayPanel extends JPanel
 				// A "resized" event will trigger a recalculation of the fractal.
 				// This does *NOT* create an undo record.
 				paramStack.get().updateSize(newSize);
+				onChange.run();
 				dispatchRedraw();
 			}
 		
@@ -65,6 +64,8 @@ public class DisplayPanel extends JPanel
 			{
 				if (e.getButton() == MouseEvent.BUTTON1)
 				{
+					// Start creating a zooming-box.
+
 					//System.out.println(e);
 					mouseStart = e.getPoint();
 
@@ -72,15 +73,23 @@ public class DisplayPanel extends JPanel
 				}
 				else if (e.getButton() == MouseEvent.BUTTON2)
 				{
+					// Start dragging the viewport.
+					
 					//System.out.println(e);
 					mouseStart = e.getPoint();
 
 					typeOfDrag = DRAG_PAN;
+
+					// Note: Undo record for panning is set right here.
+					paramStack.push();
 				}
 				else if (e.getButton() == MouseEvent.BUTTON3)
 				{
+					// Directly center the viewport.
+
 					paramStack.push();
 					paramStack.get().updateCenter(e.getPoint());
+					onChange.run();
 					dispatchRedraw();
 				}
 				else
@@ -102,6 +111,7 @@ public class DisplayPanel extends JPanel
 					{
 						paramStack.push();
 						paramStack.get().zoomBox(mouseStart, mouseEnd);
+						onChange.run();
 						dispatchRedraw();	
 					}
 				}
@@ -127,8 +137,10 @@ public class DisplayPanel extends JPanel
 				// Pan/Move
 				else if (typeOfDrag == DRAG_PAN)
 				{
-					paramStack.push();
+					// Note: No undo record here, this is only done
+					// when dragging is initiated.
 					paramStack.get().updateCenter(mouseStart, e.getPoint());
+					onChange.run();
 					dispatchRedraw();
 
 					mouseStart = e.getPoint();
@@ -146,6 +158,7 @@ public class DisplayPanel extends JPanel
 				else
 					paramStack.get().zoomOut();
 
+				onChange.run();
 				dispatchRedraw();
 			}
 		};
@@ -175,14 +188,12 @@ public class DisplayPanel extends JPanel
 				}
 				
 				if (changed)
+				{
+					onChange.run();
 					dispatchRedraw();	
+				}
 			}
 		});
-	}
-
-	public void setCallbackOnChange(Runnable r)
-	{
-		callbackOnChange = r;
 	}
 
 	/**
@@ -218,9 +229,6 @@ public class DisplayPanel extends JPanel
 	{
 		runningJobs++;
 		repaint();
-
-		if (callbackOnChange != null)
-			callbackOnChange.run();
 
 		FractalRenderer.dispatchJob(2,
 				new FractalRenderer.Job(paramStack.get(), nextStamp()),
