@@ -193,35 +193,47 @@ public class Multifrac extends JFrame
 		colorInside.setPreferredSize(new Dimension(50, 50));
 		addComp(cont, colorInside, gbl, 1, 3, 1, 1, 0.0, 0.0);
 
-		// Listener: TYPE
+		// Listeners: TYPE
+		// An action listener which catches the users clicks.
+		// An item state listener which takes care of the edit boxes.
 		ItemListener typeChanged = new ItemListener()
 		{ 
 			@Override
 			public void itemStateChanged(ItemEvent e)
 			{ 
-				//System.out.println("TICK: " + c_mandel.isSelected() + ", " + c_julia.isSelected());
-				Object comp = e.getSource();
-				if (comp instanceof JRadioButton)
+				if (c_mandel.isSelected())
 				{
-					if (c_mandel.isSelected())
-					{
-						paramStack.push();
-						setActiveType(FractalParameters.TYPE_MANDELBROT);
-						paramStack.get().type = FractalParameters.TYPE_MANDELBROT;
-						rend.dispatchRedraw();
-					}
-					else if (c_julia.isSelected())
-					{
-						paramStack.push();
-						setActiveType(FractalParameters.TYPE_JULIA);
-						paramStack.get().type = FractalParameters.TYPE_JULIA;
-						rend.dispatchRedraw();
-					}
+					setActiveType(FractalParameters.TYPE_MANDELBROT);
+				}
+				else if (c_julia.isSelected())
+				{
+					setActiveType(FractalParameters.TYPE_JULIA);
 				}
 			} 
 		};
+		ActionListener typeAction = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (c_mandel.isSelected())
+				{
+					paramStack.push();
+					paramStack.get().type = FractalParameters.TYPE_MANDELBROT;
+					rend.dispatchRedraw();
+				}
+				else if (c_julia.isSelected())
+				{
+					paramStack.push();
+					paramStack.get().type = FractalParameters.TYPE_JULIA;
+					rend.dispatchRedraw();
+				}
+			}
+		};
 		c_mandel.addItemListener(typeChanged);
 		c_julia.addItemListener(typeChanged);
+		c_mandel.addActionListener(typeAction);
+		c_julia.addActionListener(typeAction);
 		
 		// PanicPanel - well, it's more like a "ButtonPanel" now...
 		JPanel panicpanel = new JPanel();
@@ -292,23 +304,27 @@ public class Multifrac extends JFrame
 		addComp(cont, panicpanel, gbl, 0, 4, 3, 1, 1.0, 0.0);
 
 		// Listener: ADAPTIVE
+		// An action listener which catches the users clicks.
+		// An item state listener which toggles the edit box.
+		c_adaptive.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				paramStack.push();
+				paramStack.get().setAdaptive(c_adaptive.isSelected());
+				rend.dispatchRedraw();
+			}
+		});
 		c_adaptive.addItemListener(new ItemListener()
 		{
 			@Override
 			public void itemStateChanged(ItemEvent e)
 			{
-				Object comp = e.getSource();
-				if (comp instanceof JCheckBox)
-				{
-					if (c_adaptive.isSelected())
-						c_nmax.setEnabled(false);
-					else
-						c_nmax.setEnabled(true);
-
-					paramStack.push();
-					paramStack.get().setAdaptive(c_adaptive.isSelected());
-					rend.dispatchRedraw();
-				}
+				if (c_adaptive.isSelected())
+					c_nmax.setEnabled(false);
+				else
+					c_nmax.setEnabled(true);
 			}
 		});
 

@@ -25,7 +25,7 @@ public class ParameterStack
 		// Create a copy of it and set this copy as the current element
 		current = new FractalParameters(current);
 
-		//dump();
+		dump();
 	}
 
 	public void pop()
@@ -39,7 +39,7 @@ public class ParameterStack
 		// Restore the last saved element
 		current = undo.pollFirst();
 
-		//dump();
+		dump();
 	}
 
 	public void unpop()
@@ -53,7 +53,7 @@ public class ParameterStack
 		// Re-activate first redo-item
 		current = redo.pollFirst();
 
-		//dump();
+		dump();
 	}
 
 	private void dump()
