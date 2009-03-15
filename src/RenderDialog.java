@@ -62,7 +62,7 @@ public class RenderDialog extends JDialog
 
 		setLayout(new GridLayout(5, 2, 5, 5));
 
-		c_super = new JComboBox(new String[] { "None", "2x", "4x", "8x" });
+		c_super = new JComboBox(new String[] { "None", "2x2", "4x4" });
 		c_super.setSelectedIndex(lastSuper);
 
 		add(new JLabel("Width:"));
@@ -100,7 +100,17 @@ public class RenderDialog extends JDialog
 				RenderSettings rset = new RenderSettings();
 				rset.param = param;
 				rset.tfile = tfile;
-				rset.supersampling = (int)Math.pow(2, lastSuper);
+
+				// Index 0 = No supersampling = Factor 1 = Keep the size.
+				if (lastSuper == 0)
+					rset.supersampling = 1;
+				// Index 1 = 2x2 supersampling = Factor 2 = Double the size in each dimension.
+				// Thus, 4 Pixels will collapse into 1 Pixel --> 2x2
+				else if (lastSuper == 1)
+					rset.supersampling = 2;
+				// Same idea for 4x4 
+				else if (lastSuper == 2)
+					rset.supersampling = 4;
 
 				new RenderExecutionDialog(subparent, rset);
 				dispose();
@@ -171,11 +181,23 @@ public class RenderDialog extends JDialog
 							int h = result.getHeight();
 							int[] px = result.getPixels();
 
+							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+
 							BufferedImage img = (BufferedImage)createImage(w, h);
 							Image buf = createImage(new MemoryImageSource(w, h, px, 0, w));
+
+							// TODO: Hier Ansatzpunkt für Speicheroptimierung, denn schon px wird
+							//       jetzt überhaupt nicht mehr gebraucht.
+							//       Auf die GC ist kein Verlass. Am besten: bilinearen Filter selbst
+							//       schreiben, der direkt auf int[] arbeiten kann.
+
+							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+
 							Graphics2D g2 = (Graphics2D)img.getGraphics();
 							g2.drawImage(buf,
 								new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
+
+							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
 							if (rset.supersampling > 0)
 							{
@@ -191,6 +213,8 @@ public class RenderDialog extends JDialog
 								g2  = (Graphics2D)img.getGraphics();
 								g2.drawImage(temp,
 									new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
+
+								System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 							}
 
 							try
