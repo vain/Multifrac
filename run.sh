@@ -1,4 +1,3 @@
 #!/bin/bash
 
-cd build
-java -Xmx1800m Multifrac
+java -Xmx1800m -jar dist/Multifrac.jar
