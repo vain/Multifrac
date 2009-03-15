@@ -383,6 +383,8 @@ public class Multifrac extends JFrame
 
 	public static void main(String[] args)
 	{
+		java.util.Locale.setDefault(java.util.Locale.US);
+
 		SwingUtilities.invokeLater(new Runnable()
 		{
 			@Override
