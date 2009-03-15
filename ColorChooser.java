@@ -21,6 +21,77 @@ public class ColorChooser
 
 		private JPanel prev_old = null;
 		private JPanel prev_new = null;
+			
+		private ChangeListener rgb_listen = new ChangeListener()
+		{
+			@Override
+			public void stateChanged(ChangeEvent e)
+			{
+				int r = ((SpinnerCSModel)(spin_r.getModel())).getIntValue();
+				int g = ((SpinnerCSModel)(spin_g.getModel())).getIntValue();
+				int b = ((SpinnerCSModel)(spin_b.getModel())).getIntValue();
+
+				// Create new color
+				colorNew = new Color(r, g, b);
+
+				// Convert to HSV
+				float[] hsv = new float[3];
+				hsv = Color.RGBtoHSB(r, g, b, hsv);
+
+				// Set the values on the HSV-Spinners but EXCLUDE their listener!
+				((SpinnerCSModel)spin_h.getModel()).setValueSilent((int)(hsv[0] * 360.0f), hsv_listen);
+				((SpinnerCSModel)spin_s.getModel()).setValueSilent((int)(hsv[1] * 100.0f), hsv_listen);
+				((SpinnerCSModel)spin_v.getModel()).setValueSilent((int)(hsv[2] * 100.0f), hsv_listen);
+
+				// Refresh preview panel
+				prev_new.setBackground(colorNew);
+				prev_new.repaint();
+			}
+
+			@Override
+			public String toString()
+			{
+				return "This is rgb_listen.";
+			}
+		};
+		
+		private ChangeListener hsv_listen = new ChangeListener()
+		{
+			@Override
+			public void stateChanged(ChangeEvent e)
+			{
+				int h = ((SpinnerCSModel)(spin_h.getModel())).getIntValue();
+				int s = ((SpinnerCSModel)(spin_s.getModel())).getIntValue();
+				int v = ((SpinnerCSModel)(spin_v.getModel())).getIntValue();
+
+				// Create new color
+				colorNew = Color.getHSBColor(
+						(float)h / 360.0f,
+						(float)s / 100.0f,
+						(float)v / 100.0f);
+
+				// Get RGB-Values
+				int r = colorNew.getRed();
+				int g = colorNew.getGreen();
+				int b = colorNew.getBlue();
+
+				// Set the values on the RGB-Spinners but EXCLUDE their listeners!
+				((SpinnerCSModel)spin_r.getModel()).setValueSilent(r, rgb_listen);
+				((SpinnerCSModel)spin_g.getModel()).setValueSilent(g, rgb_listen);
+				((SpinnerCSModel)spin_b.getModel()).setValueSilent(b, rgb_listen);
+
+				// Refresh preview panel
+				prev_new.setBackground(colorNew);
+				prev_new.repaint();
+			}
+
+			@Override
+			public String toString()
+			{
+				return "This is hsv_listen.";
+			}
+		};
+
 
 		public Dia(Color initial, Frame parent, String title, boolean modal)
 		{
@@ -52,73 +123,17 @@ public class ColorChooser
 
 			// TODO: Steuerung der Spinner via Mausrad
 			
-			ChangeListener rgb_listen = new ChangeListener()
-			{
-				@Override
-				public void stateChanged(ChangeEvent e)
-				{
-					int r = ((SpinnerNumberModel)(spin_r.getModel())).getNumber().intValue();
-					int g = ((SpinnerNumberModel)(spin_g.getModel())).getNumber().intValue();
-					int b = ((SpinnerNumberModel)(spin_b.getModel())).getNumber().intValue();
-
-					/*
-					System.out.println(
-							"r = " + r + ", " +
-							"g = " + g + ", " +
-							"b = " + b
-							);
-					*/
-
-					Color neu = new Color(r, g, b);
-					System.out.println(neu);
-
-					// TODO: Neue Farbe setzen und das allen Controls mitteilen.
-					//       Problem: Durch jedes Setzen des Wertes an einem JSpinner
-					//       entsteht *IMMER* ein ChangeEvent, also rennt man in eine
-					//       Feedbackschleife rein.
-					//       Die Lösung ist vielleicht ein eigenes SpinnerModel, das
-					//       es erlaubt, einen Wert ohne Feuern eines Events zu setzen.
-					//       Ein eigenes Model ist sowieso nötig für die zyklischen
-					//       Werte bei Hue.
-				}
-			};
-			
-			ChangeListener hsv_listen = new ChangeListener()
-			{
-				@Override
-				public void stateChanged(ChangeEvent e)
-				{
-					int h = ((SpinnerNumberModel)(spin_h.getModel())).getNumber().intValue();
-					int s = ((SpinnerNumberModel)(spin_s.getModel())).getNumber().intValue();
-					int v = ((SpinnerNumberModel)(spin_v.getModel())).getNumber().intValue();
-
-					/*
-					System.out.println(
-							"h = " + h + ", " +
-							"s = " + s + ", " +
-							"v = " + v
-							);
-					*/
-
-					Color neu = Color.getHSBColor(
-							(float)h / 255.0f,
-							(float)s / 255.0f,
-							(float)v / 255.0f);
-					System.out.println(neu);
-				}
-			};
-			
-			smod = new SpinnerNumberModel(colorInitial.getRed(), 0, 255, 1);
+			smod = new SpinnerCSModel(colorInitial.getRed(), 0, 256, 1);
 			spin_r = new JSpinner(smod);
-			spin_r.addChangeListener(rgb_listen);
+			spin_r.getModel().addChangeListener(rgb_listen);
 			
-			smod = new SpinnerNumberModel(colorInitial.getGreen(), 0, 255, 1);
+			smod = new SpinnerCSModel(colorInitial.getGreen(), 0, 256, 1);
 			spin_g = new JSpinner(smod);
-			spin_g.addChangeListener(rgb_listen);
+			spin_g.getModel().addChangeListener(rgb_listen);
 			
-			smod = new SpinnerNumberModel(colorInitial.getBlue(), 0, 255, 1);
+			smod = new SpinnerCSModel(colorInitial.getBlue(), 0, 256, 1);
 			spin_b = new JSpinner(smod);
-			spin_b.addChangeListener(rgb_listen);
+			spin_b.getModel().addChangeListener(rgb_listen);
 			
 			float[] hsv = new float[3];
 			hsv = Color.RGBtoHSB(
@@ -127,17 +142,17 @@ public class ColorChooser
 					colorInitial.getBlue(),
 					hsv);
 
-			smod = new SpinnerNumberModel((int)(hsv[0] * 360.0f), 0, 255, 1);
+			smod = new SpinnerCSModel((int)(hsv[0] * 360.0f), 0, 360, 1);
 			spin_h = new JSpinner(smod);
-			spin_h.addChangeListener(hsv_listen);
+			spin_h.getModel().addChangeListener(hsv_listen);
 			
-			smod = new SpinnerNumberModel((int)(hsv[1] * 100.0f), 0, 255, 1);
+			smod = new SpinnerCSModel((int)(hsv[1] * 100.0f), 0, 101, 1); // 100 can be reached
 			spin_s = new JSpinner(smod);
-			spin_s.addChangeListener(hsv_listen);
+			spin_s.getModel().addChangeListener(hsv_listen);
 			
-			smod = new SpinnerNumberModel((int)(hsv[2] * 100.0f), 0, 255, 1);
+			smod = new SpinnerCSModel((int)(hsv[2] * 100.0f), 0, 101, 1);
 			spin_v = new JSpinner(smod);
-			spin_v.addChangeListener(hsv_listen);
+			spin_v.getModel().addChangeListener(hsv_listen);
 		}
 
 		private void initPreviews()
