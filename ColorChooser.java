@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.event.*;
+import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -47,12 +48,6 @@ public class ColorChooser
 				prev_new.setBackground(colorNew);
 				prev_new.repaint();
 			}
-
-			@Override
-			public String toString()
-			{
-				return "This is rgb_listen.";
-			}
 		};
 		
 		private ChangeListener hsv_listen = new ChangeListener()
@@ -84,12 +79,6 @@ public class ColorChooser
 				prev_new.setBackground(colorNew);
 				prev_new.repaint();
 			}
-
-			@Override
-			public String toString()
-			{
-				return "This is hsv_listen.";
-			}
 		};
 
 
@@ -120,8 +109,6 @@ public class ColorChooser
 		private void initSpinners()
 		{
 			SpinnerModel smod;
-
-			// TODO: Steuerung der Spinner via Mausrad
 			
 			smod = new SpinnerCSModel(colorInitial.getRed(), 0, 256, 1);
 			spin_r = new JSpinner(smod);
@@ -153,17 +140,63 @@ public class ColorChooser
 			smod = new SpinnerCSModel((int)(hsv[2] * 100.0f), 0, 101, 1);
 			spin_v = new JSpinner(smod);
 			spin_v.getModel().addChangeListener(hsv_listen);
+
+
+			// Add all listeners in a nifty loop.
+			JSpinner[] av = new JSpinner[] { spin_r, spin_g, spin_b, spin_h, spin_s, spin_v };
+			for (JSpinner sp : av)
+			{
+				// Add a listener for mouse wheel control
+				final JSpinner mine = sp;
+				mine.addMouseWheelListener(new MouseWheelListener()
+				{
+					@Override
+					public void mouseWheelMoved(MouseWheelEvent e)
+					{
+						if (e.getWheelRotation() < 0) // Rotating UP is -1 ...
+							mine.setValue(mine.getNextValue());
+						else
+							mine.setValue(mine.getPreviousValue());
+					}
+				});
+
+				// Add a listener which selects the text when focus is gained
+				final JTextField text = ((JSpinner.DefaultEditor)mine.getEditor()).getTextField();
+				text.addFocusListener(new FocusAdapter()
+				{
+					@Override
+					public void focusGained(FocusEvent e)
+					{
+						// Yap, to select text, you'll need to queue that.
+						SwingUtilities.invokeLater(new Runnable()
+						{
+							@Override
+							public void run()
+							{
+								text.selectAll();
+							}
+						});
+					}
+				});
+			}
+
+			// TODO: Focus cycle order. A LOT (!) of Java-typically overhead.
 		}
 
 		private void initPreviews()
 		{
+			//Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+			Border commonBorder = BorderFactory.createRaisedBevelBorder();
+
 			prev_old = new JPanel();
 			prev_old.setBackground(colorInitial);
 			prev_old.setPreferredSize(new Dimension(50, 20));
+			prev_old.setBorder(commonBorder);
 
 			prev_new = new JPanel();
 			prev_new.setBackground(colorInitial);
 			prev_new.setPreferredSize(new Dimension(50, 20));
+			prev_new.setBorder(commonBorder);
 		}
 
 		private void addComp(Component comp, Container cont,
