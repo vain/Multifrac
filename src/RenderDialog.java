@@ -57,6 +57,8 @@ public class RenderDialog extends JDialog
 		add(new JLabel("File:"));
 		add(c_file);
 
+		// TODO: FocusAdapter which selects everything when a text field gains focus.
+
 		add(c_ok);
 		add(c_cancel);
 

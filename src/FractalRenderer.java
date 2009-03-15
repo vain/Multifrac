@@ -176,14 +176,12 @@ public class FractalRenderer extends Thread
 				else
 				{
 					// Outside
-					// Idee: http://linas.org/art-gallery/escape/smooth.html
-					// Leider müssen diese teuren Funktionen hier tatsächlich ausgeführt werden.
+					// Idea: http://linas.org/art-gallery/escape/smooth.html
 					muh = (double)n + 1.0f - Math.log10(Math.log10(Math.sqrt(sqr_abs_z))) / logTwoBaseTen;
 					muh /= nmax;
 
-					// Diese zusätzliche Wurzel sorgt dafür, dass die kleinen Werte nicht so
-					// nah beieinander sind. Dadurch kann man die Farben im Colorizer gleich-
-					// mäßiger verteilen.
+					// Apply an extra square root to push smaller values. This allows
+					// an easier selection of colors via the colorizer.
 					muh = Math.sqrt(muh);
 
 					// Linear interpolation between marks
@@ -241,6 +239,7 @@ public class FractalRenderer extends Thread
 				int a = 0, b = bunch;
 				
 				// Divide and Spawn
+				// TODO: Dynamic work distribution...
 				Token toktok = null;
 				for (int i = 0; i < run.length - 1; i++)
 				{

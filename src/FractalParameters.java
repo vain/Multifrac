@@ -168,10 +168,9 @@ public class FractalParameters
 
 	public void adjustAdaptive()
 	{
-		// Eine schöne Darstellung ergibt sich, wenn man nmax auf
-		// m * E setzt, wobei E der negative Exponent des Zooms
-		// ist und m ein magischer Faktor. Mindestens sollte es
-		// aber DEF_NMAX sein, zum Beispiel 100.
+		// A nice recursion depth is somewhere around m * E
+		// where E is the exponent of the current zoom factor
+		// and where m is a magical factor.
 		if (adaptive)
 		{
 			double zehnerpotenz = -Math.log10(zoom);
