@@ -19,7 +19,7 @@ public class SingleColorPanel extends JLabel
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				Color temp = JColorChooser.showDialog(
+				Color temp = ColorChooser.showDialog(
 					parent,
 					"Edit color: \"Inside the set\"",
 					getBackground());
