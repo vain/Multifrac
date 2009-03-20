@@ -41,25 +41,6 @@ public class Multifrac extends JFrame
 
 	protected ParameterStack paramStack = new ParameterStack();
 
-	private void addComp(Container cont, Component c, GridBagLayout gbl, int x, int y, int w, int h, double wx, double wy)
-	{
-		GridBagConstraints gbc = new GridBagConstraints(); 
-		gbc.fill = GridBagConstraints.BOTH; 
-
-		gbc.gridx = x;
-		gbc.gridy = y; 
-		gbc.gridwidth = w;
-		gbc.gridheight = h; 
-
-		gbc.weightx = wx;
-		gbc.weighty = wy; 
-
-		gbc.insets = new Insets(2, 2, 2, 2);
-
-		gbl.setConstraints(c, gbc);
-		cont.add(c);
-	}
-
 	private void setActiveType(int w)
 	{
 		if (w == FractalParameters.TYPE_MANDELBROT)
@@ -98,9 +79,8 @@ public class Multifrac extends JFrame
 
 	public Multifrac()
 	{
-		GridBagLayout gbl = new GridBagLayout();
-		setLayout(gbl);
-		Container cont = getContentPane();
+		SimpleGridBag sgb_main = new SimpleGridBag(getContentPane());
+		setLayout(sgb_main);
 		//Border commonBorder = BorderFactory.createLoweredBevelBorder();
 		Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
@@ -118,31 +98,31 @@ public class Multifrac extends JFrame
 		rend.setPreferredSize(new Dimension(512, 384));
 		rend.setBorder(commonBorder);
 		rend.setVisible(true);
-		addComp(cont, rend, gbl, 0, 2, 3, 1, 1.0, 1.0);
+		sgb_main.add(rend, 0, 2, 3, 1, 1.0, 1.0);
 
 		// OptionPanel
 		JPanel opts = new JPanel();
-		GridBagLayout gblopts = new GridBagLayout();
-		opts.setLayout(gblopts);
-		addComp(opts, c_adaptive,           gblopts, 0, 0, 2, 1, 1.0, 1.0);
-		addComp(opts, new JLabel("Max. Iterations:"), gblopts, 0, 1, 1, 1, 0.0, 0.0);
-		addComp(opts, new JLabel("Escape Radius:"),   gblopts, 0, 2, 1, 1, 0.0, 0.0);
-		addComp(opts, c_nmax,               gblopts, 1, 1, 1, 1, 1.0, 1.0);
-		addComp(opts, c_escape,             gblopts, 1, 2, 1, 1, 1.0, 1.0);
-		addComp(opts, c_mandel,             gblopts, 2, 0, 5, 1, 1.0, 1.0);
-		addComp(opts, c_julia,              gblopts, 2, 1, 5, 1, 1.0, 1.0);
-		addComp(opts, new JLabel("Parameters:"),      gblopts, 2, 2, 1, 1, 0.0, 0.0);
-		addComp(opts, c_julia_re,           gblopts, 3, 2, 1, 1, 1.0, 1.0);
-		addComp(opts, new JLabel("+"),    gblopts, 4, 2, 1, 1, 0.0, 0.0);
-		addComp(opts, c_julia_im,           gblopts, 5, 2, 1, 1, 1.0, 1.0);
-		addComp(opts, new JLabel("i"),      gblopts, 6, 2, 1, 1, 0.0, 0.0);
+		SimpleGridBag sgb_opts = new SimpleGridBag(opts);
+		opts.setLayout(sgb_opts);
+		sgb_opts.add(c_adaptive,           0, 0, 2, 1, 1.0, 1.0);
+		sgb_opts.add(new JLabel("Max. Iterations:"), 0, 1, 1, 1, 0.0, 0.0);
+		sgb_opts.add(new JLabel("Escape Radius:"),   0, 2, 1, 1, 0.0, 0.0);
+		sgb_opts.add(c_nmax,               1, 1, 1, 1, 1.0, 1.0);
+		sgb_opts.add(c_escape,             1, 2, 1, 1, 1.0, 1.0);
+		sgb_opts.add(c_mandel,             2, 0, 5, 1, 1.0, 1.0);
+		sgb_opts.add(c_julia,              2, 1, 5, 1, 1.0, 1.0);
+		sgb_opts.add(new JLabel("Parameters:"),      2, 2, 1, 1, 0.0, 0.0);
+		sgb_opts.add(c_julia_re,           3, 2, 1, 1, 1.0, 1.0);
+		sgb_opts.add(new JLabel("+"),      4, 2, 1, 1, 0.0, 0.0);
+		sgb_opts.add(c_julia_im,           5, 2, 1, 1, 1.0, 1.0);
+		sgb_opts.add(new JLabel("i"),      6, 2, 1, 1, 0.0, 0.0);
 		opts.setBorder(BorderFactory.createTitledBorder(commonBorder, "Parametrization"));
 
 		ButtonGroup g = new ButtonGroup();
 		g.add(c_mandel);
 		g.add(c_julia);
 
-		addComp(cont, opts, gbl, 0, 0, 3, 1, 1.0, 0.0);
+		sgb_main.add(opts, 0, 0, 3, 1, 1.0, 0.0);
 
 		// LocationPanel
 		JPanel loc = new JPanel();
@@ -190,7 +170,7 @@ public class Multifrac extends JFrame
 			}
 		});
 
-		addComp(cont, loc, gbl, 0, 1, 3, 1, 1.0, 0.0);
+		sgb_main.add(loc, 0, 1, 3, 1, 1.0, 0.0);
 
 		// ColorChooser Panel
 		Runnable colorOnChange = new Runnable()
@@ -204,13 +184,13 @@ public class Multifrac extends JFrame
 		colorizer = new ColorizerPanel(this, paramStack, colorOnChange);
 		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		colorizer.setBorder(commonBorder);
-		addComp(cont, colorizer, gbl, 0, 3, 1, 1, 1.0, 0.0);
+		sgb_main.add(colorizer, 0, 3, 1, 1, 1.0, 0.0);
 
 		// BackgroundColorPanel
 		colorInside = new SingleColorPanel("Inside", this, paramStack, colorOnChange);
 		colorInside.setBorder(commonBorder);
 		colorInside.setPreferredSize(new Dimension(50, 50));
-		addComp(cont, colorInside, gbl, 1, 3, 1, 1, 0.0, 0.0);
+		sgb_main.add(colorInside, 1, 3, 1, 1, 0.0, 0.0);
 
 		// Listeners: TYPE
 		// An action listener which catches the users clicks.
@@ -320,7 +300,7 @@ public class Multifrac extends JFrame
 		});
 		panicpanel.add(panic);
 		
-		addComp(cont, panicpanel, gbl, 0, 4, 3, 1, 1.0, 0.0);
+		sgb_main.add(panicpanel, 0, 4, 3, 1, 1.0, 0.0);
 
 		// Listener: ADAPTIVE
 		// An action listener which catches the users clicks.
