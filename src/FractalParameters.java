@@ -63,6 +63,11 @@ public class FractalParameters
 		// so they have to be initialized separately.
 		colorInside = ColorizerPanel.getDefaultInside();
 		gradient = ColorizerPanel.getDefaultGradient();
+
+		// Same goes for the type and julia parameters.
+		type = TYPE_JULIA;
+		julia_re = -0.46;
+		julia_im = 0.58;
 	}
 
 	public FractalParameters(FractalParameters p)
@@ -91,13 +96,10 @@ public class FractalParameters
 
 	public void setDefaults()
 	{
-		type = TYPE_JULIA;
 		nmax = DEF_NMAX;
 		zoom = DEF_ZOOM;
 		escape = 32.0;
 		adaptive = true;
-		julia_re = -0.46;
-		julia_im = 0.58;
 		centerOffset = new Point2D.Double(0.0, 0.0);
 	}
 
