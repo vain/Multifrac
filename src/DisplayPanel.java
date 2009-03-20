@@ -268,7 +268,8 @@ public class DisplayPanel extends JPanel
 
 						paintImmediately(0, 0, result.getWidth(), result.getHeight());
 					}
-				});
+				},
+				new Object[0]);
 	}
 
 	/**

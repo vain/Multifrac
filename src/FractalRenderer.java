@@ -69,7 +69,7 @@ public class FractalRenderer extends Thread
 	static public abstract class Callback implements Runnable
 	{
 		private Job job = null;
-		public void setJob(Job j)
+		protected void setJob(Job j)
 		{
 			job = j;
 		}
@@ -90,12 +90,45 @@ public class FractalRenderer extends Thread
 	}
 
 	/**
+	 * This will be executed on the EDT to publish progress.
+	 */
+	static public abstract class Publisher implements Runnable
+	{
+		private int ID = -1;
+		private int v  = 0;
+		protected void setID(int i)
+		{
+			ID = i;
+		}
+		public int getID()
+		{
+			return ID;
+		}
+
+		protected void setValue(int i)
+		{
+			v = i;
+		}
+		public int getValue()
+		{
+			return v;
+		}
+
+		/**
+		 * Override this method.
+		 */
+		@Override
+		public abstract void run();
+	}
+
+	/**
 	 * Describes one token of a job.
 	 */
 	static protected class Token
 	{
 		protected int start = 0;
 		protected int end   = 0;
+		protected Publisher pub = null;
 
 		@Override
 		public String toString()
@@ -236,14 +269,30 @@ public class FractalRenderer extends Thread
 					}
 				}
 			}
+
+			// Publish progress
+			if ((coord_y % 50) == 0 && myToken.pub != null)
+			{
+				// Scale the current row to [0, 100], then invoke the publisher.
+				myToken.pub.setValue(
+						(int)(
+							100.0f * (coord_y - myToken.start) / (float)(myToken.end - myToken.start)
+							));
+				SwingUtilities.invokeLater(myToken.pub);
+			}
 		}
 	}
 
 	/**
 	 * Used to dispatch a job. It will calculate the fractal for the given
 	 * parameters in the background and will immediately return.
+	 *
+	 * TODO: An Object[] for the publishers seems to be the only way
+	 *       to pass them. Remember: It must be OK to use "null" instead
+	 *       of a real array - and this is not possible? Whuh?
 	 */
-	public static void dispatchJob(final int numthreads, final Job job, final Callback whenFinished)
+	public static void dispatchJob(final int numthreads, final Job job, final Callback whenFinished,
+			final Object[] pub)
 	{
 		Thread t = new Thread()
 		{
@@ -260,9 +309,17 @@ public class FractalRenderer extends Thread
 				Token toktok = null;
 				for (int i = 0; i < run.length - 1; i++)
 				{
+					Publisher tokpub = null;
+					if (pub != null && i < pub.length && pub[i] instanceof Publisher)
+					{
+						tokpub = (Publisher)pub[i];
+						tokpub.setID(i);
+					}
+
 					toktok = new Token();
 					toktok.start = a;
 					toktok.end   = b;
+					toktok.pub   = tokpub;
 
 					run[i] = new FractalRenderer(job, toktok);
 					run[i].start();
@@ -272,11 +329,20 @@ public class FractalRenderer extends Thread
 				}
 
 				// Last job
+				Publisher tokpub = null;
+				int last = run.length - 1;
+				if (pub != null && last < pub.length && pub[last] instanceof Publisher)
+				{
+					tokpub = (Publisher)pub[last];
+					tokpub.setID(last);
+				}
+
 				toktok = new Token();
 				toktok.start = a;
 				toktok.end   = job.param.getHeight();
-				run[run.length - 1] = new FractalRenderer(job, toktok);
-				run[run.length - 1].start();
+				toktok.pub   = tokpub;
+				run[last] = new FractalRenderer(job, toktok);
+				run[last].start();
 
 				// Join
 				for (int i = 0; i < run.length; i++)

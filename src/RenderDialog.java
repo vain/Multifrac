@@ -154,18 +154,51 @@ public class RenderDialog extends JDialog
 		public int supersampling;
 	}
 
+	public static class BarDriver extends FractalRenderer.Publisher
+	{
+		private RenderExecutionDialog parent = null;
+
+		public BarDriver(RenderExecutionDialog parent)
+		{
+			this.parent = parent;
+		}
+
+		@Override
+		public void run()
+		{
+			//System.out.println(this + ", " + getID() + ", " + getValue());
+			parent.setBar(getID(), getValue());
+		}
+	}
+
 	private static class RenderExecutionDialog extends JDialog
 	{
+		private JProgressBar[] bars = null;
+
 		public RenderExecutionDialog(final Dialog parent, final RenderSettings rset)
 		{
 			super(parent, "Rendering ...", true);
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+			setLayout(new GridLayout(1 + Multifrac.numthreads, 1));
 
 			add(new JLabel("Please wait. Rendering in progress."));
+			bars = new JProgressBar[Multifrac.numthreads];
+			for (int i = 0; i < Multifrac.numthreads; i++)
+			{
+				bars[i] = new JProgressBar(0, 100);
+				add(bars[i]);
+			}
 
 			rset.param.size.width  *= rset.supersampling;
 			rset.param.size.height *= rset.supersampling;
 
+
+			// Construct BarDrivers
+			final Object[] drivers = new BarDriver[Multifrac.numthreads];
+			for (int i = 0; i < drivers.length; i++)
+				drivers[i] = new BarDriver(this);
+
+			// Construct Job
 			final JDialog me = this;
 			FractalRenderer.dispatchJob(Multifrac.numthreads,
 					new FractalRenderer.Job(rset.param, -1),
@@ -174,6 +207,8 @@ public class RenderDialog extends JDialog
 						@Override
 						public void run()
 						{
+							// TODO: StatusChange, wenn jetzt der lange Resample-Prozess läuft.
+
 							FractalRenderer.Job result = getJob();
 
 							// Create an image from the int-array
@@ -229,11 +264,23 @@ public class RenderDialog extends JDialog
 							// Now close this dialog
 							me.dispose();
 						}
-					});
+					},
+					drivers);
 
 			pack();
 			center(this, parent);
 			setVisible(true);
+		}
+
+		public void setBar(int i, int val)
+		{
+			if (bars == null)
+				return;
+
+			if (i >= bars.length)
+				return;
+
+			bars[i].setValue(val);
 		}
 	}
 }
