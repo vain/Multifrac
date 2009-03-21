@@ -254,7 +254,7 @@ public class DisplayPanel extends JPanel
 		repaint();
 
 		FractalRenderer.dispatchJob(Multifrac.numthreads,
-				new FractalRenderer.Job(paramStack.get(), nextStamp()),
+				new FractalRenderer.Job(paramStack.get(), 1, nextStamp()),
 				new FractalRenderer.Callback()
 				{
 					@Override
@@ -269,7 +269,7 @@ public class DisplayPanel extends JPanel
 						paintImmediately(0, 0, result.getWidth(), result.getHeight());
 					}
 				},
-				new Object[0]);
+				new Object[0], null);
 	}
 
 	/**

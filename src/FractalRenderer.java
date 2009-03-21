@@ -34,10 +34,16 @@ public class FractalRenderer extends Thread
 		public int[] pixels = null;
 		public FractalParameters param = null;
 		public long stamp = 0;
+		public int supersampling = 1;
 
-		public Job(FractalParameters p, long s)
+		public Job(FractalParameters p, int supsam, long s)
 		{
 			param = new FractalParameters(p);
+
+			supersampling      = supsam;
+			param.size.width  *= supsam;
+			param.size.height *= supsam;
+
 			pixels = new int[param.getWidth() * param.getHeight()];
 
 			stamp = s;
@@ -56,12 +62,26 @@ public class FractalRenderer extends Thread
 			return param.getHeight();
 		}
 
+		public void resizeBack()
+		{
+			pixels = ImageOperations.resize2(
+					pixels,
+					getWidth(),
+					getHeight(),
+					supersampling);
+
+			param.size.width  /= supersampling;
+			param.size.height /= supersampling;
+		}
+
 		@Override
 		public String toString()
 		{
 			return "Job[" + getWidth() + "x" + getHeight() + "]";
 		}
 	}
+
+	// TODO: Generics for all those "Carriers" and "Publishers"
 
 	/**
 	 * This will be executed on the EDT after the job has been completed.
@@ -112,6 +132,25 @@ public class FractalRenderer extends Thread
 		public int getValue()
 		{
 			return v;
+		}
+
+		/**
+		 * Override this method.
+		 */
+		@Override
+		public abstract void run();
+	}
+
+	static public abstract class Messenger implements Runnable
+	{
+		private String msg = "";
+		protected void setMsg(String s)
+		{
+			msg = s;
+		}
+		public String getMsg()
+		{
+			return msg;
 		}
 
 		/**
@@ -292,13 +331,19 @@ public class FractalRenderer extends Thread
 	 *       of a real array - and this is not possible? Whuh?
 	 */
 	public static void dispatchJob(final int numthreads, final Job job, final Callback whenFinished,
-			final Object[] pub)
+			final Object[] pub, final Messenger msg)
 	{
 		Thread t = new Thread()
 		{
 			@Override
 			public void run()
 			{
+				if (msg != null)
+				{
+					msg.setMsg("Rendering in progress, this may take a while.");
+					SwingUtilities.invokeLater(msg);
+				}
+
 				// Manage
 				FractalRenderer[] run = new FractalRenderer[numthreads];
 				int bunch = job.param.getHeight() / numthreads;
@@ -354,6 +399,16 @@ public class FractalRenderer extends Thread
 					catch (InterruptedException ignore)
 					{}
 				}
+
+				// Push current status
+				if (msg != null)
+				{
+					msg.setMsg("Resizing and saving.");
+					SwingUtilities.invokeLater(msg);
+				}
+
+				// Resize back to normal size
+				job.resizeBack();
 
 				// Callback
 				whenFinished.setJob(job);

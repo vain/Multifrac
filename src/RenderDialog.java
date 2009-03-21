@@ -167,6 +167,7 @@ public class RenderDialog extends JDialog
 
 	private static class RenderExecutionDialog extends JDialog
 	{
+		public JLabel lblStatus = new JLabel();
 		private JProgressBar[] bars = null;
 
 		public RenderExecutionDialog(final Dialog parent, final RenderSettings rset)
@@ -175,7 +176,7 @@ public class RenderDialog extends JDialog
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 			setLayout(new GridLayout(1 + Multifrac.numthreads, 1));
 
-			add(new JLabel("Please wait. Rendering in progress."));
+			add(lblStatus);
 			bars = new JProgressBar[Multifrac.numthreads];
 			for (int i = 0; i < Multifrac.numthreads; i++)
 			{
@@ -183,19 +184,15 @@ public class RenderDialog extends JDialog
 				add(bars[i]);
 			}
 
-			rset.param.size.width  *= rset.supersampling;
-			rset.param.size.height *= rset.supersampling;
-
-
 			// Construct BarDrivers
 			final Object[] drivers = new BarDriver[Multifrac.numthreads];
 			for (int i = 0; i < drivers.length; i++)
 				drivers[i] = new BarDriver(this);
 
 			// Construct Job
-			final JDialog me = this;
+			final RenderExecutionDialog me = this;
 			FractalRenderer.dispatchJob(Multifrac.numthreads,
-					new FractalRenderer.Job(rset.param, -1),
+					new FractalRenderer.Job(rset.param, rset.supersampling, -1),
 					new FractalRenderer.Callback()
 					{
 						@Override
@@ -205,16 +202,10 @@ public class RenderDialog extends JDialog
 
 							FractalRenderer.Job result = getJob();
 
-							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
-
 							// Create an image from the int-array
 							int w = result.getWidth();
 							int h = result.getHeight();
-							int[] px = ImageOperations.resize2(result.getPixels(),
-																w, h, rset.supersampling);
-
-							w /= rset.supersampling;
-							h /= rset.supersampling;
+							int[] px = result.getPixels();
 
 							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
@@ -247,7 +238,17 @@ public class RenderDialog extends JDialog
 							me.dispose();
 						}
 					},
-					drivers);
+					drivers,
+					new FractalRenderer.Messenger()
+					{
+						@Override
+						public void run()
+						{
+							me.lblStatus.setText(getMsg());
+							pack();
+							center(me, parent);
+						}
+					});
 
 			pack();
 			center(this, parent);
