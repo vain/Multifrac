@@ -320,6 +320,12 @@ public class FractalRenderer extends Thread
 				SwingUtilities.invokeLater(myToken.pub);
 			}
 		}
+
+		if (myToken.pub != null)
+		{
+			myToken.pub.setValue(100);
+			SwingUtilities.invokeLater(myToken.pub);
+		}
 	}
 
 	/**
