@@ -62,7 +62,7 @@ public class RenderDialog extends JDialog
 
 		setLayout(new GridLayout(5, 2, 5, 5));
 
-		c_super = new JComboBox(new String[] { "None", "2x2", "4x4" });
+		c_super = new JComboBox(new String[] { "None", "2x2", "4x4", "8x8" });
 		c_super.setSelectedIndex(lastSuper);
 
 		add(new JLabel("Width:"));
@@ -101,16 +101,10 @@ public class RenderDialog extends JDialog
 				rset.param = param;
 				rset.tfile = tfile;
 
-				// Index 0 = No supersampling = Factor 1 = Keep the size.
-				if (lastSuper == 0)
-					rset.supersampling = 1;
-				// Index 1 = 2x2 supersampling = Factor 2 = Double the size in each dimension.
-				// Thus, 4 Pixels will collapse into 1 Pixel --> 2x2
-				else if (lastSuper == 1)
-					rset.supersampling = 2;
-				// Same idea for 4x4 
-				else if (lastSuper == 2)
-					rset.supersampling = 4;
+				// Index 0 = Factor 1
+				// Index 1 = Factor 2
+				// Index 2 = Factor 4 ... --> 2^Index
+				rset.supersampling = (int)Math.pow(2.0, lastSuper);
 
 				new RenderExecutionDialog(subparent, rset);
 				dispose();
@@ -211,10 +205,16 @@ public class RenderDialog extends JDialog
 
 							FractalRenderer.Job result = getJob();
 
+							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+
 							// Create an image from the int-array
 							int w = result.getWidth();
 							int h = result.getHeight();
-							int[] px = result.getPixels();
+							int[] px = ImageOperations.resize2(result.getPixels(),
+																w, h, rset.supersampling);
+
+							w /= rset.supersampling;
+							h /= rset.supersampling;
 
 							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
@@ -233,24 +233,6 @@ public class RenderDialog extends JDialog
 								new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
 
 							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
-
-							if (rset.supersampling > 0)
-							{
-								w /= rset.supersampling;
-								h /= rset.supersampling;
-
-								Image temp = img.getScaledInstance(
-									w,
-									h,
-									Image.SCALE_SMOOTH);
-
-								img = (BufferedImage)createImage(w, h);
-								g2  = (Graphics2D)img.getGraphics();
-								g2.drawImage(temp,
-									new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
-
-								System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
-							}
 
 							try
 							{
