@@ -16,6 +16,7 @@
 */
 
 import javax.swing.*;
+import javax.swing.filechooser.*;
 import javax.imageio.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -30,7 +31,8 @@ public class RenderDialog extends JDialog
 
 	private JTextField c_width  = new JTextField();
 	private JTextField c_height = new JTextField();
-	private JTextField c_file   = new JTextField(20);
+	public  JTextField c_file   = new JTextField(20);
+	private JButton    c_file_chooser = new JButton("...");
 	private JButton    c_ok     = new JButton("OK");
 	private JButton    c_cancel = new JButton("Cancel");
 	private JComboBox  c_super  = null;
@@ -60,36 +62,68 @@ public class RenderDialog extends JDialog
 			c_file.setText(lastFile);
 		}
 
-		setLayout(new GridLayout(5, 2, 5, 5));
+		SimpleGridBag sgb = new SimpleGridBag(getContentPane());
+		setLayout(sgb);
 
 		c_super = new JComboBox(new String[] { "None", "2x2", "4x4", "8x8" });
 		c_super.setSelectedIndex(lastSuper);
 
-		add(new JLabel("Width:"));
-		add(c_width);
-		add(new JLabel("Height:"));
-		add(c_height);
-		add(new JLabel("Supersampling:"));
-		add(c_super);
-		add(new JLabel("File:"));
-		add(c_file);
+		sgb.add(new JLabel("Width:"),			0, 0, 1, 1, 1.0, 1.0);
+		sgb.add(c_width,						1, 0, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
+		sgb.add(new JLabel("Height:"),			0, 1, 1, 1, 1.0, 1.0);
+		sgb.add(c_height,						1, 1, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
+		sgb.add(new JLabel("Supersampling:"),	0, 2, 1, 1, 1.0, 1.0);
+		sgb.add(c_super,						1, 2, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
+		sgb.add(new JLabel("File:"),			0, 3, 1, 1, 1.0, 1.0);
+		sgb.add(c_file,							1, 3, 1, 1, 1.0, 1.0);
+		sgb.add(c_file_chooser,					2, 3, 1, 1, 1.0, 1.0);
 
 		// TODO: FocusAdapter which selects everything when a text field gains focus.
 
-		add(c_ok);
-		add(c_cancel);
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
+		buttonPanel.add(c_ok);
+		buttonPanel.add(c_cancel);
+		sgb.add(buttonPanel, 0, 4, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
 
-		final Dialog subparent = this;
+		final RenderDialog subparent = this;
 		c_ok.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				// TODO: try-catch for non-numeric input
-				param.size.width = new Integer(c_width.getText());
-				param.size.height = new Integer(c_height.getText());
+				// Usability checks...
+				try
+				{
+					param.size.width = new Integer(c_width.getText());
+					param.size.height = new Integer(c_height.getText());
+				}
+				catch (NumberFormatException ex)
+				{
+					JOptionPane.showMessageDialog(subparent,
+						"Non-numeric input for width and/or size.", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 
 				File tfile = new File(c_file.getText());
+
+				File dir = null;
+				if (tfile != null)
+					dir = tfile.getParentFile();
+				if (dir == null || !dir.canWrite())
+				{
+					JOptionPane.showMessageDialog(subparent,
+						"I won't be able to write to this file.", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+
+				if (tfile.exists())
+				{
+					int ret = JOptionPane.showConfirmDialog(subparent,
+						"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
+					if (ret != JOptionPane.YES_OPTION)
+						return;
+				}
 				
 				// Save a copy
 				lastSize = new Dimension(param.size);
@@ -117,6 +151,31 @@ public class RenderDialog extends JDialog
 			public void actionPerformed(ActionEvent e)
 			{
 				dispose();
+			}
+		});
+
+		c_file_chooser.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JFileChooser chooser = new JFileChooser();
+
+				// try to set the old directory and file
+				File old = new File(subparent.c_file.getText());
+				chooser.setSelectedFile(old);
+
+				// simple filter
+				FileNameExtensionFilter filter = new FileNameExtensionFilter(
+							"PNG & JPG Images", "png", "jpg");
+
+				// fire up the dialog
+				chooser.setFileFilter(filter);
+				int returnVal = chooser.showSaveDialog(subparent);
+				if (returnVal == JFileChooser.APPROVE_OPTION)
+				{
+					subparent.c_file.setText(chooser.getSelectedFile().getAbsolutePath());
+				}
 			}
 		});
 
