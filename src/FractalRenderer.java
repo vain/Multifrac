@@ -180,10 +180,12 @@ public class FractalRenderer extends Thread
 	// Store stuff... An object of this class will handle the pair (Job, Token)
 	private Job myJob = null;
 	private Token myToken = null;
-	public FractalRenderer(Job j, Token t)
+	private int[] coordinator = null;
+	public FractalRenderer(Job j, Token t, int[] c)
 	{
 		myJob = j;
 		myToken = t;
+		coordinator = c;
 	}
 	
 	/**
@@ -191,8 +193,7 @@ public class FractalRenderer extends Thread
 	 * so this is the actual part which will be executed in parallel somewhere
 	 * in the background.
 	 */
-	@Override
-	public void run()
+	private void renderPass()
 	{
 		// This is where the magic happens.
 		//System.out.println("Executing " + myJob + " (" + myToken + ") on " + Thread.currentThread());
@@ -308,23 +309,40 @@ public class FractalRenderer extends Thread
 					}
 				}
 			}
-
-			// Publish progress
-			if ((coord_y % 50) == 0 && myToken.pub != null)
-			{
-				// Scale the current row to [0, 100], then invoke the publisher.
-				myToken.pub.setValue(
-						(int)(
-							100.0f * (coord_y - myToken.start) / (float)(myToken.end - myToken.start)
-							));
-				SwingUtilities.invokeLater(myToken.pub);
-			}
 		}
+	}
 
-		if (myToken.pub != null)
+	@Override
+	public void run()
+	{
+		int bunch = 6;
+		int max = myJob.getHeight();
+
+		while (true)
 		{
-			myToken.pub.setValue(100);
-			SwingUtilities.invokeLater(myToken.pub);
+			// The coordinator is used as follows:
+			//  - It is an object, so threads can synchronize on this object
+			//  - coordinator[0] always holds the next possible start row
+			//  - After a thread has fetched its own new start row, it will
+			//    increase the global next start row.
+			synchronized (coordinator)
+			{
+				if (coordinator[0] >= max)
+					return;
+
+				myToken.start = coordinator[0];
+				coordinator[0] += bunch;
+				myToken.end = coordinator[0];
+			}
+
+			// Do not exceed image boundaries. :-)
+			if (myToken.end >= max)
+				myToken.end = max;
+
+			// Now render this particular token.
+			renderPass();
+
+			// TODO: Update progress
 		}
 	}
 
@@ -352,13 +370,10 @@ public class FractalRenderer extends Thread
 
 				// Manage
 				FractalRenderer[] run = new FractalRenderer[numthreads];
-				int bunch = job.param.getHeight() / numthreads;
-				int a = 0, b = bunch;
 				
 				// Divide and Spawn
-				// TODO: Dynamic work distribution...
-				Token toktok = null;
-				for (int i = 0; i < run.length - 1; i++)
+				int[] coordinator = new int[1];
+				for (int i = 0; i < run.length; i++)
 				{
 					Publisher tokpub = null;
 					if (pub != null && i < pub.length && pub[i] instanceof Publisher)
@@ -367,33 +382,11 @@ public class FractalRenderer extends Thread
 						tokpub.setID(i);
 					}
 
-					toktok = new Token();
-					toktok.start = a;
-					toktok.end   = b;
-					toktok.pub   = tokpub;
-
-					run[i] = new FractalRenderer(job, toktok);
+					Token toktok = new Token();
+					toktok.pub = tokpub;
+					run[i] = new FractalRenderer(job, toktok, coordinator);
 					run[i].start();
-
-					a += bunch;
-					b += bunch;
 				}
-
-				// Last job
-				Publisher tokpub = null;
-				int last = run.length - 1;
-				if (pub != null && last < pub.length && pub[last] instanceof Publisher)
-				{
-					tokpub = (Publisher)pub[last];
-					tokpub.setID(last);
-				}
-
-				toktok = new Token();
-				toktok.start = a;
-				toktok.end   = job.param.getHeight();
-				toktok.pub   = tokpub;
-				run[last] = new FractalRenderer(job, toktok);
-				run[last].start();
 
 				// Join
 				for (int i = 0; i < run.length; i++)
