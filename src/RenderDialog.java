@@ -157,27 +157,54 @@ public class RenderDialog extends JDialog
 			this.parent = parent;
 		}
 
+		private String timeToStr(int s)
+		{
+			if (s == 0)
+				return "--:--:--";
+
+			long h = s / 3600;
+			s -= 3600 * h;
+
+			long m = s / 60;
+			s -= 60 * m;
+
+			return 	(h < 10 ? "0" : "") + h + ":" +
+					(m < 10 ? "0" : "") + m + ":" +
+					(s < 10 ? "0" : "") + s
+					;
+		}
+
 		@Override
 		public void run()
 		{
+			int v = getValue();
 			//System.out.println(this + ", " + getID() + ", " + getValue());
-			parent.bar.setValue(getValue());
+			parent.bar.setValue(v);
+
+			int elapsed  = (int)((System.currentTimeMillis() - parent.time_start) / 1000);
+			int duration = (v > 5 ? (int)((float)elapsed / (float)v * 100.0f) : 0);
+			parent.lblTime.setText(timeToStr(elapsed) + " / " + timeToStr(duration));
 		}
 	}
 
 	private static class RenderExecutionDialog extends JDialog
 	{
 		public JLabel lblStatus = new JLabel();
+		public JLabel lblTime   = new JLabel("00:00:00 / --:--:--", SwingConstants.CENTER);
 		public JProgressBar bar = new JProgressBar(0, 100);
+
+		public long time_start = System.currentTimeMillis();
 
 		public RenderExecutionDialog(final Dialog parent, final RenderSettings rset)
 		{
+			// Content and properties
 			super(parent, "Rendering ...", true);
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			setLayout(new GridLayout(2, 1));
+			setLayout(new GridLayout(3, 1));
 
 			add(lblStatus);
 			add(bar);
+			add(lblTime);
 
 			// Construct Job
 			final RenderExecutionDialog me = this;
