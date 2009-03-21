@@ -188,35 +188,6 @@ public class DisplayPanel extends JPanel
 		addMouseListener(m);
 		addMouseMotionListener(m);
 		addMouseWheelListener(m);
-
-		// Keyboard Events
-		addKeyListener(new KeyAdapter()
-		{
-			public void keyTyped(KeyEvent e)
-			{
-				boolean changed = false;
-
-				//System.out.println(e.getKeyChar());
-				if (e.getKeyChar() == '+')
-				{
-					changed = true;
-					paramStack.push();
-					paramStack.get().zoomIn();
-				}
-				else if (e.getKeyChar() == '-')
-				{
-					changed = true;
-					paramStack.push();
-					paramStack.get().zoomOut();
-				}
-				
-				if (changed)
-				{
-					onChange.run();
-					dispatchRedraw();	
-				}
-			}
-		});
 	}
 
 	/**
@@ -270,15 +241,6 @@ public class DisplayPanel extends JPanel
 					}
 				},
 				null);
-	}
-
-	/**
-	 * Needed in order to receive keyboard events.
-	 */
-	@Override
-	public boolean isFocusable()
-	{
-		return true;
 	}
 
 	/**
