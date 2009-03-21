@@ -182,7 +182,7 @@ public class RenderDialog extends JDialog
 			parent.bar.setValue(v);
 
 			int elapsed  = (int)((System.currentTimeMillis() - parent.time_start) / 1000);
-			int duration = (v > 5 ? (int)((float)elapsed / (float)v * 100.0f) : 0);
+			int duration = (elapsed > 5 ? (int)((float)elapsed / (float)v * 100.0f) : 0);
 			parent.lblTime.setText(timeToStr(elapsed) + " / " + timeToStr(duration));
 		}
 	}
@@ -201,6 +201,8 @@ public class RenderDialog extends JDialog
 			super(parent, "Rendering ...", true);
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 			setLayout(new GridLayout(3, 1));
+
+			bar.setStringPainted(true);
 
 			add(lblStatus);
 			add(bar);
