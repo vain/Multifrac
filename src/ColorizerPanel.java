@@ -202,17 +202,26 @@ public class ColorizerPanel extends JPanel
 	public static ArrayList<ColorStep> getDefaultGradient()
 	{
 		ArrayList<ColorStep> g = new ArrayList<ColorStep>();
+		/*
 		g.add(new ColorStep(0.0f,    Color.white));
 		g.add(new ColorStep(0.53f,   Color.black));
 		g.add(new ColorStep(0.63f,   Color.red));
 		g.add(new ColorStep(0.8675f, Color.black));
 		g.add(new ColorStep(1.0f,    Color.black));
+		*/
+		g.add(new ColorStep(0.0f,    Color.white));
+		g.add(new ColorStep(0.395f,  Color.black));
+		g.add(new ColorStep(0.504f,  Color.white));
+		g.add(new ColorStep(0.572f,  Color.yellow));
+		g.add(new ColorStep(0.648f,  Color.red));
+		g.add(new ColorStep(0.737f,  Color.black));
+		g.add(new ColorStep(1.0f,    Color.white));
 		return g;
 	}
 
 	public static Color getDefaultInside()
 	{
-		return Color.black;
+		return Color.white;
 	}
 
 	@Override

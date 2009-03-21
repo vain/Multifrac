@@ -33,4 +33,10 @@ public class ColorStep
 		pos = c.pos;
 		color = new Color(c.color.getRGB());
 	}
+
+	@Override
+	public String toString()
+	{
+		return "CS[" + pos + ", " + color + "]";
+	}
 }
