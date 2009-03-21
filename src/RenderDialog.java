@@ -161,45 +161,33 @@ public class RenderDialog extends JDialog
 		public void run()
 		{
 			//System.out.println(this + ", " + getID() + ", " + getValue());
-			parent.setBar(getID(), getValue());
+			parent.bar.setValue(getValue());
 		}
 	}
 
 	private static class RenderExecutionDialog extends JDialog
 	{
 		public JLabel lblStatus = new JLabel();
-		private JProgressBar[] bars = null;
+		public JProgressBar bar = new JProgressBar(0, 100);
 
 		public RenderExecutionDialog(final Dialog parent, final RenderSettings rset)
 		{
 			super(parent, "Rendering ...", true);
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			setLayout(new GridLayout(1 + Multifrac.numthreads, 1));
+			setLayout(new GridLayout(2, 1));
 
 			add(lblStatus);
-			bars = new JProgressBar[Multifrac.numthreads];
-			for (int i = 0; i < Multifrac.numthreads; i++)
-			{
-				bars[i] = new JProgressBar(0, 100);
-				add(bars[i]);
-			}
-
-			// Construct BarDrivers
-			final Object[] drivers = new BarDriver[Multifrac.numthreads];
-			for (int i = 0; i < drivers.length; i++)
-				drivers[i] = new BarDriver(this);
+			add(bar);
 
 			// Construct Job
 			final RenderExecutionDialog me = this;
 			FractalRenderer.dispatchJob(Multifrac.numthreads,
-					new FractalRenderer.Job(rset.param, rset.supersampling, -1),
+					new FractalRenderer.Job(rset.param, rset.supersampling, -1, new BarDriver(this)),
 					new FractalRenderer.Callback()
 					{
 						@Override
 						public void run()
 						{
-							// TODO: StatusChange, wenn jetzt der lange Resample-Prozess läuft.
-
 							FractalRenderer.Job result = getJob();
 
 							// Create an image from the int-array
@@ -209,25 +197,25 @@ public class RenderDialog extends JDialog
 
 							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
+							// Construct containers
 							BufferedImage img = (BufferedImage)createImage(w, h);
 							Image buf = createImage(new MemoryImageSource(w, h, px, 0, w));
 
-							// TODO: Hier Ansatzpunkt für Speicheroptimierung, denn schon px wird
-							//       jetzt überhaupt nicht mehr gebraucht.
-							//       Auf die GC ist kein Verlass. Am besten: bilinearen Filter selbst
-							//       schreiben, der direkt auf int[] arbeiten kann.
-
 							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
+							// Write int[] -> Graphics2D
 							Graphics2D g2 = (Graphics2D)img.getGraphics();
 							g2.drawImage(buf,
 								new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
 
 							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
+							// Save/Encode the file
 							try
 							{
-								ImageIO.write(img, "PNG", rset.tfile);
+								String a = rset.tfile.getName();
+								String ext = a.substring(a.lastIndexOf('.') + 1);
+								ImageIO.write(img, ext, rset.tfile);
 							}
 							catch (Exception e)
 							{
@@ -238,7 +226,6 @@ public class RenderDialog extends JDialog
 							me.dispose();
 						}
 					},
-					drivers,
 					new FractalRenderer.Messenger()
 					{
 						@Override
@@ -253,17 +240,6 @@ public class RenderDialog extends JDialog
 			pack();
 			center(this, parent);
 			setVisible(true);
-		}
-
-		public void setBar(int i, int val)
-		{
-			if (bars == null)
-				return;
-
-			if (i >= bars.length)
-				return;
-
-			bars[i].setValue(val);
 		}
 	}
 }

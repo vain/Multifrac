@@ -24,6 +24,17 @@ import javax.swing.*;
 public class FractalRenderer extends Thread
 {
 	private static final double logTwoBaseTen = Math.log10(2.0);
+	
+
+	// Properties of a whole render process.
+	private Job myJob = null;
+	private int[] coordinator = null;
+	public FractalRenderer(Job j, int[] c)
+	{
+		myJob = j;
+		coordinator = c;
+	}
+	
 
 	/**
 	 * Describes a whole job, i.e. the complete image.
@@ -35,8 +46,9 @@ public class FractalRenderer extends Thread
 		public FractalParameters param = null;
 		public long stamp = 0;
 		public int supersampling = 1;
+		public Publisher pub = null;
 
-		public Job(FractalParameters p, int supsam, long s)
+		public Job(FractalParameters p, int supsam, long s, Publisher pu)
 		{
 			param = new FractalParameters(p);
 
@@ -47,6 +59,8 @@ public class FractalRenderer extends Thread
 			pixels = new int[param.getWidth() * param.getHeight()];
 
 			stamp = s;
+
+			pub = pu;
 		}
 
 		public int[] getPixels()
@@ -81,8 +95,6 @@ public class FractalRenderer extends Thread
 		}
 	}
 
-	// TODO: Generics for all those "Carriers" and "Publishers"
-
 	/**
 	 * This will be executed on the EDT after the job has been completed.
 	 */
@@ -114,22 +126,17 @@ public class FractalRenderer extends Thread
 	 */
 	static public abstract class Publisher implements Runnable
 	{
-		private int ID = -1;
-		private int v  = 0;
-		protected void setID(int i)
-		{
-			ID = i;
-		}
-		public int getID()
-		{
-			return ID;
-		}
+		private int v = 0;
 
-		protected void setValue(int i)
+		/**
+		 * Only set the value if it is larger than the current value.
+		 */
+		synchronized protected void setValue(int i)
 		{
-			v = i;
+			if (i > v)
+				v = i;
 		}
-		public int getValue()
+		synchronized public int getValue()
 		{
 			return v;
 		}
@@ -160,40 +167,13 @@ public class FractalRenderer extends Thread
 		public abstract void run();
 	}
 
-	/**
-	 * Describes one token of a job.
-	 */
-	static protected class Token
-	{
-		protected int start = 0;
-		protected int end   = 0;
-		protected Publisher pub = null;
 
-		@Override
-		public String toString()
-		{
-			return "Token[" + start + "," + end  + "]";
-		}
-	}
-
-
-	// Store stuff... An object of this class will handle the pair (Job, Token)
-	private Job myJob = null;
-	private Token myToken = null;
-	private int[] coordinator = null;
-	public FractalRenderer(Job j, Token t, int[] c)
-	{
-		myJob = j;
-		myToken = t;
-		coordinator = c;
-	}
-	
 	/**
 	 * This is where the magic happens. This class is derived from "Thread",
 	 * so this is the actual part which will be executed in parallel somewhere
 	 * in the background.
 	 */
-	private void renderPass()
+	private void renderPass(int tstart, int tend)
 	{
 		// This is where the magic happens.
 		//System.out.println("Executing " + myJob + " (" + myToken + ") on " + Thread.currentThread());
@@ -209,8 +189,8 @@ public class FractalRenderer extends Thread
 		double w = myJob.getWidth();
 		double muh = 0.0;
 
-		int index = myToken.start * myJob.getWidth();
-		for (int coord_y = myToken.start; coord_y < myToken.end; coord_y++)
+		int index = tstart * myJob.getWidth();
+		for (int coord_y = tstart; coord_y < tend; coord_y++)
 		{
 			//zeichY = (-1.0 + 2.0 * (double)coord_y * resrezi);
 			y = myJob.param.YtoWorld(coord_y);
@@ -312,11 +292,17 @@ public class FractalRenderer extends Thread
 		}
 	}
 
+	/**
+	 * Starting point of one render thread.
+	 */
 	@Override
 	public void run()
 	{
 		int bunch = 6;
 		int max = myJob.getHeight();
+
+		int start = 0;
+		int end   = 0;
 
 		while (true)
 		{
@@ -330,32 +316,33 @@ public class FractalRenderer extends Thread
 				if (coordinator[0] >= max)
 					return;
 
-				myToken.start = coordinator[0];
+				start = coordinator[0];
 				coordinator[0] += bunch;
-				myToken.end = coordinator[0];
+				end = coordinator[0];
 			}
 
 			// Do not exceed image boundaries. :-)
-			if (myToken.end >= max)
-				myToken.end = max;
+			if (end >= max)
+				end = max;
 
 			// Now render this particular token.
-			renderPass();
+			renderPass(start, end);
 
-			// TODO: Update progress
+			// Update progress
+			if (myJob.pub != null)
+			{
+				myJob.pub.setValue((int)(100.0f * end / (float)max));
+				SwingUtilities.invokeLater(myJob.pub);
+			}
 		}
 	}
 
 	/**
 	 * Used to dispatch a job. It will calculate the fractal for the given
 	 * parameters in the background and will immediately return.
-	 *
-	 * TODO: An Object[] for the publishers seems to be the only way
-	 *       to pass them. Remember: It must be OK to use "null" instead
-	 *       of a real array - and this is not possible? Whuh?
 	 */
 	public static void dispatchJob(final int numthreads, final Job job, final Callback whenFinished,
-			final Object[] pub, final Messenger msg)
+								   final Messenger msg)
 	{
 		Thread t = new Thread()
 		{
@@ -375,16 +362,7 @@ public class FractalRenderer extends Thread
 				int[] coordinator = new int[1];
 				for (int i = 0; i < run.length; i++)
 				{
-					Publisher tokpub = null;
-					if (pub != null && i < pub.length && pub[i] instanceof Publisher)
-					{
-						tokpub = (Publisher)pub[i];
-						tokpub.setID(i);
-					}
-
-					Token toktok = new Token();
-					toktok.pub = tokpub;
-					run[i] = new FractalRenderer(job, toktok, coordinator);
+					run[i] = new FractalRenderer(job, coordinator);
 					run[i].start();
 				}
 
