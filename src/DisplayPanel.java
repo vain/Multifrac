@@ -282,11 +282,9 @@ public class DisplayPanel extends JPanel
 			w = Math.abs(mouseEnd.x - mouseStart.x);
 			h = Math.abs(mouseEnd.y - mouseStart.y);
 
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
 			// Fade out anything else:
 			// top, bottom, left, right
-			Color COL_DRAG_OUTSIDE = new Color(0xA0000000, true);
+			Color COL_DRAG_OUTSIDE = new Color(0x70000000, true);
 			g2.setPaint(COL_DRAG_OUTSIDE);
 			g2.fillRect(0, 0, getWidth(), y);
 			g2.fillRect(0, y + h, getWidth(), getHeight());
