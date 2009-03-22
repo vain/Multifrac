@@ -89,6 +89,20 @@ public class RenderDialog extends JDialog
 		final RenderDialog subparent = this;
 		c_ok.addActionListener(new ActionListener()
 		{
+			private String toSize(double s)
+			{
+				String[] suff = new String[] { "Bytes", "KB", "MB", "GB", "TB" };
+				int i = 0;
+				while (s > 1000.0 && i < suff.length - 1)
+				{
+					s /= 1000.0;
+					i++;
+				}
+
+				s = (int)(s * 100) / 100.0;
+				return s + " " + suff[i];
+			}
+
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -116,14 +130,6 @@ public class RenderDialog extends JDialog
 						"I won't be able to write to this file.", "Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-
-				if (tfile.exists())
-				{
-					int ret = JOptionPane.showConfirmDialog(subparent,
-						"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
-					if (ret != JOptionPane.YES_OPTION)
-						return;
-				}
 				
 				// Save a copy
 				lastSize = new Dimension(param.size);
@@ -139,6 +145,34 @@ public class RenderDialog extends JDialog
 				// Index 1 = Factor 2
 				// Index 2 = Factor 4 ... --> 2^Index
 				rset.supersampling = (int)Math.pow(2.0, lastSuper);
+
+				// Check if the image fits into memory
+				double w = (double)param.getWidth();
+				double h = (double)param.getHeight();
+				double av = (double)Runtime.getRuntime().maxMemory();
+				double sz = 0;
+
+				if (rset.supersampling == 1)
+					sz = w * h * 4;
+				if (rset.supersampling >= 2)
+					sz = w * h * rset.supersampling * rset.supersampling * 1.5 * 4;
+
+				if (av < sz)
+				{
+					JOptionPane.showMessageDialog(subparent,
+						"I'm sorry, " + toSize(sz) + " needed to process this image but only " + toSize(av) + " available.\nTry increasing your heap space with \"-Xmx...\".", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+
+				// Ok, we're ready to go. Overwrite existing file?
+				// This should be the last question.
+				if (tfile.exists())
+				{
+					int ret = JOptionPane.showConfirmDialog(subparent,
+						"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
+					if (ret != JOptionPane.YES_OPTION)
+						return;
+				}
 
 				new RenderExecutionDialog(subparent, rset);
 				dispose();
@@ -165,12 +199,24 @@ public class RenderDialog extends JDialog
 				File old = new File(subparent.c_file.getText());
 				chooser.setSelectedFile(old);
 
-				// simple filter
-				FileNameExtensionFilter filter = new FileNameExtensionFilter(
-							"PNG & JPG Images", "png", "jpg");
+				// set up filters
+				FileNameExtensionFilter tiff =
+					new FileNameExtensionFilter("TIFF (large images)", "tif", "tiff");
+				FileNameExtensionFilter png =
+					new FileNameExtensionFilter("PNG & JPG (regular images)", "png", "jpg");
+
+				chooser.addChoosableFileFilter(png);
+				chooser.addChoosableFileFilter(tiff);
+
+				// choose current filter
+				if (tiff.accept(old))
+					chooser.setFileFilter(tiff);
+				else if (png.accept(old))
+					chooser.setFileFilter(png);
+				else
+					chooser.setAcceptAllFileFilterUsed(true);
 
 				// fire up the dialog
-				chooser.setFileFilter(filter);
 				int returnVal = chooser.showSaveDialog(subparent);
 				if (returnVal == JFileChooser.APPROVE_OPTION)
 				{
@@ -277,33 +323,46 @@ public class RenderDialog extends JDialog
 						public void run()
 						{
 							FractalRenderer.Job result = getJob();
-
-							// Create an image from the int-array
 							int w = result.getWidth();
 							int h = result.getHeight();
 							int[] px = result.getPixels();
 
-							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
-
-							// Construct containers
-							BufferedImage img = (BufferedImage)createImage(w, h);
-							Image buf = createImage(new MemoryImageSource(w, h, px, 0, w));
-
-							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
-
-							// Write int[] -> Graphics2D
-							Graphics2D g2 = (Graphics2D)img.getGraphics();
-							g2.drawImage(buf,
-								new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
-
-							System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+							// Determine which writer to use
+							String a = rset.tfile.getName();
+							String ext = a.substring(a.lastIndexOf('.') + 1).toUpperCase();
 
 							// Save/Encode the file
 							try
 							{
-								String a = rset.tfile.getName();
-								String ext = a.substring(a.lastIndexOf('.') + 1);
-								ImageIO.write(img, ext, rset.tfile);
+								if (ext.equals("TIF") || ext.equals("TIFF"))
+								{
+									// Use own tiff writer
+									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+									TIFFWriter.writeRGBImage(rset.tfile, px, w, h);
+									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+								}
+								else
+								{
+									// Use Java-Libraries
+
+									// Create an image from the int-array
+									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+
+									// Construct containers
+									BufferedImage img = (BufferedImage)createImage(w, h);
+									Image buf = createImage(new MemoryImageSource(w, h, px, 0, w));
+
+									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+
+									// Write int[] -> Graphics2D
+									Graphics2D g2 = (Graphics2D)img.getGraphics();
+									g2.drawImage(buf,
+										new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
+
+									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
+
+									ImageIO.write(img, ext, rset.tfile);
+								}
 							}
 							catch (Exception e)
 							{
