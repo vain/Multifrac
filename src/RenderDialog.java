@@ -169,6 +169,7 @@ public class RenderDialog extends JDialog
 				if (tfile.exists())
 				{
 					int ret = JOptionPane.showConfirmDialog(subparent,
+						tfile.getAbsolutePath() + "\n" +
 						"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
 					if (ret != JOptionPane.YES_OPTION)
 						return;

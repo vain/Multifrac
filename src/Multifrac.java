@@ -131,6 +131,9 @@ public class Multifrac extends JFrame
 				int returnVal = chooser.showOpenDialog(parent);
 				if (returnVal == JFileChooser.APPROVE_OPTION)
 				{
+					// save last dir
+					parent.lastDir = chooser.getCurrentDirectory();
+
 					File tfile = chooser.getSelectedFile().getAbsoluteFile();
 
 					try
@@ -156,10 +159,6 @@ public class Multifrac extends JFrame
 						JOptionPane.showMessageDialog(parent,
 							"File could not be read:\n\"" + ex.getMessage() + "\"", "Error", JOptionPane.ERROR_MESSAGE);
 					}
-					finally
-					{
-						parent.lastDir = chooser.getCurrentDirectory();
-					}
 				}
 			}
 		});
@@ -182,6 +181,9 @@ public class Multifrac extends JFrame
 				int returnVal = chooser.showSaveDialog(parent);
 				if (returnVal == JFileChooser.APPROVE_OPTION)
 				{
+					// save last dir
+					parent.lastDir = chooser.getCurrentDirectory();
+
 					// save stuff
 					FractalParameters p = parent.paramStack.get();
 					String tname = chooser.getSelectedFile().getAbsolutePath();
@@ -190,6 +192,17 @@ public class Multifrac extends JFrame
 						tname += "." + EXTENSION;
 
 					File tfile = new File(tname);
+
+					// Ok, we're ready to go. Overwrite existing file?
+					// This should be the last question.
+					if (tfile.exists())
+					{
+						int ret = JOptionPane.showConfirmDialog(parent,
+							tfile.getAbsolutePath() + "\n" +
+							"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
+						if (ret != JOptionPane.YES_OPTION)
+							return;
+					}
 
 					try
 					{
@@ -203,10 +216,6 @@ public class Multifrac extends JFrame
 					catch (Exception ex)
 					{
 						ex.printStackTrace();
-					}
-					finally
-					{
-						parent.lastDir = chooser.getCurrentDirectory();
 					}
 				}
 			}
