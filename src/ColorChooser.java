@@ -20,13 +20,17 @@ import javax.swing.event.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 public class ColorChooser
 {
+	protected static final int HISTORY_MAX = 8;
+	protected static ArrayList<Color> history = new ArrayList<Color>();
+
 	private static class Dia extends JDialog
 	{
-		private Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-		//private Border commonBorder = BorderFactory.createRaisedBevelBorder();
+		//private Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+		private Border commonBorder = BorderFactory.createRaisedBevelBorder();
 
 		private boolean OK = false;
 		private Color colorInitial = null;
@@ -44,6 +48,7 @@ public class ColorChooser
 		private JPanel prev_old = null;
 		private JPanel prev_new = null;
 		private JPanel[] presets = null;
+		private JPanel[] lastUsed = null;
 			
 		private ChangeListener rgb_listen = new ChangeListener()
 		{
@@ -253,14 +258,53 @@ public class ColorChooser
 			}
 		}
 
+		private void initLastUsed()
+		{
+			// Create some Panels
+			lastUsed = new JPanel[HISTORY_MAX];
+			int j = history.size() - 1; // for descending order
+			for (int i = 0; i < lastUsed.length; i++)
+			{
+				lastUsed[i] = new JPanel();
+				if (j >= 0)
+					lastUsed[i].setBackground(history.get(j));
+				else
+					lastUsed[i].setBackground(Color.white);
+				lastUsed[i].setPreferredSize(colorButtonDimension);
+				lastUsed[i].setBorder(commonBorder);
+
+				// Listeners: On a mouse click, set the RGB-spinners.
+				// Their ChangeListeners will do all the remaining work.
+				final JPanel mine = lastUsed[i];
+				mine.addMouseListener(new MouseAdapter()
+				{
+					@Override
+					public void mouseClicked(MouseEvent e)
+					{
+						Color bg = mine.getBackground();
+						spin_r.setValue(bg.getRed());
+						spin_g.setValue(bg.getGreen());
+						spin_b.setValue(bg.getBlue());
+					}
+				});
+
+				j--;
+			}
+		}
+
 		private void initComponents()
 		{
 			initSpinners();
 			initPreviews();
 			initPresets();
+			initLastUsed();
 
-			SimpleGridBag sgb = new SimpleGridBag(getContentPane());
-			setLayout(sgb);
+			setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
+
+			JPanel pan = new JPanel();
+			SimpleGridBag sgb = new SimpleGridBag(pan);
+			pan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Adjust color"));
+			pan.setLayout(sgb);
 
 			Insets normal = sgb.getInsets();
 			Insets margin = new Insets(normal.top, normal.left, normal.bottom, normal.right + 15);
@@ -293,21 +337,45 @@ public class ColorChooser
 			sgb.addLabel("Value:",      2, 2,  1, 1,  1.0, 1.0);
 			sgb.add(spin_v,             3, 2,  1, 1,  1.0, 1.0);
 
+			add(pan);
+
 			// Preview-Panels
-			JPanel ppan = new JPanel();
-			ppan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Preview"));
-			ppan.setLayout(new FlowLayout());
-			ppan.add(new JLabel("Old:"));
-			ppan.add(prev_old);
-			ppan.add(new JLabel("New:"));
-			ppan.add(prev_new);
-			sgb.add(ppan, 0, 3,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0);
+			pan = new JPanel();
+			pan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Preview"));
+			pan.setLayout(new FlowLayout());
+			pan.add(new JLabel("Old:"));
+			pan.add(prev_old);
+			pan.add(new JLabel("New:"));
+			pan.add(prev_new);
+			add(pan);
+
+			// History-Panels
+			pan = new JPanel();
+			pan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Last used"));
+			pan.setLayout(new BoxLayout(pan, BoxLayout.Y_AXIS));
+			JPanel cur = new JPanel();
+			cur.setLayout(new FlowLayout());
+			// Use several containers to force a wrap...
+			for (int i = 0; i < lastUsed.length; i++)
+			{
+				cur.add(lastUsed[i]);
+
+				// Wrap at every 4 elements if it is NOT the last element
+				if (((i + 1) % 4) == 0 && i < lastUsed.length - 1)
+				{
+					pan.add(cur);
+					cur = new JPanel();
+					cur.setLayout(new FlowLayout());
+				}
+			}
+			pan.add(cur);
+			add(pan);
 
 			// Preset-Panels
-			JPanel presetpan = new JPanel();
-			presetpan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Presets"));
-			presetpan.setLayout(new BoxLayout(presetpan, BoxLayout.Y_AXIS));
-			JPanel cur = new JPanel();
+			pan = new JPanel();
+			pan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Presets"));
+			pan.setLayout(new BoxLayout(pan, BoxLayout.Y_AXIS));
+			cur = new JPanel();
 			cur.setLayout(new FlowLayout());
 			// Use several containers to force a wrap...
 			for (int i = 0; i < presets.length; i++)
@@ -317,17 +385,17 @@ public class ColorChooser
 				// Wrap at every 4 elements if it is NOT the last element
 				if (((i + 1) % 4) == 0 && i < presets.length - 1)
 				{
-					presetpan.add(cur);
+					pan.add(cur);
 					cur = new JPanel();
 					cur.setLayout(new FlowLayout());
 				}
 			}
-			presetpan.add(cur);
-			sgb.add(presetpan, 0, 4,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0);
+			pan.add(cur);
+			add(pan);
 
 			// Buttons
-			JPanel pan = new JPanel();
-			sgb.add(pan, 0, 5,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0);
+			pan = new JPanel();
+			add(pan);
 
 			JButton okay = new JButton("OK");
 			JButton cancel = new JButton("Cancel");
@@ -385,7 +453,26 @@ public class ColorChooser
 		dia.setVisible(true);
 
 		if (dia.getOK())
-			return dia.getColor();
+		{
+			// Add new color to history, keeping max 8 colors there
+			Color c = dia.getColor();
+
+			boolean doAdd = true;
+			for (Color d : history)
+				if (c.equals(d))
+					doAdd = false;
+
+			if (doAdd)
+			{
+				history.add(c);
+				while (history.size() > HISTORY_MAX)
+				{
+					history.remove(0);
+				}
+			}
+
+			return c;
+		}
 		else
 			return null;
 	}
