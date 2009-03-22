@@ -208,6 +208,32 @@ public class Multifrac extends JFrame
 
 		menuBar.add(menuFile);
 
+		// --- Preview menu
+		JMenu menuPreview = new JMenu("Preview");
+
+		// define all aspect ratios with descriptions, create the items and add listeners
+		String[] aspectDesc = new String[] { "1:1", "4:3", "16:10", "16:9" };
+		double[] aspectVals = new double[] { 1.0, 4.0 / 3.0, 1.6, 16.0 / 9.0 };
+		for (int i = 0; i < aspectVals.length; i++)
+		{
+			final String desc = aspectDesc[i];
+			final double val  = aspectVals[i];
+			final JMenuItem item = new JMenuItem(desc);
+			item.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					Dimension d = rend.getPreferredSize();
+					rend.setPreferredSize(new Dimension(d.width, (int)((double)d.width / val)));
+					pack();
+				}
+			});
+			menuPreview.add(item);
+		}
+
+		menuBar.add(menuPreview);
+
 		// --- Render menu
 		JMenu menuRender = new JMenu("Render");
 		JMenuItem miRenderToFile = new JMenuItem("Render to File ...");
