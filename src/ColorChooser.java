@@ -458,9 +458,16 @@ public class ColorChooser
 			Color c = dia.getColor();
 
 			boolean doAdd = true;
+
+			// Don't add to history if it's already there
 			for (Color d : history)
-				if (c.equals(d))
+				if (c.getRGB() == d.getRGB())
 					doAdd = false;
+
+			// Don't add to history if the color is white and history is not full
+			// (all initial history items are white...)
+			if (history.size() < HISTORY_MAX && c.equals(Color.white))
+				doAdd = false;
 
 			if (doAdd)
 			{
