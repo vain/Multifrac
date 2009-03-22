@@ -18,9 +18,12 @@
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
+import java.io.*;
 
 public class FractalParameters
 {
+	private static final int VERSION = 0;
+
 	protected static final double ZOOM_STEP = 0.9;
 
 	public static final int TYPE_MANDELBROT = 0;
@@ -46,10 +49,16 @@ public class FractalParameters
 	{
 		String out = "\n"
 			+ "\tID: " + hashCode() + "\n"
-			+ "\t" + zoom + "\n"
-			+ "\t" + centerOffset + "\n"
-			+ "\t" + colorInside + "\n"
-			+ "\t" + gradient + "\n"
+			+ "\ttype: " + type + "\n"
+			+ "\tzoom: " + zoom + "\n"
+			+ "\tnmax: " + nmax + "\n"
+			+ "\tesca: " + escape + "\n"
+			+ "\tadap: " + adaptive + "\n"
+			+ "\tjulia_re: " + julia_re + "\n"
+			+ "\tjulia_im: " + julia_im + "\n"
+			+ "\tcenter: " + centerOffset + "\n"
+			+ "\tinside: " + colorInside + "\n"
+			+ "\tgradie: " + gradient + "\n"
 			;
 		return out;
 	}
@@ -92,6 +101,11 @@ public class FractalParameters
 		gradient = new ArrayList<ColorStep>();
 		for (ColorStep cs : p.gradient)
 			gradient.add(new ColorStep(cs));
+	}
+
+	public FractalParameters(DataInputStream in) throws IOException
+	{
+		readFromStream(in);
 	}
 
 	public void setDefaults()
@@ -234,5 +248,76 @@ public class FractalParameters
 		t *= zoom;
 		t += centerOffset.getY();
 		return t;
+	}
+
+	public void writeToStream(DataOutputStream out) throws IOException
+	{
+		// ***************************************************
+		// Do not forget to increase VERSION on major changes.
+		// ***************************************************
+
+		out.writeInt(VERSION);
+
+		// Basic properties
+		out.writeInt(type);
+
+		out.writeDouble(escape);
+		out.writeInt(nmax);
+		out.writeBoolean(adaptive);
+		out.writeDouble(zoom);
+
+		out.writeInt(size.width);
+		out.writeInt(size.height);
+
+		out.writeDouble(centerOffset.getX());
+		out.writeDouble(centerOffset.getY());
+
+		out.writeDouble(julia_re);
+		out.writeDouble(julia_im);
+
+		out.writeInt(colorInside.getRGB());
+
+		// Gradient
+		out.writeInt(gradient.size());
+		for (int i = 0; i < gradient.size(); i++)
+			gradient.get(i).writeToStream(out);
+	}
+
+	private void readFromStream(DataInputStream in) throws IOException
+	{
+		if (in.readInt() > VERSION)
+		{
+			System.err.println("*** FractalParameters: Can't read this object, too new!");
+			return;
+		}
+
+		// Basic properties
+		type     = in.readInt();
+
+		escape   = in.readDouble();
+		nmax     = in.readInt();
+		adaptive = in.readBoolean();
+		zoom     = in.readDouble();
+
+		int ix = in.readInt();
+		int iy = in.readInt();
+		size = new Dimension(ix, iy);
+
+		double dx = in.readDouble();
+		double dy = in.readDouble();
+		centerOffset = new Point2D.Double(dx, dy);
+
+		julia_re = in.readDouble();
+		julia_im = in.readDouble();
+
+		colorInside = new Color(in.readInt(), true);
+
+		// Gradient
+		gradient = new ArrayList<ColorStep>();
+		int num = in.readInt();
+		for (int i = 0; i < num; i++)
+			gradient.add(new ColorStep(in));
+
+		System.out.println(this);
 	}
 }

@@ -17,13 +17,16 @@
 
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.filechooser.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.*;
+import java.io.*;
 
 public class Multifrac extends JFrame
 {
 	public static int numthreads = Runtime.getRuntime().availableProcessors();
+	public static final String EXTENSION = "mfd";
 
 	protected DisplayPanel rend = null;
 	protected ColorizerPanel colorizer = null;
@@ -79,6 +82,118 @@ public class Multifrac extends JFrame
 
 	public Multifrac()
 	{
+		final Multifrac parent = this;
+
+		// Build menu
+		JMenuBar menuBar = new JMenuBar();
+		JMenu menuFile = new JMenu("File");
+
+		JMenuItem miLoad = new JMenuItem("Load ...");
+		JMenuItem miSave = new JMenuItem("Save ...");
+		JMenuItem miQuit = new JMenuItem("Quit");
+
+		menuFile.add(miLoad);
+		menuFile.add(miSave);
+		menuFile.add(new JSeparator());
+		menuFile.add(miQuit);
+
+		menuBar.add(menuFile);
+
+		setJMenuBar(menuBar);
+
+		// Action listeners for the menu
+		miLoad.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JFileChooser chooser = new JFileChooser();
+
+				// set up filters
+				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*.mfd)", EXTENSION));
+
+				// fire up the dialog
+				int returnVal = chooser.showSaveDialog(parent);
+				if (returnVal == JFileChooser.APPROVE_OPTION)
+				{
+					File tfile = chooser.getSelectedFile().getAbsoluteFile();
+
+					try
+					{
+						// load stuff
+						FileInputStream fis = new FileInputStream(tfile);
+						DataInputStream dis = new DataInputStream(fis);
+
+						FractalParameters p = new FractalParameters(dis);
+						parent.paramStack.clear(p);
+
+						// repaint stuff
+						parent.rend.dispatchRedraw();
+						parent.colorizer.repaint();
+						parent.colorInside.repaint();
+						parent.setCompValues(paramStack.get());
+
+						fis.close();
+					}
+					catch (Exception ex)
+					{
+						ex.printStackTrace();
+					}
+				}
+			}
+		});
+
+		miSave.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JFileChooser chooser = new JFileChooser();
+
+				// set up filters
+				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*.mfd)", EXTENSION));
+
+				// fire up the dialog
+				int returnVal = chooser.showSaveDialog(parent);
+				if (returnVal == JFileChooser.APPROVE_OPTION)
+				{
+					// save stuff
+					FractalParameters p = parent.paramStack.get();
+					String tname = chooser.getSelectedFile().getAbsolutePath();
+
+					if (!tname.endsWith("." + EXTENSION))
+						tname += "." + EXTENSION;
+
+					File tfile = new File(tname);
+
+					try
+					{
+						FileOutputStream fos = new FileOutputStream(tfile);
+						DataOutputStream dos = new DataOutputStream(fos);
+
+						p.writeToStream(dos);
+
+						fos.close();
+					}
+					catch (Exception ex)
+					{
+						ex.printStackTrace();
+					}
+				}
+			}
+		});
+
+		miQuit.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				System.exit(0);
+			}
+		});
+
+
+		// Components
 		SimpleGridBag sgb_main = new SimpleGridBag(getContentPane());
 		setLayout(sgb_main);
 		//Border commonBorder = BorderFactory.createLoweredBevelBorder();
@@ -238,7 +353,6 @@ public class Multifrac extends JFrame
 		JPanel panicpanel = new JPanel();
 		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
 
-		final Frame parent = this;
 		JButton renderToFile = new JButton("Render ...");
 		renderToFile.addActionListener(new ActionListener()
 		{

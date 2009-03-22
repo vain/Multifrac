@@ -73,6 +73,15 @@ public class ParameterStack
 		dump();
 	}
 
+	public void clear(FractalParameters top)
+	{
+		undo.clear();
+		redo.clear();
+		current = top;
+
+		dump();
+	}
+
 	private void dump()
 	{
 		System.out.println("CURRENT:" + current);

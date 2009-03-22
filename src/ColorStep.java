@@ -16,9 +16,12 @@
 */
 
 import java.awt.*;
+import java.io.*;
 
 public class ColorStep
 {
+	private static final int VERSION = 0;
+
 	public float pos = 0.0f;
 	public Color color = null;
 
@@ -26,6 +29,11 @@ public class ColorStep
 	{
 		pos = p;
 		color = c;
+	}
+
+	public ColorStep(DataInputStream in) throws IOException
+	{
+		readFromStream(in);
 	}
 
 	public ColorStep(ColorStep c)
@@ -38,5 +46,29 @@ public class ColorStep
 	public String toString()
 	{
 		return "CS[" + pos + ", " + color + "]";
+	}
+
+	public void writeToStream(DataOutputStream out) throws IOException
+	{
+		// ***************************************************
+		// Do not forget to increase VERSION on major changes.
+		// ***************************************************
+
+		out.writeInt(VERSION);
+
+		out.writeFloat(pos);
+		out.writeInt(color.getRGB());
+	}
+
+	private void readFromStream(DataInputStream in) throws IOException
+	{
+		if (in.readInt() > VERSION)
+		{
+			System.err.println("*** ColorStep: Can't read this object, too new!");
+			return;
+		}
+
+		pos = in.readFloat();
+		color = new Color(in.readInt(), true);
 	}
 }
