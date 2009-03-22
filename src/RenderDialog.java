@@ -101,7 +101,7 @@ public class RenderDialog extends JDialog
 				catch (NumberFormatException ex)
 				{
 					JOptionPane.showMessageDialog(subparent,
-						"Non-numeric input for width and/or size.", "Error", JOptionPane.ERROR_MESSAGE);
+						"Non-numeric input for width and/or height.", "Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 
