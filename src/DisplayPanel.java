@@ -35,6 +35,7 @@ public class DisplayPanel extends JPanel
 	protected final int DRAG_ZOOM_BOX = 0;
 	protected final int DRAG_PAN      = 1;
 	protected int typeOfDrag = DRAG_NONE;
+	public boolean boxKeepsRatio = false;
 
 	protected long displayStamp = 0;
 	protected long lastStamp = -1;
@@ -150,7 +151,16 @@ public class DisplayPanel extends JPanel
 				if (typeOfDrag == DRAG_ZOOM_BOX)
 				{
 					//System.out.println(e);
-					mouseEnd = e.getPoint();
+
+					if (boxKeepsRatio)
+					{
+						mouseEnd = respectRatio(mouseStart, e.getPoint());
+					}
+					else
+					{
+						mouseEnd = e.getPoint();
+					}
+
 					repaint();
 				}
 				
@@ -190,6 +200,28 @@ public class DisplayPanel extends JPanel
 		addMouseListener(m);
 		addMouseMotionListener(m);
 		addMouseWheelListener(m);
+	}
+
+	/**
+	 * Have a look at point a and b, set the y-value of b
+	 * so that it fits the current ratio of the panel.
+	 */
+	private Point respectRatio(Point a, Point b)
+	{
+		int w, h, y;
+		double ratio = (double)getWidth() / (double)getHeight();
+
+		// Get current width and calc height on this base
+		w = Math.abs(a.x - b.x);
+		h = (int)((double)w / ratio);
+
+		// Adjust new y value
+		if (b.y > a.y)
+			y = a.y + h;
+		else
+			y = a.y - h;
+
+		return new Point(b.x, y);
 	}
 
 	/**
