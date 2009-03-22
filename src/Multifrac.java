@@ -82,6 +82,111 @@ public class Multifrac extends JFrame
 		c_zoom.setText(df.format(p.zoom));
 	}
 
+	protected void loadScene()
+	{
+		JFileChooser chooser = new JFileChooser();
+
+		// set up filters
+		chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*."
+				+ EXTENSION + ")", EXTENSION));
+
+		if (lastDir != null)
+			chooser.setCurrentDirectory(lastDir);
+
+		// fire up the dialog
+		int returnVal = chooser.showOpenDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION)
+		{
+			// save last dir
+			lastDir = chooser.getCurrentDirectory();
+
+			File tfile = chooser.getSelectedFile().getAbsoluteFile();
+
+			try
+			{
+				// load stuff
+				FileInputStream fis = new FileInputStream(tfile);
+				DataInputStream dis = new DataInputStream(fis);
+
+				FractalParameters p = new FractalParameters(dis);
+				paramStack.clear(p);
+
+				// repaint stuff
+				rend.dispatchRedraw();
+				colorizer.repaint();
+				colorInside.repaint();
+				setCompValues(paramStack.get());
+
+				fis.close();
+			}
+			catch (Exception ex)
+			{
+				ex.printStackTrace();
+				JOptionPane.showMessageDialog(this,
+					"File could not be read:\n\"" + ex.getMessage() + "\"", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
+	protected void saveScene()
+	{
+		JFileChooser chooser = new JFileChooser();
+
+		// set up filters
+		chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*."
+				+ EXTENSION + ")", EXTENSION));
+
+		if (lastDir != null)
+			chooser.setCurrentDirectory(lastDir);
+
+		// fire up the dialog
+		int returnVal = chooser.showSaveDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION)
+		{
+			// save last dir
+			lastDir = chooser.getCurrentDirectory();
+
+			// save stuff
+			FractalParameters p = paramStack.get();
+			String tname = chooser.getSelectedFile().getAbsolutePath();
+
+			if (!tname.endsWith("." + EXTENSION))
+				tname += "." + EXTENSION;
+
+			File tfile = new File(tname);
+
+			// Ok, we're ready to go. Overwrite existing file?
+			// This should be the last question.
+			if (tfile.exists())
+			{
+				int ret = JOptionPane.showConfirmDialog(this,
+					tfile.getAbsolutePath() + "\n" +
+					"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
+				if (ret != JOptionPane.YES_OPTION)
+				{
+					saveScene();
+					return;
+				}
+			}
+
+			try
+			{
+				FileOutputStream fos = new FileOutputStream(tfile);
+				DataOutputStream dos = new DataOutputStream(fos);
+
+				p.writeToStream(dos);
+
+				fos.close();
+			}
+			catch (Exception ex)
+			{
+				ex.printStackTrace();
+				JOptionPane.showMessageDialog(this,
+					"File could not be saved:\n\"" + ex.getMessage() + "\"", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
 	public Multifrac()
 	{
 		final Multifrac parent = this;
@@ -118,48 +223,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JFileChooser chooser = new JFileChooser();
-
-				// set up filters
-				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*."
-						+ EXTENSION + ")", EXTENSION));
-
-				if (parent.lastDir != null)
-					chooser.setCurrentDirectory(parent.lastDir);
-
-				// fire up the dialog
-				int returnVal = chooser.showOpenDialog(parent);
-				if (returnVal == JFileChooser.APPROVE_OPTION)
-				{
-					// save last dir
-					parent.lastDir = chooser.getCurrentDirectory();
-
-					File tfile = chooser.getSelectedFile().getAbsoluteFile();
-
-					try
-					{
-						// load stuff
-						FileInputStream fis = new FileInputStream(tfile);
-						DataInputStream dis = new DataInputStream(fis);
-
-						FractalParameters p = new FractalParameters(dis);
-						parent.paramStack.clear(p);
-
-						// repaint stuff
-						parent.rend.dispatchRedraw();
-						parent.colorizer.repaint();
-						parent.colorInside.repaint();
-						parent.setCompValues(paramStack.get());
-
-						fis.close();
-					}
-					catch (Exception ex)
-					{
-						ex.printStackTrace();
-						JOptionPane.showMessageDialog(parent,
-							"File could not be read:\n\"" + ex.getMessage() + "\"", "Error", JOptionPane.ERROR_MESSAGE);
-					}
-				}
+				loadScene();
 			}
 		});
 
@@ -168,56 +232,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JFileChooser chooser = new JFileChooser();
-
-				// set up filters
-				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*."
-						+ EXTENSION + ")", EXTENSION));
-
-				if (parent.lastDir != null)
-					chooser.setCurrentDirectory(parent.lastDir);
-
-				// fire up the dialog
-				int returnVal = chooser.showSaveDialog(parent);
-				if (returnVal == JFileChooser.APPROVE_OPTION)
-				{
-					// save last dir
-					parent.lastDir = chooser.getCurrentDirectory();
-
-					// save stuff
-					FractalParameters p = parent.paramStack.get();
-					String tname = chooser.getSelectedFile().getAbsolutePath();
-
-					if (!tname.endsWith("." + EXTENSION))
-						tname += "." + EXTENSION;
-
-					File tfile = new File(tname);
-
-					// Ok, we're ready to go. Overwrite existing file?
-					// This should be the last question.
-					if (tfile.exists())
-					{
-						int ret = JOptionPane.showConfirmDialog(parent,
-							tfile.getAbsolutePath() + "\n" +
-							"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
-						if (ret != JOptionPane.YES_OPTION)
-							return;
-					}
-
-					try
-					{
-						FileOutputStream fos = new FileOutputStream(tfile);
-						DataOutputStream dos = new DataOutputStream(fos);
-
-						p.writeToStream(dos);
-
-						fos.close();
-					}
-					catch (Exception ex)
-					{
-						ex.printStackTrace();
-					}
-				}
+				saveScene();
 			}
 		});
 
@@ -226,7 +241,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				System.exit(0);
+				parent.processWindowEvent(new WindowEvent(parent, WindowEvent.WINDOW_CLOSING));
 			}
 		});
 
@@ -518,7 +533,26 @@ public class Multifrac extends JFrame
 
 		// Properties of the window itself
 		setTitle("Multifrac");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+
+		addWindowListener(new WindowAdapter()
+		{
+			@Override
+			public void windowClosing(WindowEvent e)
+			{
+				if (!parent.paramStack.get().saved)
+				{
+					int ret = JOptionPane.showConfirmDialog(parent,
+						"Scene not saved. Do it now?", "Unsaved", JOptionPane.YES_NO_CANCEL_OPTION);
+					if (ret == JOptionPane.YES_OPTION)
+						saveScene();
+					else if (ret == JOptionPane.CANCEL_OPTION)
+						return;
+				}
+
+				System.exit(0);
+			}
+		});
 
 		pack();
 		setLocationRelativeTo(null);
