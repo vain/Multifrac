@@ -16,20 +16,23 @@
 */
 
 import java.awt.*;
+import javax.swing.JLabel;
 
 public class SimpleGridBag extends GridBagLayout
 {
+	private GridBagConstraints gbc = new GridBagConstraints(); 
 	private Container cont = null;
 
 	public SimpleGridBag(Container cont)
 	{
 		super();
 		this.cont = cont;
+
+		gbc.insets = new Insets(2, 2, 2, 2);
 	}
 	
 	public void add(Component c, int x, int y, int w, int h, double wx, double wy)
 	{
-		GridBagConstraints gbc = new GridBagConstraints(); 
 		gbc.fill = GridBagConstraints.BOTH; 
 
 		gbc.gridx = x;
@@ -40,9 +43,22 @@ public class SimpleGridBag extends GridBagLayout
 		gbc.weightx = wx;
 		gbc.weighty = wy; 
 
-		gbc.insets = new Insets(2, 2, 2, 2);
-
 		setConstraints(c, gbc);
 		cont.add(c);
+	}
+
+	public void addLabel(String title, int x, int y, int w, int h, double wx, double wy)
+	{
+		add(new JLabel(title), x, y, w, h, wx, wy);
+	}
+
+	public void setInsets(Insets i)
+	{
+		gbc.insets = i;
+	}
+
+	public Insets getInsets()
+	{
+		return gbc.insets;
 	}
 }

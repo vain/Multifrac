@@ -25,6 +25,9 @@ public class ColorChooser
 {
 	private static class Dia extends JDialog
 	{
+		private Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+		//private Border commonBorder = BorderFactory.createRaisedBevelBorder();
+
 		private boolean OK = false;
 		private Color colorInitial = null;
 		private Color colorNew     = null;
@@ -37,8 +40,10 @@ public class ColorChooser
 		private JSpinner spin_s = null;
 		private JSpinner spin_v = null;
 
+		private Dimension colorButtonDimension = new Dimension(30, 30);
 		private JPanel prev_old = null;
 		private JPanel prev_new = null;
+		private JPanel[] presets = null;
 			
 		private ChangeListener rgb_listen = new ChangeListener()
 		{
@@ -202,81 +207,127 @@ public class ColorChooser
 
 		private void initPreviews()
 		{
-			//Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-			Border commonBorder = BorderFactory.createRaisedBevelBorder();
-
 			prev_old = new JPanel();
 			prev_old.setBackground(colorInitial);
-			prev_old.setPreferredSize(new Dimension(50, 20));
+			prev_old.setPreferredSize(colorButtonDimension);
 			prev_old.setBorder(commonBorder);
 
 			prev_new = new JPanel();
 			prev_new.setBackground(colorInitial);
-			prev_new.setPreferredSize(new Dimension(50, 20));
+			prev_new.setPreferredSize(colorButtonDimension);
 			prev_new.setBorder(commonBorder);
 		}
 
-		private void addComp(Component comp, Container cont,
-				int x, int y, int w, int h,
-				double wx, double wy, int marginRight)
+		private void initPresets()
 		{
-			GridBagConstraints c = new GridBagConstraints();
+			// Our preset colors
+			Color[] c = new Color[]
+			{
+				Color.black, Color.red, Color.green, Color.blue,
+				Color.white, Color.cyan, Color.magenta, Color.yellow
+			};
 
-			c.fill = GridBagConstraints.BOTH; 
-			c.insets = new Insets(2, 2, 2, marginRight);
+			// Create some Panels
+			presets = new JPanel[c.length];
+			for (int i = 0; i < c.length; i++)
+			{
+				presets[i] = new JPanel();
+				presets[i].setBackground(c[i]);
+				presets[i].setPreferredSize(colorButtonDimension);
+				presets[i].setBorder(commonBorder);
 
-			c.gridx = x;
-			c.gridy = y;
-
-			c.gridwidth = w;
-			c.gridheight = h;
-
-			c.weightx = wx;
-			c.weighty = wy;
-
-			cont.add(comp, c);
-		}
-
-		private void addLabl(String title, Container cont,
-				int x, int y, int w, int h,
-				double wx, double wy, int marginRight)
-		{
-			addComp(new JLabel(title), cont, x, y, w, h, wx, wy, marginRight);
+				// Listeners: On a mouse click, set the RGB-spinners.
+				// Their ChangeListeners will do all the remaining work.
+				final JPanel mine = presets[i];
+				mine.addMouseListener(new MouseAdapter()
+				{
+					@Override
+					public void mouseClicked(MouseEvent e)
+					{
+						Color bg = mine.getBackground();
+						spin_r.setValue(bg.getRed());
+						spin_g.setValue(bg.getGreen());
+						spin_b.setValue(bg.getBlue());
+					}
+				});
+			}
 		}
 
 		private void initComponents()
 		{
 			initSpinners();
 			initPreviews();
+			initPresets();
 
-			setLayout(new GridBagLayout());
+			SimpleGridBag sgb = new SimpleGridBag(getContentPane());
+			setLayout(sgb);
+
+			Insets normal = sgb.getInsets();
+			Insets margin = new Insets(normal.top, normal.left, normal.bottom, normal.right + 15);
 
 			// RGB-Spinners
-			addLabl("Red:",   this,  0, 0,  1, 1,  0.0, 0.0,  2);
-			addComp(spin_r,   this,  1, 0,  1, 1,  0.0, 0.0,  20);
-			addLabl("Green:", this,  0, 1,  1, 1,  0.0, 0.0,  2);
-			addComp(spin_g,   this,  1, 1,  1, 1,  0.0, 0.0,  20);
-			addLabl("Blue:",  this,  0, 2,  1, 1,  0.0, 0.0,  2);
-			addComp(spin_b,   this,  1, 2,  1, 1,  0.0, 0.0,  20);
+			sgb.setInsets(normal);
+			sgb.addLabel("Red:",   0, 0,  1, 1,  1.0, 1.0);
+
+			sgb.setInsets(margin);
+			sgb.add(spin_r,        1, 0,  1, 1,  1.0, 1.0);
+
+			sgb.setInsets(normal);
+			sgb.addLabel("Green:", 0, 1,  1, 1,  1.0, 1.0);
+
+			sgb.setInsets(margin);
+			sgb.add(spin_g,        1, 1,  1, 1,  1.0, 1.0);
+
+			sgb.setInsets(normal);
+			sgb.addLabel("Blue:",  0, 2,  1, 1,  1.0, 1.0);
+
+			sgb.setInsets(margin);
+			sgb.add(spin_b,        1, 2,  1, 1,  1.0, 1.0);
+			sgb.setInsets(normal);
 
 			// HSV-Spinners
-			addLabl("Hue:",        this,  2, 0,  1, 1,  0.0, 0.0,  2);
-			addComp(spin_h,        this,  3, 0,  1, 1,  0.0, 0.0,  2);
-			addLabl("Saturation:", this,  2, 1,  1, 1,  0.0, 0.0,  2);
-			addComp(spin_s,        this,  3, 1,  1, 1,  0.0, 0.0,  2);
-			addLabl("Value:",      this,  2, 2,  1, 1,  0.0, 0.0,  2);
-			addComp(spin_v,        this,  3, 2,  1, 1,  0.0, 0.0,  2);
+			sgb.addLabel("Hue:",        2, 0,  1, 1,  1.0, 1.0);
+			sgb.add(spin_h,             3, 0,  1, 1,  1.0, 1.0);
+			sgb.addLabel("Saturation:", 2, 1,  1, 1,  1.0, 1.0);
+			sgb.add(spin_s,             3, 1,  1, 1,  1.0, 1.0);
+			sgb.addLabel("Value:",      2, 2,  1, 1,  1.0, 1.0);
+			sgb.add(spin_v,             3, 2,  1, 1,  1.0, 1.0);
 
 			// Preview-Panels
 			JPanel ppan = new JPanel();
+			ppan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Preview"));
 			ppan.setLayout(new FlowLayout());
+			ppan.add(new JLabel("Old:"));
 			ppan.add(prev_old);
+			ppan.add(new JLabel("New:"));
 			ppan.add(prev_new);
-			addComp(ppan, this,  0, 3,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0,  2);
+			sgb.add(ppan, 0, 3,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0);
+
+			// Preset-Panels
+			JPanel presetpan = new JPanel();
+			presetpan.setBorder(BorderFactory.createTitledBorder(commonBorder, "Presets"));
+			presetpan.setLayout(new BoxLayout(presetpan, BoxLayout.Y_AXIS));
+			JPanel cur = new JPanel();
+			cur.setLayout(new FlowLayout());
+			// Use several containers to force a wrap...
+			for (int i = 0; i < presets.length; i++)
+			{
+				cur.add(presets[i]);
+
+				// Wrap at every 4 elements if it is NOT the last element
+				if (((i + 1) % 4) == 0 && i < presets.length - 1)
+				{
+					presetpan.add(cur);
+					cur = new JPanel();
+					cur.setLayout(new FlowLayout());
+				}
+			}
+			presetpan.add(cur);
+			sgb.add(presetpan, 0, 4,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0);
 
 			// Buttons
 			JPanel pan = new JPanel();
-			addComp(pan, this,  0, 4,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0,  2);
+			sgb.add(pan, 0, 5,  GridBagConstraints.REMAINDER, 1,  0.0, 0.0);
 
 			JButton okay = new JButton("OK");
 			JButton cancel = new JButton("Cancel");
