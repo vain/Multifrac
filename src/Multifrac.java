@@ -26,7 +26,7 @@ import java.io.*;
 public class Multifrac extends JFrame
 {
 	public static int numthreads = Runtime.getRuntime().availableProcessors();
-	public static final String EXTENSION = "mfd";
+	public static final String EXTENSION = "muf";
 
 	protected DisplayPanel rend = null;
 	protected ColorizerPanel colorizer = null;
@@ -43,6 +43,8 @@ public class Multifrac extends JFrame
 	protected JTextField c_zoom = new JTextField(10);
 
 	protected ParameterStack paramStack = new ParameterStack();
+
+	protected File lastDir = null;
 
 	private void setActiveType(int w)
 	{
@@ -86,6 +88,8 @@ public class Multifrac extends JFrame
 
 		// Build menu
 		JMenuBar menuBar = new JMenuBar();
+
+		// --- File menu
 		JMenu menuFile = new JMenu("File");
 
 		JMenuItem miLoad = new JMenuItem("Load ...");
@@ -99,6 +103,13 @@ public class Multifrac extends JFrame
 
 		menuBar.add(menuFile);
 
+		// --- Render menu
+		JMenu menuRender = new JMenu("Render");
+		JMenuItem miRenderToFile = new JMenuItem("Render to File ...");
+		menuRender.add(miRenderToFile);
+		
+		menuBar.add(menuRender);
+
 		setJMenuBar(menuBar);
 
 		// Action listeners for the menu
@@ -110,10 +121,14 @@ public class Multifrac extends JFrame
 				JFileChooser chooser = new JFileChooser();
 
 				// set up filters
-				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*.mfd)", EXTENSION));
+				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*."
+						+ EXTENSION + ")", EXTENSION));
+
+				if (parent.lastDir != null)
+					chooser.setCurrentDirectory(parent.lastDir);
 
 				// fire up the dialog
-				int returnVal = chooser.showSaveDialog(parent);
+				int returnVal = chooser.showOpenDialog(parent);
 				if (returnVal == JFileChooser.APPROVE_OPTION)
 				{
 					File tfile = chooser.getSelectedFile().getAbsoluteFile();
@@ -138,6 +153,12 @@ public class Multifrac extends JFrame
 					catch (Exception ex)
 					{
 						ex.printStackTrace();
+						JOptionPane.showMessageDialog(parent,
+							"File could not be read:\n\"" + ex.getMessage() + "\"", "Error", JOptionPane.ERROR_MESSAGE);
+					}
+					finally
+					{
+						parent.lastDir = chooser.getCurrentDirectory();
 					}
 				}
 			}
@@ -151,7 +172,11 @@ public class Multifrac extends JFrame
 				JFileChooser chooser = new JFileChooser();
 
 				// set up filters
-				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*.mfd)", EXTENSION));
+				chooser.setFileFilter(new FileNameExtensionFilter("Multifrac data (*."
+						+ EXTENSION + ")", EXTENSION));
+
+				if (parent.lastDir != null)
+					chooser.setCurrentDirectory(parent.lastDir);
 
 				// fire up the dialog
 				int returnVal = chooser.showSaveDialog(parent);
@@ -179,6 +204,10 @@ public class Multifrac extends JFrame
 					{
 						ex.printStackTrace();
 					}
+					finally
+					{
+						parent.lastDir = chooser.getCurrentDirectory();
+					}
 				}
 			}
 		});
@@ -192,6 +221,14 @@ public class Multifrac extends JFrame
 			}
 		});
 
+		miRenderToFile.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				new RenderDialog(parent, paramStack);
+			}
+		});
 
 		// Components
 		SimpleGridBag sgb_main = new SimpleGridBag(getContentPane());
@@ -353,19 +390,6 @@ public class Multifrac extends JFrame
 		JPanel panicpanel = new JPanel();
 		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
 
-		JButton renderToFile = new JButton("Render ...");
-		renderToFile.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				new RenderDialog(parent, paramStack);
-			}
-		});
-		panicpanel.add(renderToFile);
-
-		panicpanel.add(new JLabel(" "));
-
 		JButton undo = new JButton("Undo");
 		undo.addActionListener(new ActionListener()
 		{
@@ -396,7 +420,7 @@ public class Multifrac extends JFrame
 		});
 		panicpanel.add(redo);
 
-		panicpanel.add(new JLabel(" "));
+		panicpanel.add(new JSeparator(SwingConstants.VERTICAL));
 
 		JButton panic = new JButton("Reset");
 		panic.addActionListener(new ActionListener()

@@ -22,7 +22,7 @@ import java.io.*;
 
 public class FractalParameters
 {
-	private static final int VERSION = 0;
+	private static final int VERSION = 0x13380000;
 
 	protected static final double ZOOM_STEP = 0.9;
 
@@ -103,7 +103,7 @@ public class FractalParameters
 			gradient.add(new ColorStep(cs));
 	}
 
-	public FractalParameters(DataInputStream in) throws IOException
+	public FractalParameters(DataInputStream in) throws Exception
 	{
 		readFromStream(in);
 	}
@@ -283,12 +283,11 @@ public class FractalParameters
 			gradient.get(i).writeToStream(out);
 	}
 
-	private void readFromStream(DataInputStream in) throws IOException
+	private void readFromStream(DataInputStream in) throws Exception
 	{
 		if (in.readInt() > VERSION)
 		{
-			System.err.println("*** FractalParameters: Can't read this object, too new!");
-			return;
+			throw new InstantiationException("FractalParameters version too new or file type unknown.");
 		}
 
 		// Basic properties
@@ -317,7 +316,5 @@ public class FractalParameters
 		int num = in.readInt();
 		for (int i = 0; i < num; i++)
 			gradient.add(new ColorStep(in));
-
-		System.out.println(this);
 	}
 }

@@ -31,7 +31,7 @@ public class ColorStep
 		color = c;
 	}
 
-	public ColorStep(DataInputStream in) throws IOException
+	public ColorStep(DataInputStream in) throws Exception
 	{
 		readFromStream(in);
 	}
@@ -60,12 +60,11 @@ public class ColorStep
 		out.writeInt(color.getRGB());
 	}
 
-	private void readFromStream(DataInputStream in) throws IOException
+	private void readFromStream(DataInputStream in) throws Exception
 	{
 		if (in.readInt() > VERSION)
 		{
-			System.err.println("*** ColorStep: Can't read this object, too new!");
-			return;
+			throw new InstantiationException("ColorStep version too new.");
 		}
 
 		pos = in.readFloat();
