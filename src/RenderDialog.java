@@ -37,12 +37,103 @@ public class RenderDialog extends JDialog
 	private JButton    c_cancel = new JButton("Cancel");
 	private JComboBox  c_super  = null;
 
+	private FractalParameters param = null;
+
+	private String toSize(double s)
+	{
+		String[] suff = new String[] { "Bytes", "KB", "MB", "GB", "TB" };
+		int i = 0;
+		while (s > 1000.0 && i < suff.length - 1)
+		{
+			s /= 1000.0;
+			i++;
+		}
+
+		s = (int)(s * 100) / 100.0;
+		return s + " " + suff[i];
+	}
+
+	protected void startRendering()
+	{
+		// Usability checks...
+		try
+		{
+			param.size.width = new Integer(c_width.getText());
+			param.size.height = new Integer(c_height.getText());
+		}
+		catch (NumberFormatException ex)
+		{
+			JOptionPane.showMessageDialog(this,
+				"Non-numeric input for width and/or height.", "Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		File tfile = new File(c_file.getText());
+
+		File dir = null;
+		if (tfile != null)
+			dir = tfile.getParentFile();
+		if (dir == null || !dir.canWrite())
+		{
+			JOptionPane.showMessageDialog(this,
+				"I won't be able to write to this file.", "Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		
+		// Save a copy
+		lastSize = new Dimension(param.size);
+		lastFile = c_file.getText();
+		lastSuper = c_super.getSelectedIndex();
+
+		RenderSettings rset = new RenderSettings();
+		rset.param = param;
+		rset.tfile = tfile;
+
+		// Index 0 = Factor 1
+		// Index 1 = Factor 2
+		// Index 2 = Factor 4 ... --> 2^Index
+		rset.supersampling = (int)Math.pow(2.0, lastSuper);
+
+		// Check if the image fits into memory
+		double w = (double)param.getWidth();
+		double h = (double)param.getHeight();
+		double av = (double)Runtime.getRuntime().maxMemory();
+		double sz = 0;
+
+		if (rset.supersampling == 1)
+			sz = w * h * 4;
+		if (rset.supersampling >= 2)
+			sz = w * h * rset.supersampling * rset.supersampling * 1.5 * 4;
+
+		if (av < sz)
+		{
+			JOptionPane.showMessageDialog(this,
+				"I'm sorry, " + toSize(sz) + " memory needed to process this image but only " + toSize(av) + " available.\nTry increasing your heap space with \"-Xmx...\".", "Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		// Ok, we're ready to go. Overwrite existing file?
+		// This should be the last question.
+		if (tfile.exists())
+		{
+			int ret = JOptionPane.showConfirmDialog(this,
+				tfile.getAbsolutePath() + "\n" +
+				"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
+			if (ret != JOptionPane.YES_OPTION)
+				return;
+		}
+
+		// Dispatch job and wait until it's finished
+		new RenderExecutionDialog(this, rset);
+		dispose();
+	}
+
 	public RenderDialog(final Frame parent, ParameterStack paramStack)
 	{
 		super(parent, "Render to File", true);
 
 		// Create a local copy
-		final FractalParameters param = new FractalParameters(paramStack.get());
+		param = new FractalParameters(paramStack.get());
 
 		// Restore last size
 		if (lastSize != null)
@@ -78,108 +169,53 @@ public class RenderDialog extends JDialog
 		sgb.add(c_file,							1, 3, 1, 1, 1.0, 1.0);
 		sgb.add(c_file_chooser,					2, 3, 1, 1, 1.0, 1.0);
 
-		// TODO: FocusAdapter which selects everything when a text field gains focus.
-
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
 		buttonPanel.add(c_ok);
 		buttonPanel.add(c_cancel);
 		sgb.add(buttonPanel, 0, 4, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
-
+		
+		// One action listener that will fire up the rendering process
 		final RenderDialog subparent = this;
-		c_ok.addActionListener(new ActionListener()
+		ActionListener starter = new ActionListener()
 		{
-			private String toSize(double s)
-			{
-				String[] suff = new String[] { "Bytes", "KB", "MB", "GB", "TB" };
-				int i = 0;
-				while (s > 1000.0 && i < suff.length - 1)
-				{
-					s /= 1000.0;
-					i++;
-				}
-
-				s = (int)(s * 100) / 100.0;
-				return s + " " + suff[i];
-			}
-
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				// Usability checks...
-				try
-				{
-					param.size.width = new Integer(c_width.getText());
-					param.size.height = new Integer(c_height.getText());
-				}
-				catch (NumberFormatException ex)
-				{
-					JOptionPane.showMessageDialog(subparent,
-						"Non-numeric input for width and/or height.", "Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-
-				File tfile = new File(c_file.getText());
-
-				File dir = null;
-				if (tfile != null)
-					dir = tfile.getParentFile();
-				if (dir == null || !dir.canWrite())
-				{
-					JOptionPane.showMessageDialog(subparent,
-						"I won't be able to write to this file.", "Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-				
-				// Save a copy
-				lastSize = new Dimension(param.size);
-				lastFile = c_file.getText();
-				lastSuper = c_super.getSelectedIndex();
-
-				// Dispatch job and wait until it's finished
-				RenderSettings rset = new RenderSettings();
-				rset.param = param;
-				rset.tfile = tfile;
-
-				// Index 0 = Factor 1
-				// Index 1 = Factor 2
-				// Index 2 = Factor 4 ... --> 2^Index
-				rset.supersampling = (int)Math.pow(2.0, lastSuper);
-
-				// Check if the image fits into memory
-				double w = (double)param.getWidth();
-				double h = (double)param.getHeight();
-				double av = (double)Runtime.getRuntime().maxMemory();
-				double sz = 0;
-
-				if (rset.supersampling == 1)
-					sz = w * h * 4;
-				if (rset.supersampling >= 2)
-					sz = w * h * rset.supersampling * rset.supersampling * 1.5 * 4;
-
-				if (av < sz)
-				{
-					JOptionPane.showMessageDialog(subparent,
-						"I'm sorry, " + toSize(sz) + " needed to process this image but only " + toSize(av) + " available.\nTry increasing your heap space with \"-Xmx...\".", "Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-
-				// Ok, we're ready to go. Overwrite existing file?
-				// This should be the last question.
-				if (tfile.exists())
-				{
-					int ret = JOptionPane.showConfirmDialog(subparent,
-						tfile.getAbsolutePath() + "\n" +
-						"File already exists. Overwrite?", "File exists", JOptionPane.YES_NO_OPTION);
-					if (ret != JOptionPane.YES_OPTION)
-						return;
-				}
-
-				new RenderExecutionDialog(subparent, rset);
-				dispose();
+				subparent.startRendering();
 			}
-		});
+		};
 
+		// Add this listener to the text fields
+		c_width.addActionListener(starter);
+		c_height.addActionListener(starter);
+		c_file.addActionListener(starter);
+		c_ok.addActionListener(starter);
+
+		// Focus listeners for all text fields
+		JTextField[] av = new JTextField[] { c_width, c_height, c_file };
+		for (JTextField comp : av)
+		{
+			final JTextField text = comp;
+			text.addFocusListener(new FocusAdapter()
+			{
+				@Override
+				public void focusGained(FocusEvent e)
+				{
+					// Yap, to select text, you'll need to queue that.
+					SwingUtilities.invokeLater(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							text.selectAll();
+						}
+					});
+				}
+			});
+		}
+
+		// Some more actions
 		c_cancel.addActionListener(new ActionListener()
 		{
 			@Override
