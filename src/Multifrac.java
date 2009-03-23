@@ -278,11 +278,12 @@ public class Multifrac extends JFrame
 
 		// --- File menu
 		JMenu menuFile = new JMenu("File");
+		menuFile.setMnemonic(KeyEvent.VK_F);
 
-		JMenuItem miLoad = new JMenuItem("Open...");
-		JMenuItem miSave = new JMenuItem("Save...");
-		JMenuItem miImportColors = new JMenuItem("Import colors...");
-		JMenuItem miQuit = new JMenuItem("Quit");
+		JMenuItem miLoad = new JMenuItem("Open...", KeyEvent.VK_O);
+		JMenuItem miSave = new JMenuItem("Save...", KeyEvent.VK_S);
+		JMenuItem miImportColors = new JMenuItem("Import colors...", KeyEvent.VK_I);
+		JMenuItem miQuit = new JMenuItem("Quit", KeyEvent.VK_Q);
 
 		miLoad.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 		miSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
@@ -337,10 +338,11 @@ public class Multifrac extends JFrame
 
 		// --- Edit menu
 		JMenu menuEdit = new JMenu("Edit");
+		menuEdit.setMnemonic(KeyEvent.VK_E);
 
-		JMenuItem miUndo = new JMenuItem("Undo");
-		JMenuItem miRedo = new JMenuItem("Redo");
-		JMenuItem miReset = new JMenuItem("Reset");
+		JMenuItem miUndo = new JMenuItem("Undo", KeyEvent.VK_U);
+		JMenuItem miRedo = new JMenuItem("Redo", KeyEvent.VK_R);
+		JMenuItem miReset = new JMenuItem("Reset", KeyEvent.VK_E);
 
 		miUndo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK));
 		miRedo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK));
@@ -383,9 +385,11 @@ public class Multifrac extends JFrame
 
 		// --- Preview menu
 		JMenu menuPreview = new JMenu("Preview");
+		menuPreview.setMnemonic(KeyEvent.VK_P);
 
 		// supersampling submenu
 		JMenu menuSuper = new JMenu("Supersampling");
+		menuSuper.setMnemonic(KeyEvent.VK_S);
 		ButtonGroup group = new ButtonGroup();
 		String[] superDesc = new String[] { "None", "2x2", "4x4" };
 		int[] superVals = new int[] { 1, 2, 4 };
@@ -415,6 +419,7 @@ public class Multifrac extends JFrame
 		menuPreview.add(menuSuper);
 
 		JMenu menuAspect = new JMenu("Change ratio");
+		menuAspect.setMnemonic(KeyEvent.VK_R);
 		// define all aspect ratios with descriptions, create the items and add listeners
 		String[] aspectDesc = new String[] { "1:1", "4:3", "5:4", "16:10", "16:9" };
 		double[] aspectVals = new double[] { 1.0,  4.0 / 3.0,  5.0 / 4.0,  1.6,  16.0 / 9.0 };
@@ -440,6 +445,7 @@ public class Multifrac extends JFrame
 		menuPreview.add(new JSeparator());
 
 		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Show center crosshairs", true);
+		mitem.setMnemonic(KeyEvent.VK_H);
 		mitem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
 		mitem.addItemListener(new ItemListener()
 		{
@@ -454,6 +460,7 @@ public class Multifrac extends JFrame
 		menuPreview.add(mitem);
 
 		mitem = new JCheckBoxMenuItem("Show mouse crosshair", false);
+		mitem.setMnemonic(KeyEvent.VK_M);
 		mitem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.CTRL_MASK));
 		mitem.addItemListener(new ItemListener()
 		{
@@ -471,7 +478,8 @@ public class Multifrac extends JFrame
 
 		// --- Render menu
 		JMenu menuRender = new JMenu("Render");
-		JMenuItem miRenderToFile = new JMenuItem("Render to File...");
+		menuRender.setMnemonic(KeyEvent.VK_R);
+		JMenuItem miRenderToFile = new JMenuItem("Render to File...", KeyEvent.VK_R);
 		miRenderToFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
 		
 		menuRender.add(miRenderToFile);
