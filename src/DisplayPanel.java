@@ -65,7 +65,8 @@ public class DisplayPanel extends JPanel
 
 		// onResize
 		addComponentListener(new ComponentListener() 
-		{  
+		{
+			@Override
 			public void componentResized(ComponentEvent evt)
 			{
 				Component c = (Component)evt.getSource();

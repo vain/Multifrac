@@ -35,15 +35,15 @@ public class ColorizerPanel extends JPanel
 	private boolean dragHasPushed = false;
 
 	private Point lastMouseDrag = null;
-	private double zoom = 1.0;
-	private double offsetX = 0.0;
+	protected double zoom = 1.0;
+	protected double offsetX = 0.0;
 
 	private ArrayList<ColorStep> gg()
 	{
 		return paramStack.get().gradient;
 	}
 
-	private float toWorld(float x)
+	protected float toWorld(float x)
 	{
 		// Pixel --> [0, 1]
 		x /= (float)getWidth();
@@ -61,7 +61,7 @@ public class ColorizerPanel extends JPanel
 		return x;
 	}
 
-	private float toScreen(float x)
+	protected float toScreen(float x)
 	{
 		// Revert offset
 		x -= offsetX;
@@ -79,7 +79,7 @@ public class ColorizerPanel extends JPanel
 		return x;
 	}
 
-	private float toWorldOnlyScale(float x)
+	protected float toWorldOnlyScale(float x)
 	{
 		// Pixel --> [0, 1]
 		x /= (float)getWidth();
@@ -111,11 +111,13 @@ public class ColorizerPanel extends JPanel
 		}
 	}
 
-	public ColorizerPanel(final Component parent, ParameterStack p, final Runnable onChange)
+	public ColorizerPanel(final Component parent, ParameterStack p, final Runnable onChange,
+			final Runnable onScroll)
 	{
 		super();
 		paramStack = p;
 		setMinimumSize(new Dimension(1, 50));
+		setPreferredSize(new Dimension(1, 50));
 		setBackground(Color.gray);
 
 		// Mouse Events
@@ -284,6 +286,8 @@ public class ColorizerPanel extends JPanel
 					}
 
 					lastMouseDrag = e.getPoint();
+
+					onScroll.run();
 				}
 
 				repaint();
@@ -296,6 +300,8 @@ public class ColorizerPanel extends JPanel
 					zoomIn();
 				else
 					zoomOut();
+
+				onScroll.run();
 
 				repaint();
 			}
@@ -360,20 +366,23 @@ public class ColorizerPanel extends JPanel
 		float screenX0 = toScreen(0.0f);
 		float screenX1 = toScreen(1.0f);
 
+		float yCorner = 0.0f;
+		float yHeight = getHeight() - yCorner;
+
 		// Draw global border
 		g2.setPaint(Color.black);
 		g2.fill(new Rectangle2D.Float(
-					screenX0 - wid,                  0.0f,
-					screenX1 - screenX0 + 2.0f * wid, (float)getHeight()));
+					screenX0 - wid, yCorner,
+					screenX1 - screenX0 + 2.0f * wid, yHeight));
 
 		// Gradient
 		for (int i = 0; i < gg().size() - 1; i++)
 		{
 			float x1 = toScreen(gg().get(i).pos);
-			float y1 = 0.0f;
+			float y1 = yCorner;
 
 			float x2 = toScreen(gg().get(i + 1).pos);
-			float y2 = (float)getHeight();
+			float y2 = yHeight;
 
 			GradientPaint cur = new GradientPaint(
 					x1, y1, gg().get(i).color,
@@ -387,43 +396,43 @@ public class ColorizerPanel extends JPanel
 		{
 			g2.setPaint(Color.black);
 			g2.fill(new Rectangle2D.Double(
-						toScreen(gg().get(i).pos) - wid - mar, 0.0,
-						2.0 * (wid + mar), getHeight()));
+						toScreen(gg().get(i).pos) - wid - mar, yCorner,
+						2.0 * (wid + mar), yHeight));
 
 			if (i == selectedHandle)
 				g2.setPaint(Color.red);
 			else
 				g2.setPaint(Color.yellow);
 			g2.fill(new Rectangle2D.Double(
-						toScreen(gg().get(i).pos) - wid, 0.0,
-						2.0 * wid, getHeight()));
+						toScreen(gg().get(i).pos) - wid, yCorner,
+						2.0 * wid, yHeight));
 		}
 
 		// First and last Handle
 		g2.setPaint(Color.black);
 		g2.fill(new Rectangle2D.Double(
-					screenX0, 0.0,
-					(3.0 * wid) + mar, getHeight()));
+					screenX0, yCorner,
+					(3.0 * wid) + mar, yHeight));
 
 		if (0 == selectedHandle)
 			g2.setPaint(Color.red);
 		else
 			g2.setPaint(Color.yellow.darker());
 		g2.fill(new Rectangle2D.Double(
-					screenX0, 0.0,
-					3.0 * wid, getHeight()));
+					screenX0, yCorner,
+					3.0 * wid, yHeight));
 
 		g2.setPaint(Color.black);
 		g2.fill(new Rectangle2D.Double(
-					screenX1 - 3.0 * wid - mar, 0.0,
-					(3.0 * wid) + mar, getHeight()));
+					screenX1 - 3.0 * wid - mar, yCorner,
+					(3.0 * wid) + mar, yHeight));
 
 		if (gg().size() - 1 == selectedHandle)
 			g2.setPaint(Color.red);
 		else
 			g2.setPaint(Color.yellow.darker());
 		g2.fill(new Rectangle2D.Double(
-					screenX1 - 3.0 * wid, 0.0,
-					3.0 * wid, getHeight()));
+					screenX1 - 3.0 * wid, yCorner,
+					3.0 * wid, yHeight));
 	}
 }

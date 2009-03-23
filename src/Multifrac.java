@@ -20,6 +20,7 @@ import javax.swing.border.*;
 import javax.swing.filechooser.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.*;
 import java.text.*;
 import java.io.*;
 
@@ -591,7 +592,35 @@ public class Multifrac extends JFrame
 
 		sgb_main.add(loc, 0, 1, 3, 1, 1.0, 0.0);
 
-		// ColorChooser Panel
+		// ColorChooser MeasureBar and Panel
+		final JPanel measureBar = new JPanel()
+		{
+			@Override
+			public void paintComponent(Graphics g)
+			{
+				super.paintComponent(g);
+				Graphics2D g2 = (Graphics2D)g;
+
+				// Get the points "0" and "full width" of the colorizer panel
+				// in its world coordinates.
+				float a = colorizer.toWorld(0);
+				float b = colorizer.toWorld(colorizer.getWidth());
+
+				// Convert this into the scale of this panel
+				float x = a * getWidth();
+				float w = b * getWidth() - x;
+
+				// Draw a rectangle which indicates where we are.
+				g2.setPaint(Color.gray);
+				g2.fill(new Rectangle2D.Float(
+							x, 0.0f,
+							w, (float)getHeight()));
+			}
+		};
+		measureBar.setBorder(commonBorder);
+		measureBar.setPreferredSize(new Dimension(1, 8));
+		sgb_main.add(measureBar, 0, 3, 1, 1, 0.0, 0.0);
+
 		Runnable colorOnChange = new Runnable()
 		{
 			@Override
@@ -600,16 +629,26 @@ public class Multifrac extends JFrame
 				rend.dispatchRedraw();
 			}
 		};
-		colorizer = new ColorizerPanel(this, paramStack, colorOnChange);
+		Runnable onScroll = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				// This will be executed when the ColorizerPanel is zoomed or scrolled.
+				// It will refresh the MeasureBar.
+				measureBar.repaint();
+			}
+		};
+		colorizer = new ColorizerPanel(this, paramStack, colorOnChange, onScroll);
 		colorizer.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		colorizer.setBorder(commonBorder);
-		sgb_main.add(colorizer, 0, 3, 1, 1, 1.0, 0.0);
+		sgb_main.add(colorizer, 0, 4, 1, 1, 1.0, 0.0);
 
 		// BackgroundColorPanel
 		colorInside = new SingleColorPanel("Inside", this, paramStack, colorOnChange);
 		colorInside.setBorder(commonBorder);
 		colorInside.setPreferredSize(new Dimension(50, 50));
-		sgb_main.add(colorInside, 1, 3, 1, 1, 0.0, 0.0);
+		sgb_main.add(colorInside, 1, 3, 1, 2, 0.0, 0.0);
 
 		// Listeners: TYPE
 		// An action listener which catches the users clicks.
@@ -692,7 +731,7 @@ public class Multifrac extends JFrame
 		});
 		panicpanel.add(panic);
 		
-		sgb_main.add(panicpanel, 0, 4, 3, 1, 1.0, 0.0);
+		sgb_main.add(panicpanel, 0, 5, 3, 1, 1.0, 0.0);
 
 		// Listener: ADAPTIVE
 		// An action listener which catches the users clicks.
