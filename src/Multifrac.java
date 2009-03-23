@@ -396,8 +396,8 @@ public class Multifrac extends JFrame
 
 		JMenu menuAspect = new JMenu("Change ratio");
 		// define all aspect ratios with descriptions, create the items and add listeners
-		String[] aspectDesc = new String[] { "1:1", "4:3", "16:10", "16:9" };
-		double[] aspectVals = new double[] { 1.0, 4.0 / 3.0, 1.6, 16.0 / 9.0 };
+		String[] aspectDesc = new String[] { "1:1", "4:3", "5:4", "16:10", "16:9" };
+		double[] aspectVals = new double[] { 1.0,  4.0 / 3.0,  5.0 / 4.0,  1.6,  16.0 / 9.0 };
 		for (int i = 0; i < aspectVals.length; i++)
 		{
 			final String desc = aspectDesc[i];
