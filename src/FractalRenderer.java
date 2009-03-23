@@ -262,10 +262,6 @@ public class FractalRenderer extends Thread
 					muh = (double)n + 1.0f - Math.log10(Math.log10(Math.sqrt(sqr_abs_z))) / logTwoBaseTen;
 					muh /= nmax;
 
-					// Apply an extra square root to push smaller values. This allows
-					// an easier selection of colors via the colorizer.
-					muh = Math.sqrt(muh);
-
 					// Linear interpolation between marks
 					if (muh >= 1.0)
 					{

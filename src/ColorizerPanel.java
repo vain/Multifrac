@@ -23,8 +23,9 @@ import java.util.*;
 
 public class ColorizerPanel extends JPanel
 {
-	private double wid = 2.0;
-	private double mar = 2.0;
+	private float wid = 2.0f;
+	private float mar = 2.0f;
+	private static final double ZOOM_STEP = 0.9;
 
 	private static final double PICKING_EPSILON = 0.01;
 	private int selectedHandle = -1;
@@ -33,9 +34,81 @@ public class ColorizerPanel extends JPanel
 	private ParameterStack paramStack = null;
 	private boolean dragHasPushed = false;
 
+	private Point lastMouseDrag = null;
+	private double zoom = 1.0;
+	private double offsetX = 0.0;
+
 	private ArrayList<ColorStep> gg()
 	{
 		return paramStack.get().gradient;
+	}
+
+	private float toWorld(float x)
+	{
+		// Pixel --> [0, 1]
+		x /= (float)getWidth();
+
+		// Zoom at 0.5
+		x -= 0.5;
+		x *= zoom;
+		x += 0.5;
+
+		// Apply offset
+		x += offsetX;
+
+		//System.out.println("toWorld() = " + x);
+
+		return x;
+	}
+
+	private float toScreen(float x)
+	{
+		// Revert offset
+		x -= offsetX;
+
+		// UnZoom at 0.5
+		x -= 0.5;
+		x /= zoom;
+		x += 0.5;
+
+		// [0, 1] --> Pixel
+		x *= (float)getWidth();
+
+		//System.out.println("toScreen() = " + x);
+
+		return x;
+	}
+
+	private float toWorldOnlyScale(float x)
+	{
+		// Pixel --> [0, 1]
+		x /= (float)getWidth();
+
+		// Zoom at 0.0
+		x *= zoom;
+
+		return x;
+	}
+
+	private double pickingEpsilon()
+	{
+		return zoom * PICKING_EPSILON;
+	}
+
+	private void zoomIn()
+	{
+		zoom *= ZOOM_STEP;
+	}
+
+	private void zoomOut()
+	{
+		zoom /= ZOOM_STEP;
+
+		if (zoom > 1.0)
+		{
+			offsetX = 0.0;
+			zoom = 1.0;
+		}
 	}
 
 	public ColorizerPanel(final Component parent, ParameterStack p, final Runnable onChange)
@@ -43,6 +116,7 @@ public class ColorizerPanel extends JPanel
 		super();
 		paramStack = p;
 		setMinimumSize(new Dimension(1, 50));
+		setBackground(Color.gray);
 
 		// Mouse Events
 		MouseAdapter m = new MouseAdapter()
@@ -54,14 +128,14 @@ public class ColorizerPanel extends JPanel
 				dragHasPushed = false;
 
 				// Picking, this is done on *every* mouse down event
-				float relative = (float)e.getPoint().x / getWidth();
+				float relative = toWorld(e.getPoint().x);
 				//System.out.println(relative);
 
 				int lastSelected = selectedHandle;
 				selectedHandle = -1;
 				for (int i = 0; i < gg().size(); i++)
 				{
-					if (Math.abs(gg().get(i).pos - relative) < PICKING_EPSILON)
+					if (Math.abs(gg().get(i).pos - relative) < pickingEpsilon())
 					{
 						selectedHandle = i;
 						//System.out.println("Selected: " + i);
@@ -134,12 +208,15 @@ public class ColorizerPanel extends JPanel
 				{
 					onChange.run();
 				}
+
+				// Reset value for dragging the panel
+				lastMouseDrag = null;
 			}
 
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				System.out.println("Click: " + e.getClickCount() + ", " + selectedHandle);
+				//System.out.println("Click: " + e.getClickCount() + ", " + selectedHandle);
 				if (e.getClickCount() >= 2 && selectedHandle != -1)
 				{
 					// Sadly, the JColorChooser can cause deadlocks.
@@ -165,6 +242,10 @@ public class ColorizerPanel extends JPanel
 						onChange.run();
 					}
 				}
+				else if (e.getClickCount() >= 2 && e.getButton() == MouseEvent.BUTTON2)
+				{
+					dumpGradient(gg());
+				}
 
 				repaint();
 			}
@@ -182,21 +263,46 @@ public class ColorizerPanel extends JPanel
 						paramStack.push();
 					}
 
-					float relative = (float)e.getPoint().x / getWidth();
+					float relative = toWorld(e.getPoint().x);
 					if (relative >= gg().get(selectedHandle + 1).pos)
-						gg().get(selectedHandle).pos = gg().get(selectedHandle + 1).pos - (float)PICKING_EPSILON;
+						gg().get(selectedHandle).pos = gg().get(selectedHandle + 1).pos - (float)pickingEpsilon();
 					else if (relative <= gg().get(selectedHandle - 1).pos)
-						gg().get(selectedHandle).pos = gg().get(selectedHandle - 1).pos + (float)PICKING_EPSILON;
+						gg().get(selectedHandle).pos = gg().get(selectedHandle - 1).pos + (float)pickingEpsilon();
 					else
 						gg().get(selectedHandle).pos = relative;
 
 					triggerCallback = true;
-					repaint();
 				}
+				// Scroll the panel?
+				else
+				{
+					if (lastMouseDrag != null)
+					{
+						int dx = e.getPoint().x - lastMouseDrag.x;
+						double fdx = toWorldOnlyScale(dx);
+						offsetX -= fdx;
+					}
+
+					lastMouseDrag = e.getPoint();
+				}
+
+				repaint();
+			}
+
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e)
+			{
+				if (e.getWheelRotation() > 0)
+					zoomIn();
+				else
+					zoomOut();
+
+				repaint();
 			}
 		};
 		addMouseListener(m);
 		addMouseMotionListener(m);
+		addMouseWheelListener(m);
 	}
 
 	public static ArrayList<ColorStep> getDefaultGradient()
@@ -209,6 +315,7 @@ public class ColorizerPanel extends JPanel
 		g.add(new ColorStep(0.8675f, Color.black));
 		g.add(new ColorStep(1.0f,    Color.black));
 		*/
+		/*
 		g.add(new ColorStep(0.0f,    Color.white));
 		g.add(new ColorStep(0.395f,  Color.black));
 		g.add(new ColorStep(0.504f,  Color.white));
@@ -216,12 +323,30 @@ public class ColorizerPanel extends JPanel
 		g.add(new ColorStep(0.648f,  Color.red));
 		g.add(new ColorStep(0.737f,  Color.black));
 		g.add(new ColorStep(1.0f,    Color.white));
+		*/
+		g.add(new ColorStep(0.0f, new Color(0xffffffff)));
+		g.add(new ColorStep(0.16040957f, new Color(0xff000000)));
+		g.add(new ColorStep(0.221843f, new Color(0xffffffff)));
+		g.add(new ColorStep(0.28156996f, new Color(0xffffff00)));
+		g.add(new ColorStep(0.34300342f, new Color(0xffff0000)));
+		g.add(new ColorStep(0.44709897f, new Color(0xff000000)));
+		g.add(new ColorStep(1.0f, new Color(0xffffffff)));
 		return g;
 	}
 
 	public static Color getDefaultInside()
 	{
 		return Color.white;
+	}
+
+	private static void dumpGradient(ArrayList<ColorStep> g)
+	{
+		for (int i = 0; i < g.size(); i++)
+		{
+			int argb = g.get(i).color.getRGB();
+			System.out.println("g.add(new ColorStep(" + Float.toString(g.get(i).pos) + "f"
+					+ ", new Color(0x" + Integer.toHexString(argb) + ")));");
+		}
 	}
 
 	@Override
@@ -232,20 +357,29 @@ public class ColorizerPanel extends JPanel
 		Graphics2D g2 = (Graphics2D)g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+		float screenX0 = toScreen(0.0f);
+		float screenX1 = toScreen(1.0f);
+
+		// Draw global border
+		g2.setPaint(Color.black);
+		g2.fill(new Rectangle2D.Float(
+					screenX0 - wid,                  0.0f,
+					screenX1 - screenX0 + 2.0f * wid, (float)getHeight()));
+
 		// Gradient
 		for (int i = 0; i < gg().size() - 1; i++)
 		{
-			float x1 = gg().get(i).pos * (float)getWidth();
+			float x1 = toScreen(gg().get(i).pos);
 			float y1 = 0.0f;
 
-			float x2 = gg().get(i + 1).pos * (float)getWidth();
+			float x2 = toScreen(gg().get(i + 1).pos);
 			float y2 = (float)getHeight();
 
 			GradientPaint cur = new GradientPaint(
 					x1, y1, gg().get(i).color,
 					x2, y1, gg().get(i + 1).color);
 			g2.setPaint(cur);
-			g2.fill(new Rectangle2D.Double(x1, y1, x2, y2));
+			g2.fill(new Rectangle2D.Double(x1, y1, x2 - x1, y2));
 		}
 
 		// Inner Handles
@@ -253,7 +387,7 @@ public class ColorizerPanel extends JPanel
 		{
 			g2.setPaint(Color.black);
 			g2.fill(new Rectangle2D.Double(
-						gg().get(i).pos * getWidth() - wid - mar, 0.0,
+						toScreen(gg().get(i).pos) - wid - mar, 0.0,
 						2.0 * (wid + mar), getHeight()));
 
 			if (i == selectedHandle)
@@ -261,35 +395,35 @@ public class ColorizerPanel extends JPanel
 			else
 				g2.setPaint(Color.yellow);
 			g2.fill(new Rectangle2D.Double(
-						gg().get(i).pos * getWidth() - wid, 0.0,
+						toScreen(gg().get(i).pos) - wid, 0.0,
 						2.0 * wid, getHeight()));
 		}
 
 		// First and last Handle
 		g2.setPaint(Color.black);
 		g2.fill(new Rectangle2D.Double(
-					0.0, 0.0,
+					screenX0, 0.0,
 					(3.0 * wid) + mar, getHeight()));
 
 		if (0 == selectedHandle)
 			g2.setPaint(Color.red);
 		else
-			g2.setPaint(Color.yellow);
+			g2.setPaint(Color.yellow.darker());
 		g2.fill(new Rectangle2D.Double(
-					0.0, 0.0,
+					screenX0, 0.0,
 					3.0 * wid, getHeight()));
 
 		g2.setPaint(Color.black);
 		g2.fill(new Rectangle2D.Double(
-					getWidth() - 3.0 * wid - mar, 0.0,
+					screenX1 - 3.0 * wid - mar, 0.0,
 					(3.0 * wid) + mar, getHeight()));
 
 		if (gg().size() - 1 == selectedHandle)
 			g2.setPaint(Color.red);
 		else
-			g2.setPaint(Color.yellow);
+			g2.setPaint(Color.yellow.darker());
 		g2.fill(new Rectangle2D.Double(
-					getWidth() - 3.0 * wid, 0.0,
+					screenX1 - 3.0 * wid, 0.0,
 					3.0 * wid, getHeight()));
 	}
 }
