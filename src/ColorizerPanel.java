@@ -23,8 +23,6 @@ import java.util.*;
 
 public class ColorizerPanel extends JPanel
 {
-	private float wid = 2.0f;
-	private float mar = 2.0f;
 	private static final double ZOOM_STEP = 0.9;
 
 	private static final double PICKING_EPSILON = 0.01;
@@ -369,11 +367,15 @@ public class ColorizerPanel extends JPanel
 		float yCorner = 0.0f;
 		float yHeight = getHeight() - yCorner;
 
-		// Draw global border
-		g2.setPaint(Color.black);
+		// Draw some nice stripes which are supposed to indicate that the
+		// user has scrolled out of the valid area.
+		GradientPaint warning = new GradientPaint(
+				0.0f, 0.0f, Color.red,
+				2.0f, 2.0f, Color.black, true);
+		g2.setPaint(warning);
 		g2.fill(new Rectangle2D.Float(
-					screenX0 - wid, yCorner,
-					screenX1 - screenX0 + 2.0f * wid, yHeight));
+					0.0f, yCorner,
+					getWidth(), yHeight));
 
 		// Gradient
 		for (int i = 0; i < gg().size() - 1; i++)
@@ -392,47 +394,32 @@ public class ColorizerPanel extends JPanel
 		}
 
 		// Inner Handles
-		for (int i = 1; i < gg().size() - 1; i++)
+		for (int i = 0; i < gg().size(); i++)
 		{
+			float wid = 2.0f;
+			float mar = 3.0f;
+
+			if (i < 1 || i >= gg().size() - 1)
+			{
+				wid *= 3.0;
+			}
+
+			// Black, white
 			g2.setPaint(Color.black);
 			g2.fill(new Rectangle2D.Double(
 						toScreen(gg().get(i).pos) - wid - mar, yCorner,
 						2.0 * (wid + mar), yHeight));
 
-			if (i == selectedHandle)
-				g2.setPaint(Color.red);
-			else
-				g2.setPaint(Color.yellow);
+			g2.setPaint(i == selectedHandle ? Color.red : Color.white);
+			g2.fill(new Rectangle2D.Double(
+						toScreen(gg().get(i).pos) - wid - 0.5 * mar, yCorner,
+						2.0 * (wid + mar) - mar, yHeight));
+
+			// The color itself
+			g2.setPaint(gg().get(i).color);
 			g2.fill(new Rectangle2D.Double(
 						toScreen(gg().get(i).pos) - wid, yCorner,
 						2.0 * wid, yHeight));
 		}
-
-		// First and last Handle
-		g2.setPaint(Color.black);
-		g2.fill(new Rectangle2D.Double(
-					screenX0, yCorner,
-					(3.0 * wid) + mar, yHeight));
-
-		if (0 == selectedHandle)
-			g2.setPaint(Color.red);
-		else
-			g2.setPaint(Color.yellow.darker());
-		g2.fill(new Rectangle2D.Double(
-					screenX0, yCorner,
-					3.0 * wid, yHeight));
-
-		g2.setPaint(Color.black);
-		g2.fill(new Rectangle2D.Double(
-					screenX1 - 3.0 * wid - mar, yCorner,
-					(3.0 * wid) + mar, yHeight));
-
-		if (gg().size() - 1 == selectedHandle)
-			g2.setPaint(Color.red);
-		else
-			g2.setPaint(Color.yellow.darker());
-		g2.fill(new Rectangle2D.Double(
-					screenX1 - 3.0 * wid, yCorner,
-					3.0 * wid, yHeight));
 	}
 }
