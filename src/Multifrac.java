@@ -132,6 +132,10 @@ public class Multifrac extends JFrame
 		if (p == null)
 			return;
 
+		// Set current size
+		p.updateSize(rend.getSize());
+
+		// Clear stack and place this item on its top
 		paramStack.clear(p);
 
 		// repaint stuff

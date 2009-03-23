@@ -22,7 +22,7 @@ import java.io.*;
 
 public class FractalParameters
 {
-	private static final int VERSION = 0x13380000;
+	private static final int VERSION = 0x13380001;
 
 	protected static final double ZOOM_STEP = 0.9;
 
@@ -270,9 +270,6 @@ public class FractalParameters
 		out.writeBoolean(adaptive);
 		out.writeDouble(zoom);
 
-		out.writeInt(size.width);
-		out.writeInt(size.height);
-
 		out.writeDouble(centerOffset.getX());
 		out.writeDouble(centerOffset.getY());
 
@@ -292,9 +289,9 @@ public class FractalParameters
 
 	private void readFromStream(DataInputStream in) throws Exception
 	{
-		if (in.readInt() > VERSION)
+		if (in.readInt() != VERSION)
 		{
-			throw new InstantiationException("FractalParameters version too new or file type unknown.");
+			throw new InstantiationException("FractalParameters: Header mismatch.");
 		}
 
 		// Basic properties
@@ -304,10 +301,6 @@ public class FractalParameters
 		nmax     = in.readInt();
 		adaptive = in.readBoolean();
 		zoom     = in.readDouble();
-
-		int ix = in.readInt();
-		int iy = in.readInt();
-		size = new Dimension(ix, iy);
 
 		double dx = in.readDouble();
 		double dy = in.readDouble();

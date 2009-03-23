@@ -62,9 +62,9 @@ public class ColorStep
 
 	private void readFromStream(DataInputStream in) throws Exception
 	{
-		if (in.readInt() > VERSION)
+		if (in.readInt() != VERSION)
 		{
-			throw new InstantiationException("ColorStep version too new or unknown.");
+			throw new InstantiationException("ColorStep: Header mismatch.");
 		}
 
 		pos = in.readFloat();
