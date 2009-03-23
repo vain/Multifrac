@@ -121,6 +121,11 @@ public class ColorChooser
 			colorNew = colorInitial;
 
 			initComponents();
+
+			// Ways to dispose this dialog
+			setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			// Press escape
+			CompHelp.addDisposeOnEscape(this);
 		}
 
 		public boolean getOK()

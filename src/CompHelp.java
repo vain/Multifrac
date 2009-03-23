@@ -76,4 +76,22 @@ public class CompHelp
 
 		which.setLocation(loc);
 	}
+
+	/**
+	 * Add an action to the action map which disposes this dialog
+	 * when ESCAPE is pressed.
+	 */
+	public static void addDisposeOnEscape(final JDialog dia)
+	{
+		InputMap aof = dia.getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		aof.put(KeyStroke.getKeyStroke("ESCAPE"), "dispose");
+		dia.getRootPane().getActionMap().put("dispose", new AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				dia.dispose();
+			}
+		});
+	}
 }
