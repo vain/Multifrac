@@ -259,24 +259,8 @@ public class RenderDialog extends JDialog
 		});
 
 		pack();
-		center(this, parent);
+		CompHelp.center(this, parent);
 		setVisible(true);
-	}
-
-	private static void center(Component which, Component parent)
-	{
-		Point loc         = parent.getLocationOnScreen();
-		Dimension parsize = parent.getSize();
-
-		loc.x += parsize.width  / 2;
-		loc.y += parsize.height / 2;
-
-		Dimension mySize = which.getSize();
-
-		loc.x -= mySize.width  / 2;
-		loc.y -= mySize.height / 2;
-
-		which.setLocation(loc);
 	}
 
 	private static class RenderSettings
@@ -451,12 +435,12 @@ public class RenderDialog extends JDialog
 
 							me.lblStatus.setText(s);
 							pack();
-							center(me, parent);
+							CompHelp.center(me, parent);
 						}
 					});
 
 			pack();
-			center(this, parent);
+			CompHelp.center(this, parent);
 			setVisible(true);
 		}
 	}

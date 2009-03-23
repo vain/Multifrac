@@ -57,4 +57,23 @@ public class CompHelp
 			addSelectOnFocus(comp);
 		}
 	}
+
+	/**
+	 * Center one component on another.
+	 */
+	public static void center(Component which, Component parent)
+	{
+		Point loc         = parent.getLocationOnScreen();
+		Dimension parsize = parent.getSize();
+
+		loc.x += parsize.width  / 2;
+		loc.y += parsize.height / 2;
+
+		Dimension mySize = which.getSize();
+
+		loc.x -= mySize.width  / 2;
+		loc.y -= mySize.height / 2;
+
+		which.setLocation(loc);
+	}
 }
