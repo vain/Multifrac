@@ -259,9 +259,9 @@ public class Multifrac extends JFrame
 		// --- File menu
 		JMenu menuFile = new JMenu("File");
 
-		JMenuItem miLoad = new JMenuItem("Load ...");
-		JMenuItem miSave = new JMenuItem("Save ...");
-		JMenuItem miImportColors = new JMenuItem("Import colors ...");
+		JMenuItem miLoad = new JMenuItem("Load...");
+		JMenuItem miSave = new JMenuItem("Save...");
+		JMenuItem miImportColors = new JMenuItem("Import colors...");
 		JMenuItem miQuit = new JMenuItem("Quit");
 
 		miLoad.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
@@ -437,7 +437,7 @@ public class Multifrac extends JFrame
 
 		// --- Render menu
 		JMenu menuRender = new JMenu("Render");
-		JMenuItem miRenderToFile = new JMenuItem("Render to File ...");
+		JMenuItem miRenderToFile = new JMenuItem("Render to File...");
 		miRenderToFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
 		
 		menuRender.add(miRenderToFile);
