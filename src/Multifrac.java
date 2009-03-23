@@ -43,8 +43,19 @@ public class Multifrac extends JFrame
 	protected JTextField c_zoom = new JTextField(10);
 
 	protected ParameterStack paramStack = new ParameterStack();
+	protected FractalParameters saved = null;
 
 	protected File lastDir = null;
+
+	private boolean isSaved(FractalParameters p)
+	{
+		return (saved == p);
+	}
+
+	private void setSaved(FractalParameters p)
+	{
+		saved = p;
+	}
 
 	private void setActiveType(int w)
 	{
@@ -110,7 +121,6 @@ public class Multifrac extends JFrame
 				DataInputStream dis = new DataInputStream(fis);
 
 				paramOut = new FractalParameters(dis);
-				paramOut.saved = true;
 
 				fis.close();
 			}
@@ -137,6 +147,9 @@ public class Multifrac extends JFrame
 
 		// Clear stack and place this item on its top
 		paramStack.clear(p);
+
+		// Set this item as "saved"
+		setSaved(p);
 
 		// repaint stuff
 		rend.dispatchRedraw();
@@ -214,6 +227,9 @@ public class Multifrac extends JFrame
 				p.writeToStream(dos);
 
 				fos.close();
+
+				// Ok, done. Now set this item as "saved".
+				setSaved(p);
 			}
 			catch (Exception ex)
 			{
@@ -732,7 +748,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
-				if (!parent.paramStack.get().saved)
+				if (!isSaved(parent.paramStack.get()))
 				{
 					int ret = JOptionPane.showConfirmDialog(parent,
 						"Scene not saved. Do it now?", "Unsaved", JOptionPane.YES_NO_CANCEL_OPTION);
@@ -745,6 +761,9 @@ public class Multifrac extends JFrame
 				System.exit(0);
 			}
 		});
+
+		// Set initial "saved" item
+		setSaved(paramStack.get());
 
 		pack();
 		setLocationRelativeTo(null);

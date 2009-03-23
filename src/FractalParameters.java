@@ -44,8 +44,6 @@ public class FractalParameters
 	public Color colorInside;
 	public Dimension size = new Dimension(100, 100);
 
-	public boolean saved = false;
-
 	@Override
 	public String toString()
 	{
@@ -83,8 +81,6 @@ public class FractalParameters
 
 	public FractalParameters(FractalParameters p)
 	{
-		// Important: Do *NOT* copy the "saved" flag!
-
 		// Copy primitives
 		type = p.type;
 		nmax = p.nmax;
@@ -282,9 +278,6 @@ public class FractalParameters
 		out.writeInt(gradient.size());
 		for (int i = 0; i < gradient.size(); i++)
 			gradient.get(i).writeToStream(out);
-
-		// Set saved flag
-		saved = true;
 	}
 
 	private void readFromStream(DataInputStream in) throws Exception

@@ -20,16 +20,9 @@ import java.util.ArrayDeque;
 
 public class ParameterStack
 {
-	private FractalParameters current = null;
+	private FractalParameters current = new FractalParameters();
 	private Deque<FractalParameters> undo = new ArrayDeque<FractalParameters>();
 	private Deque<FractalParameters> redo = new ArrayDeque<FractalParameters>();
-
-	public ParameterStack()
-	{
-		// Init the stack with an element which status is set to "saved"
-		current = new FractalParameters();
-		current.saved = true;
-	}
 
 	public FractalParameters get()
 	{
