@@ -38,6 +38,7 @@ public class DisplayPanel extends JPanel
 	protected final int DRAG_PAN      = 1;
 	protected int typeOfDrag = DRAG_NONE;
 	public boolean boxKeepsRatio = true;
+	public boolean showCrosshairs = true;
 
 	protected long displayStamp = 0;
 	protected long lastStamp = -1;
@@ -128,9 +129,9 @@ public class DisplayPanel extends JPanel
 					//System.out.println(e);
 
 					// Only update if the mouse has been dragged *inside* the window
-					if (boxEnd != null
-							&& boxEnd.getX() >= 0 && boxEnd.getX() < getWidth()
-							&& boxEnd.getY() >= 0 && boxEnd.getY() < getHeight())
+					if (mouseEnd != null
+							&& mouseEnd.getX() >= 0 && mouseEnd.getX() < getWidth()
+							&& mouseEnd.getY() >= 0 && mouseEnd.getY() < getHeight())
 					{
 						paramStack.push();
 						paramStack.get().zoomBox(boxStart, boxEnd);
@@ -309,15 +310,23 @@ public class DisplayPanel extends JPanel
 			g2.fillRect(0, y, x, h);
 			g2.fillRect(x + w, y, getWidth() - x - w, h);
 
-			// Crosshair
-			g2.setPaint(Color.red);
+			if (showCrosshairs)
+			{
+				// Crosshair
+				g2.setPaint(Color.red);
+				g2.setStroke(new BasicStroke(1.0f));
+				g2.drawLine(x, y + h / 2, x + w - 1, y + h / 2);
+				g2.drawLine(x + w / 2, y, x + w / 2, y + h - 1);
+			}
+
+			// Box
+			g2.setPaint(Color.black);
 			g2.setStroke(new BasicStroke(1.0f));
-			g2.drawLine(x, y + h / 2, x + w - 1, y + h / 2);
-			g2.drawLine(x + w / 2, y, x + w / 2, y + h - 1);
+			g2.drawRect(x, y, w, h);
 		}
-		else
+		else if (showCrosshairs)
 		{
-			// Global Crosshair -- only when the zoom-box is not active
+			// Global Crosshairs -- only when the zoom-box is not active
 			g2.setPaint(Color.red);
 			g2.setStroke(new BasicStroke(1.0f));
 			g2.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2);

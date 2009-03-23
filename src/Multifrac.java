@@ -234,8 +234,8 @@ public class Multifrac extends JFrame
 
 		menuPreview.add(new JSeparator());
 
-		JCheckBoxMenuItem fixate = new JCheckBoxMenuItem("Fix ZoomBox ratio", true);
-		fixate.addItemListener(new ItemListener()
+		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Fix ZoomBox ratio", true);
+		mitem.addItemListener(new ItemListener()
 		{
 			@Override
 			public void itemStateChanged(ItemEvent e)
@@ -244,7 +244,20 @@ public class Multifrac extends JFrame
 				rend.boxKeepsRatio = b;
 			}
 		});
-		menuPreview.add(fixate);
+		menuPreview.add(mitem);
+
+		mitem = new JCheckBoxMenuItem("Show crosshairs", true);
+		mitem.addItemListener(new ItemListener()
+		{
+			@Override
+			public void itemStateChanged(ItemEvent e)
+			{
+				boolean b = (e.getStateChange() == ItemEvent.SELECTED);
+				rend.showCrosshairs = b;
+				rend.repaint();
+			}
+		});
+		menuPreview.add(mitem);
 
 		menuBar.add(menuPreview);
 
