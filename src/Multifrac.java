@@ -454,7 +454,7 @@ public class Multifrac extends JFrame
 		menuPreview.add(mitem);
 
 		mitem = new JCheckBoxMenuItem("Show mouse crosshair", false);
-		mitem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
+		mitem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.CTRL_MASK));
 		mitem.addItemListener(new ItemListener()
 		{
 			@Override
