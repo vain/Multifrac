@@ -324,7 +324,7 @@ public class Multifrac extends JFrame
 				setCompValues(paramStack.get());
 			}
 		});
-		rend.setPreferredSize(new Dimension(512, 384));
+		rend.setPreferredSize(new Dimension(640, 400));
 		rend.setBorder(commonBorder);
 		rend.setVisible(true);
 		sgb_main.add(rend, 0, 2, 3, 1, 1.0, 1.0);
