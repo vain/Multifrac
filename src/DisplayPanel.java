@@ -32,6 +32,7 @@ public class DisplayPanel extends JPanel
 	protected Point mouseEnd   = null;
 	protected Point boxStart = null;
 	protected Point boxEnd   = null;
+	protected boolean ctrlPressed = false;
 
 	protected final int DRAG_NONE     = -1;
 	protected final int DRAG_ZOOM_BOX = 0;
@@ -95,6 +96,10 @@ public class DisplayPanel extends JPanel
 
 					//System.out.println(e);
 					mouseStart = e.getPoint();
+
+					// Save status of "CTRL". This will determine whether it's a
+					// concentric box or not.
+					ctrlPressed = ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0);
 
 					typeOfDrag = DRAG_ZOOM_BOX;
 				}
@@ -204,20 +209,76 @@ public class DisplayPanel extends JPanel
 	 */
 	private void calcZoomBox()
 	{
-		int w, h;
+		double ratio = (double)getWidth() / (double)getHeight();
 
-		w = Math.abs(mouseStart.x - mouseEnd.x);
-
-		if (boxKeepsRatio)
+		if (ctrlPressed)
 		{
-			double ratio = (double)getWidth() / (double)getHeight();
-			h = (int)((double)w / ratio);
+			// Create a concentric zoom box.
+
+			int w, h;
+			w = Math.abs(mouseStart.x - mouseEnd.x);
+
+			if (boxKeepsRatio)
+				h = (int)((double)w / ratio);
+			else
+				h = Math.abs(mouseStart.y - mouseEnd.y);
+
+			boxStart = new Point(mouseStart.x - w, mouseStart.y - h);
+			boxEnd   = new Point(mouseStart.x + w, mouseStart.y + h);
 		}
 		else
-			h = Math.abs(mouseStart.y - mouseEnd.y);
+		{
+			// Create a regular zoom box.
 
-		boxStart = new Point(mouseStart.x - w, mouseStart.y - h);
-		boxEnd   = new Point(mouseStart.x + w, mouseStart.y + h);
+			int x1, y1, x2, y2;
+
+			// Sort X
+			if (mouseStart.x < mouseEnd.x)
+			{
+				x1 = mouseStart.x;
+				x2 = mouseEnd.x;
+			}
+			else
+			{
+				x1 = mouseEnd.x;
+				x2 = mouseStart.x;
+			}
+
+
+			if (boxKeepsRatio)
+			{
+				// Keep Panel Ratio
+				int w = Math.abs(mouseStart.x - mouseEnd.x);
+				int h = (int)((double)w / ratio);
+				if (mouseStart.y < mouseEnd.y)
+				{
+					y1 = mouseStart.y;
+					y2 = y1 + h;
+				}
+				else
+				{
+					y2 = mouseStart.y;
+					y1 = y2 - h;
+				}
+			}
+			else
+			{
+				// Regular. Sort Y.
+				if (mouseStart.y < mouseEnd.y)
+				{
+					y1 = mouseStart.y;
+					y2 = mouseEnd.y;
+				}
+				else
+				{
+					y1 = mouseEnd.y;
+					y2 = mouseStart.y;
+				}
+			}
+
+			boxStart = new Point(x1, y1);
+			boxEnd   = new Point(x2, y2);
+		}
 	}
 
 	/**
