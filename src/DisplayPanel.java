@@ -40,6 +40,8 @@ public class DisplayPanel extends JPanel
 	public boolean boxKeepsRatio = true;
 	public boolean showCrosshairs = true;
 
+	public int supersampling = 1;
+
 	protected long displayStamp = 0;
 	protected long lastStamp = -1;
 
@@ -253,7 +255,7 @@ public class DisplayPanel extends JPanel
 		repaint();
 
 		FractalRenderer.dispatchJob(Multifrac.numthreads,
-				new FractalRenderer.Job(paramStack.get(), 1, nextStamp(), null),
+				new FractalRenderer.Job(paramStack.get(), supersampling, nextStamp(), null),
 				new FractalRenderer.Callback()
 				{
 					@Override

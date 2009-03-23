@@ -211,6 +211,37 @@ public class Multifrac extends JFrame
 		// --- Preview menu
 		JMenu menuPreview = new JMenu("Preview");
 
+		// supersampling submenu
+		JMenu menuSuper = new JMenu("Supersampling");
+		ButtonGroup group = new ButtonGroup();
+		String[] superDesc = new String[] { "None", "2x2", "4x4" };
+		int[] superVals = new int[] { 1, 2, 4 };
+		for (int i = 0; i < superVals.length; i++)
+		{
+			final String desc = superDesc[i];
+			final int val  = superVals[i];
+			final JRadioButtonMenuItem item = new JRadioButtonMenuItem(desc);
+
+			// select the first item *BEFORE* the listener is added.
+			if (i == 0)
+				item.setSelected(true);
+
+			item.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					rend.supersampling = val;
+					rend.dispatchRedraw();
+				}
+			});
+			menuSuper.add(item);
+			group.add(item);
+		}
+
+		menuPreview.add(menuSuper);
+
+		JMenu menuAspect = new JMenu("Aspect ratio");
 		// define all aspect ratios with descriptions, create the items and add listeners
 		String[] aspectDesc = new String[] { "1:1", "4:3", "16:10", "16:9" };
 		double[] aspectVals = new double[] { 1.0, 4.0 / 3.0, 1.6, 16.0 / 9.0 };
@@ -229,10 +260,8 @@ public class Multifrac extends JFrame
 					pack();
 				}
 			});
-			menuPreview.add(item);
+			menuAspect.add(item);
 		}
-
-		menuPreview.add(new JSeparator());
 
 		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Fix ZoomBox ratio", true);
 		mitem.addItemListener(new ItemListener()
@@ -244,7 +273,10 @@ public class Multifrac extends JFrame
 				rend.boxKeepsRatio = b;
 			}
 		});
-		menuPreview.add(mitem);
+		menuAspect.add(mitem);
+
+		menuPreview.add(menuAspect);
+		menuPreview.add(new JSeparator());
 
 		mitem = new JCheckBoxMenuItem("Show crosshairs", true);
 		mitem.addItemListener(new ItemListener()
