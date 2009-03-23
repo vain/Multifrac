@@ -753,6 +753,11 @@ public class Multifrac extends JFrame
 			}
 		});
 
+		// Listeners: SELECT ALL ON FOCUS GAINED
+		JTextField[] av = new JTextField[]
+					{ c_nmax, c_escape, c_julia_re, c_julia_im, c_loc_re, c_loc_im, c_zoom };
+		CompHelp.addSelectOnFocus(av);
+
 		// Properties of the window itself
 		setTitle("Multifrac");
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);

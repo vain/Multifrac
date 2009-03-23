@@ -188,23 +188,7 @@ public class ColorChooser
 				});
 
 				// Add a listener which selects the text when focus is gained
-				final JTextField text = ((JSpinner.DefaultEditor)mine.getEditor()).getTextField();
-				text.addFocusListener(new FocusAdapter()
-				{
-					@Override
-					public void focusGained(FocusEvent e)
-					{
-						// Yap, to select text, you'll need to queue that.
-						SwingUtilities.invokeLater(new Runnable()
-						{
-							@Override
-							public void run()
-							{
-								text.selectAll();
-							}
-						});
-					}
-				});
+				CompHelp.addSelectOnFocus(((JSpinner.DefaultEditor)mine.getEditor()).getTextField());
 			}
 
 			// TODO: Focus cycle order. A LOT (!) of Java-typically overhead.

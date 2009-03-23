@@ -426,7 +426,7 @@ public class DisplayPanel extends JPanel
 		// Status
 		if (runningJobs > 0)
 		{
-			int wid = 10;
+			int wid = 20;
 			g2.setPaint(Color.black);
 			g.fillRect(getWidth() - wid - 2, getHeight() - wid - 2, wid + 2, wid + 2);
 			g2.setPaint(Color.red);

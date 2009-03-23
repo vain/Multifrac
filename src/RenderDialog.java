@@ -194,26 +194,7 @@ public class RenderDialog extends JDialog
 
 		// Focus listeners for all text fields
 		JTextField[] av = new JTextField[] { c_width, c_height, c_file };
-		for (JTextField comp : av)
-		{
-			final JTextField text = comp;
-			text.addFocusListener(new FocusAdapter()
-			{
-				@Override
-				public void focusGained(FocusEvent e)
-				{
-					// Yap, to select text, you'll need to queue that.
-					SwingUtilities.invokeLater(new Runnable()
-					{
-						@Override
-						public void run()
-						{
-							text.selectAll();
-						}
-					});
-				}
-			});
-		}
+		CompHelp.addSelectOnFocus(av);
 
 		// Some more actions
 		c_cancel.addActionListener(new ActionListener()
