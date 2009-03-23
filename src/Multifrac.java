@@ -220,12 +220,41 @@ public class Multifrac extends JFrame
 		}
 	}
 
+	protected void undo()
+	{
+		paramStack.pop();
+		setCompValues(paramStack.get());
+		rend.dispatchRedraw();
+		colorizer.repaint();
+		colorInside.repaint();
+	}
+
+	protected void redo()
+	{
+		paramStack.unpop();
+		setCompValues(paramStack.get());
+		rend.dispatchRedraw();
+		colorizer.repaint();
+		colorInside.repaint();
+	}
+
+	protected void reset()
+	{
+		paramStack.push();
+		paramStack.get().setDefaults();
+		setCompValues(paramStack.get());
+		rend.dispatchRedraw();
+		colorizer.repaint();
+		colorInside.repaint();
+	}
+
 	public Multifrac()
 	{
 		final Multifrac parent = this;
 
 		// Build menu
 		JMenuBar menuBar = new JMenuBar();
+
 
 		// --- File menu
 		JMenu menuFile = new JMenu("File");
@@ -235,6 +264,47 @@ public class Multifrac extends JFrame
 		JMenuItem miImportColors = new JMenuItem("Import colors ...");
 		JMenuItem miQuit = new JMenuItem("Quit");
 
+		miLoad.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
+		miSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+		miImportColors.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.CTRL_MASK));
+		miQuit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.CTRL_MASK));
+
+		miLoad.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				loadScene();
+			}
+		});
+
+		miSave.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				saveScene();
+			}
+		});
+
+		miImportColors.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				importColors();
+			}
+		});
+
+		miQuit.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				parent.processWindowEvent(new WindowEvent(parent, WindowEvent.WINDOW_CLOSING));
+			}
+		});
+
 		menuFile.add(miLoad);
 		menuFile.add(miSave);
 		menuFile.add(new JSeparator());
@@ -243,6 +313,53 @@ public class Multifrac extends JFrame
 		menuFile.add(miQuit);
 
 		menuBar.add(menuFile);
+
+
+		// --- Edit menu
+		JMenu menuEdit = new JMenu("Edit");
+
+		JMenuItem miUndo = new JMenuItem("Undo");
+		JMenuItem miRedo = new JMenuItem("Redo");
+		JMenuItem miReset = new JMenuItem("Reset");
+
+		miUndo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK));
+		miRedo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK));
+		miReset.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK));
+
+		miUndo.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				undo();
+			}
+		});
+
+		miRedo.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				redo();
+			}
+		});
+
+		miReset.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				reset();
+			}
+		});
+
+		menuEdit.add(miUndo);
+		menuEdit.add(miRedo);
+		menuEdit.add(new JSeparator());
+		menuEdit.add(miReset);
+
+		menuBar.add(menuEdit);
+
 
 		// --- Preview menu
 		JMenu menuPreview = new JMenu("Preview");
@@ -303,6 +420,7 @@ public class Multifrac extends JFrame
 		menuPreview.add(new JSeparator());
 
 		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Show crosshairs", true);
+		mitem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
 		mitem.addItemListener(new ItemListener()
 		{
 			@Override
@@ -320,48 +438,12 @@ public class Multifrac extends JFrame
 		// --- Render menu
 		JMenu menuRender = new JMenu("Render");
 		JMenuItem miRenderToFile = new JMenuItem("Render to File ...");
-		menuRender.add(miRenderToFile);
+		miRenderToFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
 		
+		menuRender.add(miRenderToFile);
 		menuBar.add(menuRender);
 
 		setJMenuBar(menuBar);
-
-		// Action listeners for the menu
-		miLoad.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				loadScene();
-			}
-		});
-
-		miSave.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				saveScene();
-			}
-		});
-
-		miImportColors.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				importColors();
-			}
-		});
-
-		miQuit.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				parent.processWindowEvent(new WindowEvent(parent, WindowEvent.WINDOW_CLOSING));
-			}
-		});
 
 		miRenderToFile.addActionListener(new ActionListener()
 		{
@@ -371,6 +453,7 @@ public class Multifrac extends JFrame
 				new RenderDialog(parent, paramStack);
 			}
 		});
+
 
 		// Components
 		SimpleGridBag sgb_main = new SimpleGridBag(getContentPane());
@@ -538,11 +621,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.pop();
-				setCompValues(paramStack.get());
-				rend.dispatchRedraw();
-				colorizer.repaint();
-				colorInside.repaint();
+				undo();
 			}
 		});
 		panicpanel.add(undo);
@@ -553,11 +632,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.unpop();
-				setCompValues(paramStack.get());
-				rend.dispatchRedraw();
-				colorizer.repaint();
-				colorInside.repaint();
+				redo();
 			}
 		});
 		panicpanel.add(redo);
@@ -570,12 +645,7 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().setDefaults();
-				setCompValues(paramStack.get());
-				rend.dispatchRedraw();
-				colorizer.repaint();
-				colorInside.repaint();
+				reset();
 			}
 		});
 		panicpanel.add(panic);
