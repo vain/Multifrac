@@ -21,6 +21,7 @@ public class Selector
 {
 	private ArrayList<Integer> sel = new ArrayList<Integer>();
 
+	/*
 	public void toggle(int i)
 	{
 		if (sel.contains(i))
@@ -28,6 +29,7 @@ public class Selector
 		else
 			sel.add(i);
 	}
+	*/
 
 	public int select(int i)
 	{
@@ -74,6 +76,7 @@ public class Selector
 
 	public Integer[] getSelected()
 	{
+		Collections.sort(sel);
 		return sel.toArray(new Integer[0]);
 	}
 }

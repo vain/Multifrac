@@ -108,6 +108,14 @@ public class ColorizerPanel extends JPanel
 		return -1;
 	}
 
+	private boolean handleTranslatable(int s)
+	{
+		if (s > 0 && s < gg().size() - 1)
+			return true;
+		else
+			return false;
+	}
+
 	private void translateSelectedHandles(float dx)
 	{
 		Integer[] selected = selector.getSelected();
@@ -117,7 +125,7 @@ public class ColorizerPanel extends JPanel
 		{
 			int s = selected[i];
 
-			if (s > 0 && s < gg().size() - 1)
+			if (handleTranslatable(s))
 			{
 				gg().get(s).pos += dx;
 			}
@@ -131,6 +139,39 @@ public class ColorizerPanel extends JPanel
 			else if (gg().get(i).pos >= gg().get(i + 1).pos)
 				gg().get(i).pos = gg().get(i + 1).pos - (float)pickingEpsilon();
 		}
+	}
+
+	private boolean deleteSelectedHandles()
+	{
+		Integer[] selected = selector.getSelected();
+
+		// Check if there's something that will be deleted
+		boolean willDelete = false;
+		for (int i = 0; i < selected.length; i++)
+			if (handleTranslatable(selected[i]))
+				willDelete = true;
+
+		if (!willDelete)
+		{
+			System.out.println("Won't delete.");
+			return false;
+		}
+
+		// Now push and delete them
+		paramStack.push();
+		for (int i = selected.length - 1; i >= 0; i--)
+		{
+			if (handleTranslatable(selected[i]))
+			{
+				gg().remove(selected[i].intValue());
+				System.out.println("Deleted: " + selected[i] + ", " + gg().size());
+				dumpGradient(gg());
+			}
+		}
+
+
+		selector.clear();
+		return true;
 	}
 
 	private void zoomIn()
@@ -168,6 +209,7 @@ public class ColorizerPanel extends JPanel
 				dragHasPushed = false;
 				wasDragged = false;
 
+				// ----- PICKING
 				boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
 
 				// Clear selected handles if SHIFT is *NOT* pressed
@@ -192,21 +234,25 @@ public class ColorizerPanel extends JPanel
 				// Save mouse position
 				lastMouseDrag = e.getPoint();
 
-				/*
+
+				// ----- EDITING
 				if (e.getButton() == MouseEvent.BUTTON3)
 				{
 					// Right mouse and nothing selected? Then insert a new handle.
-					if (selectedHandle == -1)
+					if (selector.nothingSelected())
 					{
 						//System.out.println("INSERT");
 						int i = 1;
+						float relative = toWorld(e.getPoint().x);
 						while (i < gg().size() && relative > gg().get(i).pos)
 							i++;
 
 						//System.out.println("Insert with index: " + i);
 						paramStack.push();
 						gg().add(i, new ColorStep(relative, Color.red));
-						selectedHandle = i;
+
+						selector.clear();
+						lastSelected = lastPicked = selector.select(i);
 
 						triggerCallback = true;
 					}
@@ -214,18 +260,11 @@ public class ColorizerPanel extends JPanel
 					// Right mouse with CTRL? Then delete.
 					if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
 					{
-						if (selectedHandle > 0 && selectedHandle != gg().size() - 1)
-						{
-							//System.out.println("DELETE");
-							paramStack.push();
-							gg().remove(selectedHandle);
-							selectedHandle = -1;
-
-							triggerCallback = true;
-						}
+						triggerCallback = deleteSelectedHandles();
 					}
 				}
 
+				/*
 				if (lastSelected != -1 && selectedHandle != -1 && e.getButton() == MouseEvent.BUTTON2)
 				{
 					if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
@@ -248,6 +287,7 @@ public class ColorizerPanel extends JPanel
 				}
 				*/
 
+				dumpGradient(gg());
 				repaint();
 			}
 
@@ -256,24 +296,27 @@ public class ColorizerPanel extends JPanel
 			{
 				boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
 
-				// Remove handle under cursor under certain
-				// circumstances (uh, queer.)
-				if (shift && !wasDragged && lastPicked != -1 && lastSelected == -1)
-				{
-					selector.unselect(lastPicked);
-				}
-				// Deselect all and only keep last picked?
-				else if (!shift && !wasDragged)
-				{
-					selector.clear();
-					selector.select(lastPicked);
-				}
-
 				// Callback?
 				if (triggerCallback)
 				{
 					onChange.run();
 				}
+				else
+				{
+					// Remove handle under cursor under certain
+					// circumstances (uh, queer.)
+					if (shift && !wasDragged && lastPicked != -1 && lastSelected == -1)
+					{
+						selector.unselect(lastPicked);
+					}
+					// Deselect all and only keep last picked?
+					else if (!shift && !wasDragged)
+					{
+						selector.clear();
+						selector.select(lastPicked);
+					}
+				}
+
 
 				// Reset value for dragging the panel
 				lastMouseDrag = null;
