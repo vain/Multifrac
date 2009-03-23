@@ -241,7 +241,7 @@ public class Multifrac extends JFrame
 
 		menuPreview.add(menuSuper);
 
-		JMenu menuAspect = new JMenu("Aspect ratio");
+		JMenu menuAspect = new JMenu("Change ratio");
 		// define all aspect ratios with descriptions, create the items and add listeners
 		String[] aspectDesc = new String[] { "1:1", "4:3", "16:10", "16:9" };
 		double[] aspectVals = new double[] { 1.0, 4.0 / 3.0, 1.6, 16.0 / 9.0 };
@@ -263,22 +263,10 @@ public class Multifrac extends JFrame
 			menuAspect.add(item);
 		}
 
-		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Fix ZoomBox ratio", true);
-		mitem.addItemListener(new ItemListener()
-		{
-			@Override
-			public void itemStateChanged(ItemEvent e)
-			{
-				boolean b = (e.getStateChange() == ItemEvent.SELECTED);
-				rend.boxKeepsRatio = b;
-			}
-		});
-		menuAspect.add(mitem);
-
 		menuPreview.add(menuAspect);
 		menuPreview.add(new JSeparator());
 
-		mitem = new JCheckBoxMenuItem("Show crosshairs", true);
+		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Show crosshairs", true);
 		mitem.addItemListener(new ItemListener()
 		{
 			@Override

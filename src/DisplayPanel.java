@@ -32,14 +32,15 @@ public class DisplayPanel extends JPanel
 	protected Point mouseEnd   = null;
 	protected Point boxStart = null;
 	protected Point boxEnd   = null;
-	protected boolean ctrlPressed = false;
 
 	protected final int DRAG_NONE     = -1;
 	protected final int DRAG_ZOOM_BOX = 0;
 	protected final int DRAG_PAN      = 1;
 	protected int typeOfDrag = DRAG_NONE;
-	public boolean boxKeepsRatio = true;
 	public boolean showCrosshairs = true;
+
+	private boolean boxKeepsRatio   = false;
+	private boolean boxIsConcentric = false;
 
 	public int supersampling = 1;
 
@@ -96,10 +97,6 @@ public class DisplayPanel extends JPanel
 
 					//System.out.println(e);
 					mouseStart = e.getPoint();
-
-					// Save status of "CTRL". This will determine whether it's a
-					// concentric box or not.
-					ctrlPressed = ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0);
 
 					typeOfDrag = DRAG_ZOOM_BOX;
 				}
@@ -160,6 +157,12 @@ public class DisplayPanel extends JPanel
 				// Zoom-Box
 				if (typeOfDrag == DRAG_ZOOM_BOX)
 				{
+					// Save modifiers. They will modify (:-)) whether this
+					// is a concentric box or not and whether this box keeps
+					// the current panel ratio.
+					boxIsConcentric = ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0);
+					boxKeepsRatio   = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
+
 					//System.out.println(e);
 					mouseEnd = e.getPoint();
 					calcZoomBox();
@@ -205,13 +208,14 @@ public class DisplayPanel extends JPanel
 	}
 
 	/**
-	 * Calc upper left and lower right point of the zoom box.
+	 * Calc upper left and lower right point of the zoom box with
+	 * respect to current modifiers.
 	 */
 	private void calcZoomBox()
 	{
 		double ratio = (double)getWidth() / (double)getHeight();
 
-		if (ctrlPressed)
+		if (boxIsConcentric)
 		{
 			// Create a concentric zoom box.
 
