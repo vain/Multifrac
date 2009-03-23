@@ -48,6 +48,8 @@ public class FractalRenderer extends Thread
 		public int supersampling = 1;
 		public Publisher pub = null;
 
+		private boolean canceled = false;
+
 		public Job(FractalParameters p, int supsam, long s, Publisher pu)
 		{
 			param = new FractalParameters(p);
@@ -86,6 +88,16 @@ public class FractalRenderer extends Thread
 
 			param.size.width  /= supersampling;
 			param.size.height /= supersampling;
+		}
+
+		synchronized public void cancel()
+		{
+			canceled = true;
+		}
+
+		synchronized public boolean isCanceled()
+		{
+			return canceled;
 		}
 
 		@Override
@@ -150,14 +162,14 @@ public class FractalRenderer extends Thread
 
 	static public abstract class Messenger implements Runnable
 	{
-		private String msg = "";
-		protected void setMsg(String s)
+		private int state = 0;
+		protected void setState(int i)
 		{
-			msg = s;
+			state = i;
 		}
-		public String getMsg()
+		public int getState()
 		{
-			return msg;
+			return state;
 		}
 
 		/**
@@ -306,6 +318,10 @@ public class FractalRenderer extends Thread
 
 		while (true)
 		{
+			// Only continue if this job is not marked as "canceled"
+			if (myJob.isCanceled())
+				return;
+
 			// The coordinator is used as follows:
 			//  - It is an object, so threads can synchronize on this object
 			//  - coordinator[0] always holds the next possible start row
@@ -341,7 +357,7 @@ public class FractalRenderer extends Thread
 	 * Used to dispatch a job. It will calculate the fractal for the given
 	 * parameters in the background and will immediately return.
 	 */
-	public static void dispatchJob(final int numthreads, final Job job, final Callback whenFinished,
+	public static Job dispatchJob(final int numthreads, final Job job, final Callback whenFinished,
 								   final Messenger msg)
 	{
 		Thread t = new Thread()
@@ -351,7 +367,7 @@ public class FractalRenderer extends Thread
 			{
 				if (msg != null)
 				{
-					msg.setMsg("Rendering in progress, this may take a while.");
+					msg.setState(0);
 					SwingUtilities.invokeLater(msg);
 				}
 
@@ -377,15 +393,19 @@ public class FractalRenderer extends Thread
 					{}
 				}
 
-				// Push current status
-				if (msg != null)
+				// Check if the job has been marked as "canceled"
+				if (!job.isCanceled())
 				{
-					msg.setMsg("Resizing and saving.");
-					SwingUtilities.invokeLater(msg);
-				}
+					// Push current status
+					if (msg != null)
+					{
+						msg.setState(1);
+						SwingUtilities.invokeLater(msg);
+					}
 
-				// Resize back to normal size
-				job.resizeBack();
+					// Resize back to normal size
+					job.resizeBack();
+				}
 
 				// Callback
 				whenFinished.setJob(job);
@@ -393,5 +413,7 @@ public class FractalRenderer extends Thread
 			}
 		};
 		t.start();
+
+		return job;
 	}
 }

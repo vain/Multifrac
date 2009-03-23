@@ -331,28 +331,45 @@ public class RenderDialog extends JDialog
 
 	private static class RenderExecutionDialog extends JDialog
 	{
+		public JButton cancel   = new JButton("Cancel");
 		public JLabel lblStatus = new JLabel();
 		public JLabel lblTime   = new JLabel("00:00:00 / --:--:--", SwingConstants.CENTER);
 		public JProgressBar bar = new JProgressBar(0, 100);
 
 		public long time_start = System.currentTimeMillis();
 
+		public FractalRenderer.Job myJob = null;
+
 		public RenderExecutionDialog(final Dialog parent, final RenderSettings rset)
 		{
 			// Content and properties
 			super(parent, "Rendering ...", true);
-			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			setLayout(new GridLayout(3, 1));
+			final RenderExecutionDialog me = this;
+
+			setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+			setLayout(new GridLayout(4, 1));
 
 			bar.setStringPainted(true);
 
 			add(lblStatus);
 			add(bar);
 			add(lblTime);
+			
+			// Cancel button
+			cancel.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					if (me.myJob != null)
+						me.myJob.cancel();
+				}
+			});
+
+			add(cancel);
 
 			// Construct Job
-			final RenderExecutionDialog me = this;
-			FractalRenderer.dispatchJob(Multifrac.numthreads,
+			myJob = FractalRenderer.dispatchJob(Multifrac.numthreads,
 					new FractalRenderer.Job(rset.param, rset.supersampling, -1, new BarDriver(this)),
 					new FractalRenderer.Callback()
 					{
@@ -360,6 +377,14 @@ public class RenderDialog extends JDialog
 						public void run()
 						{
 							FractalRenderer.Job result = getJob();
+							
+							// Important: Check whether the job has been canceled
+							if (result.isCanceled())
+							{
+								me.dispose();
+								return;
+							}
+
 							int w = result.getWidth();
 							int h = result.getHeight();
 							int[] px = result.getPixels();
@@ -415,7 +440,20 @@ public class RenderDialog extends JDialog
 						@Override
 						public void run()
 						{
-							me.lblStatus.setText(getMsg());
+							String s = "";
+							switch (getState())
+							{
+								case 0:
+									s = "Rendering in progress, this may take a while.";
+									break;
+
+								case 1:
+									s = "Resizing and saving.";
+									me.cancel.setEnabled(false);
+									break;
+							}
+
+							me.lblStatus.setText(s);
 							pack();
 							center(me, parent);
 						}
