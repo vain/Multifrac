@@ -28,6 +28,7 @@ public class DisplayPanel extends JPanel
 {
 	protected ParameterStack paramStack = null;
 	protected FractalRenderer.Job drawIt = null;
+	protected Point mousePoint = new Point(0, 0);
 	protected Point mouseStart = null;
 	protected Point mouseEnd   = null;
 	protected Point boxStart = null;
@@ -38,6 +39,7 @@ public class DisplayPanel extends JPanel
 	protected final int DRAG_PAN      = 1;
 	protected int typeOfDrag = DRAG_NONE;
 	public boolean showCrosshairs = true;
+	public boolean showLiveCH     = false;
 
 	private boolean boxKeepsRatio   = false;
 	private boolean boxIsConcentric = false;
@@ -163,6 +165,9 @@ public class DisplayPanel extends JPanel
 					boxIsConcentric = ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0);
 					boxKeepsRatio   = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
 
+					// Update LiveCH
+					mousePoint = e.getPoint();
+
 					//System.out.println(e);
 					mouseEnd = e.getPoint();
 					calcZoomBox();
@@ -200,6 +205,15 @@ public class DisplayPanel extends JPanel
 
 				onChange.run();
 				dispatchRedraw();
+			}
+
+			@Override
+			public void mouseMoved(MouseEvent e)
+			{
+				mousePoint = e.getPoint();
+
+				if (showLiveCH)
+					repaint();
 			}
 		};
 		addMouseListener(m);
@@ -398,6 +412,15 @@ public class DisplayPanel extends JPanel
 			g2.setStroke(new BasicStroke(1.0f));
 			g2.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2);
 			g2.drawLine(getWidth() / 2, 0, getWidth() / 2, getHeight());
+		}
+
+		if (showLiveCH)
+		{
+			// Live Crosshair
+			g2.setPaint(Color.black);
+			g2.setStroke(new BasicStroke(1.0f));
+			g2.drawLine(0, mousePoint.y, getWidth(), mousePoint.y);
+			g2.drawLine(mousePoint.x, 0, mousePoint.x, getHeight());
 		}
 
 		// Status

@@ -279,12 +279,12 @@ public class Multifrac extends JFrame
 		// --- File menu
 		JMenu menuFile = new JMenu("File");
 
-		JMenuItem miLoad = new JMenuItem("Load...");
+		JMenuItem miLoad = new JMenuItem("Open...");
 		JMenuItem miSave = new JMenuItem("Save...");
 		JMenuItem miImportColors = new JMenuItem("Import colors...");
 		JMenuItem miQuit = new JMenuItem("Quit");
 
-		miLoad.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
+		miLoad.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 		miSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
 		miImportColors.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.CTRL_MASK));
 		miQuit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.CTRL_MASK));
@@ -439,7 +439,7 @@ public class Multifrac extends JFrame
 		menuPreview.add(menuAspect);
 		menuPreview.add(new JSeparator());
 
-		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Show crosshairs", true);
+		JCheckBoxMenuItem mitem = new JCheckBoxMenuItem("Show center crosshairs", true);
 		mitem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
 		mitem.addItemListener(new ItemListener()
 		{
@@ -448,6 +448,20 @@ public class Multifrac extends JFrame
 			{
 				boolean b = (e.getStateChange() == ItemEvent.SELECTED);
 				rend.showCrosshairs = b;
+				rend.repaint();
+			}
+		});
+		menuPreview.add(mitem);
+
+		mitem = new JCheckBoxMenuItem("Show mouse crosshair", false);
+		mitem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
+		mitem.addItemListener(new ItemListener()
+		{
+			@Override
+			public void itemStateChanged(ItemEvent e)
+			{
+				boolean b = (e.getStateChange() == ItemEvent.SELECTED);
+				rend.showLiveCH = b;
 				rend.repaint();
 			}
 		});
