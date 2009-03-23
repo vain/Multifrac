@@ -116,11 +116,33 @@ public class ColorizerPanel extends JPanel
 			return false;
 	}
 
-	private void translateSelectedHandles(float dx)
+	private boolean handlesAffected(Integer[] selected)
+	{
+		// Check if there's something that will be deleted
+		for (int i = 0; i < selected.length; i++)
+			if (handleTranslatable(selected[i]))
+				return true;
+
+		return false;
+	}
+
+	private boolean translateSelectedHandles(float dx)
 	{
 		Integer[] selected = selector.getSelected();
 
-		// First, translate all handles
+		if (!handlesAffected(selected))
+		{
+			return false;
+		}
+
+		// First, see if you have to push
+		if (!dragHasPushed)
+		{
+			paramStack.push();
+			dragHasPushed = true;
+		}
+
+		// Translate all handles
 		for (int i = 0; i < selected.length; i++)
 		{
 			int s = selected[i];
@@ -139,21 +161,16 @@ public class ColorizerPanel extends JPanel
 			else if (gg().get(i).pos >= gg().get(i + 1).pos)
 				gg().get(i).pos = gg().get(i + 1).pos - (float)pickingEpsilon();
 		}
+
+		return true;
 	}
 
 	private boolean deleteSelectedHandles()
 	{
 		Integer[] selected = selector.getSelected();
 
-		// Check if there's something that will be deleted
-		boolean willDelete = false;
-		for (int i = 0; i < selected.length; i++)
-			if (handleTranslatable(selected[i]))
-				willDelete = true;
-
-		if (!willDelete)
+		if (!handlesAffected(selected))
 		{
-			System.out.println("Won't delete.");
 			return false;
 		}
 
@@ -168,7 +185,6 @@ public class ColorizerPanel extends JPanel
 				dumpGradient(gg());
 			}
 		}
-
 
 		selector.clear();
 		return true;
@@ -235,7 +251,7 @@ public class ColorizerPanel extends JPanel
 				lastMouseDrag = e.getPoint();
 
 
-				// ----- EDITING
+				// ----- INSERTING / DELETING
 				if (e.getButton() == MouseEvent.BUTTON3)
 				{
 					// Right mouse and nothing selected? Then insert a new handle.
@@ -310,13 +326,12 @@ public class ColorizerPanel extends JPanel
 						selector.unselect(lastPicked);
 					}
 					// Deselect all and only keep last picked?
-					else if (!shift && !wasDragged)
+					else if (!shift && !wasDragged && lastPicked != -1)
 					{
 						selector.clear();
 						selector.select(lastPicked);
 					}
 				}
-
 
 				// Reset value for dragging the panel
 				lastMouseDrag = null;
@@ -325,7 +340,7 @@ public class ColorizerPanel extends JPanel
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				//System.out.println("Click: " + e.getClickCount() + ", " + selectedHandle);
+				// Fire up color editing dialog
 				if (e.getClickCount() >= 2 && !selector.nothingSelected())
 				{
 					Color temp = ColorChooser.showDialog(
@@ -354,31 +369,6 @@ public class ColorizerPanel extends JPanel
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				/*
-				// Dragging Handles
-				if (selectedHandle > 0 && selectedHandle < gg().size() - 1)
-				{
-					// Only save the first change
-					if (!dragHasPushed)
-					{
-						dragHasPushed = true;
-						paramStack.push();
-					}
-
-					float relative = toWorld(e.getPoint().x);
-					if (relative >= gg().get(selectedHandle + 1).pos)
-						gg().get(selectedHandle).pos = gg().get(selectedHandle + 1).pos - (float)pickingEpsilon();
-					else if (relative <= gg().get(selectedHandle - 1).pos)
-						gg().get(selectedHandle).pos = gg().get(selectedHandle - 1).pos + (float)pickingEpsilon();
-					else
-						gg().get(selectedHandle).pos = relative;
-
-					triggerCallback = true;
-				}
-				// Scroll the panel?
-				else
-				*/
-
 				if (lastMouseDrag != null)
 				{
 					int dx = e.getPoint().x - lastMouseDrag.x;
@@ -387,7 +377,7 @@ public class ColorizerPanel extends JPanel
 					// Translate handles
 					if (!selector.nothingSelected())
 					{
-						translateSelectedHandles((float)fdx);
+						triggerCallback = translateSelectedHandles((float)fdx);
 					}
 					// Scroll panel
 					else
