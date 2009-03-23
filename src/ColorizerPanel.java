@@ -124,9 +124,13 @@ public class ColorizerPanel extends JPanel
 		}
 
 		// Then, maintain order
-		Collections.sort(gg());
-		dumpGradient(gg());
-
+		for (int i = 1; i < gg().size() - 1; i++)
+		{
+			if (gg().get(i).pos <= gg().get(i - 1).pos)
+				gg().get(i).pos = gg().get(i - 1).pos + (float)pickingEpsilon();
+			else if (gg().get(i).pos >= gg().get(i + 1).pos)
+				gg().get(i).pos = gg().get(i + 1).pos - (float)pickingEpsilon();
+		}
 	}
 
 	private void zoomIn()
@@ -265,7 +269,7 @@ public class ColorizerPanel extends JPanel
 					selector.select(lastPicked);
 				}
 
-				//System.out.println("Released: " + selectedHandle);
+				// Callback?
 				if (triggerCallback)
 				{
 					onChange.run();
