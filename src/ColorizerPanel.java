@@ -26,8 +26,12 @@ public class ColorizerPanel extends JPanel
 	private static final double ZOOM_STEP = 0.9;
 
 	private static final double PICKING_EPSILON = 0.01;
-	private int selectedHandle = -1;
 	private boolean triggerCallback = false;
+
+	private Selector selector = new Selector();
+	private int lastPicked   = -1;
+	private int lastSelected = -1;
+	private boolean wasDragged = false;
 
 	private ParameterStack paramStack = null;
 	private boolean dragHasPushed = false;
@@ -93,6 +97,35 @@ public class ColorizerPanel extends JPanel
 		return zoom * PICKING_EPSILON;
 	}
 
+	private int pick(int x)
+	{
+		float relative = toWorld(x);
+
+		for (int i = 0; i < gg().size(); i++)
+			if (Math.abs(gg().get(i).pos - relative) < pickingEpsilon())
+				return i;
+
+		return -1;
+	}
+
+	private void translateSelectedHandles(float dx)
+	{
+		Integer[] selected = selector.getSelected();
+
+		// First, translate all handles
+		for (int i = 0; i < selected.length; i++)
+		{
+			int s = selected[i];
+
+			if (s > 0 && s < gg().size() - 1)
+			{
+				gg().get(s).pos += dx;
+			}
+		}
+
+		// Then, maintain order
+	}
+
 	private void zoomIn()
 	{
 		zoom *= ZOOM_STEP;
@@ -126,23 +159,33 @@ public class ColorizerPanel extends JPanel
 			{
 				triggerCallback = false;
 				dragHasPushed = false;
+				wasDragged = false;
 
-				// Picking, this is done on *every* mouse down event
-				float relative = toWorld(e.getPoint().x);
-				//System.out.println(relative);
+				boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
 
-				int lastSelected = selectedHandle;
-				selectedHandle = -1;
-				for (int i = 0; i < gg().size(); i++)
+				// Clear selected handles if SHIFT is *NOT* pressed
+				// and if there's only *ONE* selected handle
+				if (!shift && selector.single())
+					selector.clear();
+
+				int picked = pick(e.getPoint().x);
+				lastPicked = picked; // for use in mouseReleased
+				if (picked != -1)
 				{
-					if (Math.abs(gg().get(i).pos - relative) < pickingEpsilon())
-					{
-						selectedHandle = i;
-						//System.out.println("Selected: " + i);
-						break;
-					}
+					// Add to selection in any case
+					lastSelected = selector.select(picked); // savefor use in mouseReleased
+				}
+				else if (!shift)
+				{
+					// If picking failed and shift is not pressed,
+					// clear selection.
+					selector.clear();
 				}
 
+				// Save mouse position
+				lastMouseDrag = e.getPoint();
+
+				/*
 				if (e.getButton() == MouseEvent.BUTTON3)
 				{
 					// Right mouse and nothing selected? Then insert a new handle.
@@ -196,6 +239,7 @@ public class ColorizerPanel extends JPanel
 						triggerCallback = true;
 					}
 				}
+				*/
 
 				repaint();
 			}
@@ -203,6 +247,15 @@ public class ColorizerPanel extends JPanel
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
+				boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
+
+				// Remove handle under cursor under certain
+				// circumstances (uh, queer.)
+				if (shift && !wasDragged && lastPicked != -1 && lastSelected == -1)
+				{
+					selector.unselect(lastPicked);
+				}
+
 				//System.out.println("Released: " + selectedHandle);
 				if (triggerCallback)
 				{
@@ -217,25 +270,17 @@ public class ColorizerPanel extends JPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				//System.out.println("Click: " + e.getClickCount() + ", " + selectedHandle);
-				if (e.getClickCount() >= 2 && selectedHandle != -1)
+				if (e.getClickCount() >= 2 && !selector.nothingSelected())
 				{
-					// Sadly, the JColorChooser can cause deadlocks.
-					/*
-					Color temp = JColorChooser.showDialog(
-							parent,
-							"Edit color",
-							gg().get(selectedHandle).color);
-					*/
-
 					Color temp = ColorChooser.showDialog(
 							parent,
 							"Edit color",
-							gg().get(selectedHandle).color);
+							gg().get(selector.firstSelected()).color);
 
 					if (temp != null)
 					{
 						paramStack.push();
-						gg().get(selectedHandle).color = temp;
+						gg().get(selector.firstSelected()).color = temp;
 
 						// As there won't be any mouseReleased in this case,
 						// fire the callback direclty
@@ -253,6 +298,7 @@ public class ColorizerPanel extends JPanel
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
+				/*
 				// Dragging Handles
 				if (selectedHandle > 0 && selectedHandle < gg().size() - 1)
 				{
@@ -275,18 +321,29 @@ public class ColorizerPanel extends JPanel
 				}
 				// Scroll the panel?
 				else
+				*/
+
+				if (lastMouseDrag != null)
 				{
-					if (lastMouseDrag != null)
+					int dx = e.getPoint().x - lastMouseDrag.x;
+					double fdx = toWorldOnlyScale(dx);
+
+					// Translate handles
+					if (!selector.nothingSelected())
 					{
-						int dx = e.getPoint().x - lastMouseDrag.x;
-						double fdx = toWorldOnlyScale(dx);
+						translateSelectedHandles((float)fdx);
+					}
+					// Scroll panel
+					else
+					{
 						offsetX -= fdx;
 					}
-
-					lastMouseDrag = e.getPoint();
-
-					onScroll.run();
 				}
+
+				lastMouseDrag = e.getPoint();
+				wasDragged = true;
+
+				onScroll.run();
 
 				repaint();
 			}
@@ -410,7 +467,7 @@ public class ColorizerPanel extends JPanel
 						toScreen(gg().get(i).pos) - wid - mar, yCorner,
 						2.0 * (wid + mar), yHeight));
 
-			g2.setPaint(i == selectedHandle ? Color.red : Color.white);
+			g2.setPaint(selector.isSelected(i) ? Color.red : Color.white);
 			g2.fill(new Rectangle2D.Double(
 						toScreen(gg().get(i).pos) - wid - 0.5 * mar, yCorner,
 						2.0 * (wid + mar) - mar, yHeight));
