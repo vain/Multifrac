@@ -262,6 +262,21 @@ public class RenderDialog extends JDialog
 			}
 		});
 
+		// Ways to dispose this dialog
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+		// Press escape
+		InputMap aof = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		aof.put(KeyStroke.getKeyStroke("ESCAPE"), "disposeWindow");
+		getRootPane().getActionMap().put("disposeWindow", new AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				dispose();
+			}
+		});
+
 		pack();
 		center(this, parent);
 		setVisible(true);
