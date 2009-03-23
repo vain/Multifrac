@@ -42,7 +42,7 @@ public class ColorizerPanel extends JPanel
 	{
 		super();
 		paramStack = p;
-		setPreferredSize(new Dimension(1, 50));
+		setMinimumSize(new Dimension(1, 50));
 
 		// Mouse Events
 		MouseAdapter m = new MouseAdapter()

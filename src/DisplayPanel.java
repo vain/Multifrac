@@ -30,12 +30,14 @@ public class DisplayPanel extends JPanel
 	protected FractalRenderer.Job drawIt = null;
 	protected Point mouseStart = null;
 	protected Point mouseEnd   = null;
+	protected Point boxStart = null;
+	protected Point boxEnd   = null;
 
 	protected final int DRAG_NONE     = -1;
 	protected final int DRAG_ZOOM_BOX = 0;
 	protected final int DRAG_PAN      = 1;
 	protected int typeOfDrag = DRAG_NONE;
-	public boolean boxKeepsRatio = false;
+	public boolean boxKeepsRatio = true;
 
 	protected long displayStamp = 0;
 	protected long lastStamp = -1;
@@ -126,12 +128,12 @@ public class DisplayPanel extends JPanel
 					//System.out.println(e);
 
 					// Only update if the mouse has been dragged *inside* the window
-					if (mouseEnd != null
-							&& mouseEnd.getX() >= 0 && mouseEnd.getX() < getWidth()
-							&& mouseEnd.getY() >= 0 && mouseEnd.getY() < getHeight())
+					if (boxEnd != null
+							&& boxEnd.getX() >= 0 && boxEnd.getX() < getWidth()
+							&& boxEnd.getY() >= 0 && boxEnd.getY() < getHeight())
 					{
 						paramStack.push();
-						paramStack.get().zoomBox(mouseStart, mouseEnd);
+						paramStack.get().zoomBox(boxStart, boxEnd);
 						onChange.run();
 						dispatchRedraw();	
 					}
@@ -151,16 +153,8 @@ public class DisplayPanel extends JPanel
 				if (typeOfDrag == DRAG_ZOOM_BOX)
 				{
 					//System.out.println(e);
-
-					if (boxKeepsRatio)
-					{
-						mouseEnd = respectRatio(mouseStart, e.getPoint());
-					}
-					else
-					{
-						mouseEnd = e.getPoint();
-					}
-
+					mouseEnd = e.getPoint();
+					calcZoomBox();
 					repaint();
 				}
 				
@@ -203,25 +197,24 @@ public class DisplayPanel extends JPanel
 	}
 
 	/**
-	 * Have a look at point a and b, set the y-value of b
-	 * so that it fits the current ratio of the panel.
+	 * Calc upper left and lower right point of the zoom box.
 	 */
-	private Point respectRatio(Point a, Point b)
+	private void calcZoomBox()
 	{
-		int w, h, y;
-		double ratio = (double)getWidth() / (double)getHeight();
+		int w, h;
 
-		// Get current width and calc height on this base
-		w = Math.abs(a.x - b.x);
-		h = (int)((double)w / ratio);
+		w = Math.abs(mouseStart.x - mouseEnd.x);
 
-		// Adjust new y value
-		if (b.y > a.y)
-			y = a.y + h;
+		if (boxKeepsRatio)
+		{
+			double ratio = (double)getWidth() / (double)getHeight();
+			h = (int)((double)w / ratio);
+		}
 		else
-			y = a.y - h;
+			h = Math.abs(mouseStart.y - mouseEnd.y);
 
-		return new Point(b.x, y);
+		boxStart = new Point(mouseStart.x - w, mouseStart.y - h);
+		boxEnd   = new Point(mouseStart.x + w, mouseStart.y + h);
 	}
 
 	/**
@@ -301,18 +294,11 @@ public class DisplayPanel extends JPanel
 		{
 			int x, y, w, h;
 
-			if (mouseStart.x > mouseEnd.x)
-				x = mouseEnd.x;
-			else
-				x = mouseStart.x;
+			x = boxStart.x;
+			y = boxStart.y;
 
-			if (mouseStart.y > mouseEnd.y)
-				y = mouseEnd.y;
-			else
-				y = mouseStart.y;
-
-			w = Math.abs(mouseEnd.x - mouseStart.x);
-			h = Math.abs(mouseEnd.y - mouseStart.y);
+			w = Math.abs(boxEnd.x - boxStart.x);
+			h = Math.abs(boxEnd.y - boxStart.y);
 
 			// Fade out anything else:
 			// top, bottom, left, right

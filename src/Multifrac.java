@@ -224,8 +224,8 @@ public class Multifrac extends JFrame
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					Dimension d = rend.getPreferredSize();
-					rend.setPreferredSize(new Dimension(d.width, (int)((double)d.width / val)));
+					int w = rend.getWidth();
+					rend.setPreferredSize(new Dimension(w, (int)((double)w / val)));
 					pack();
 				}
 			});
@@ -234,7 +234,7 @@ public class Multifrac extends JFrame
 
 		menuPreview.add(new JSeparator());
 
-		JCheckBoxMenuItem fixate = new JCheckBoxMenuItem("Fix ZoomBox ratio");
+		JCheckBoxMenuItem fixate = new JCheckBoxMenuItem("Fix ZoomBox ratio", true);
 		fixate.addItemListener(new ItemListener()
 		{
 			@Override
