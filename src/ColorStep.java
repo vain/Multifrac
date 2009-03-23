@@ -64,7 +64,7 @@ public class ColorStep
 	{
 		if (in.readInt() > VERSION)
 		{
-			throw new InstantiationException("ColorStep version too new.");
+			throw new InstantiationException("ColorStep version too new or unknown.");
 		}
 
 		pos = in.readFloat();

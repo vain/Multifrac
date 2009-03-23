@@ -82,8 +82,9 @@ public class Multifrac extends JFrame
 		c_zoom.setText(df.format(p.zoom));
 	}
 
-	protected void loadScene()
+	protected FractalParameters loadParametersFromScene()
 	{
+		FractalParameters paramOut = null;
 		JFileChooser chooser = new JFileChooser();
 
 		// set up filters
@@ -108,24 +109,56 @@ public class Multifrac extends JFrame
 				FileInputStream fis = new FileInputStream(tfile);
 				DataInputStream dis = new DataInputStream(fis);
 
-				FractalParameters p = new FractalParameters(dis);
-				paramStack.clear(p);
-
-				// repaint stuff
-				rend.dispatchRedraw();
-				colorizer.repaint();
-				colorInside.repaint();
-				setCompValues(paramStack.get());
+				paramOut = new FractalParameters(dis);
+				paramOut.saved = true;
 
 				fis.close();
 			}
 			catch (Exception ex)
 			{
+				paramOut = null; // just to be sure...
 				ex.printStackTrace();
 				JOptionPane.showMessageDialog(this,
 					"File could not be read:\n\"" + ex.getMessage() + "\"", "Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
+
+		return paramOut;
+	}
+
+	protected void loadScene()
+	{
+		FractalParameters p = loadParametersFromScene();
+		if (p == null)
+			return;
+
+		paramStack.clear(p);
+
+		// repaint stuff
+		rend.dispatchRedraw();
+		colorizer.repaint();
+		colorInside.repaint();
+		setCompValues(paramStack.get());
+	}
+
+	protected void importColors()
+	{
+		FractalParameters p = loadParametersFromScene();
+		if (p == null)
+			return;
+
+		// Save current settings
+		paramStack.push();
+
+		// Load new settings from this file
+		paramStack.get().colorInside = p.colorInside;
+		paramStack.get().gradient = p.gradient;
+
+		// repaint stuff
+		rend.dispatchRedraw();
+		colorizer.repaint();
+		colorInside.repaint();
+		setCompValues(paramStack.get());
 	}
 
 	protected void saveScene()
@@ -199,10 +232,13 @@ public class Multifrac extends JFrame
 
 		JMenuItem miLoad = new JMenuItem("Load ...");
 		JMenuItem miSave = new JMenuItem("Save ...");
+		JMenuItem miImportColors = new JMenuItem("Import colors ...");
 		JMenuItem miQuit = new JMenuItem("Quit");
 
 		menuFile.add(miLoad);
 		menuFile.add(miSave);
+		menuFile.add(new JSeparator());
+		menuFile.add(miImportColors);
 		menuFile.add(new JSeparator());
 		menuFile.add(miQuit);
 
@@ -306,6 +342,15 @@ public class Multifrac extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				saveScene();
+			}
+		});
+
+		miImportColors.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				importColors();
 			}
 		});
 

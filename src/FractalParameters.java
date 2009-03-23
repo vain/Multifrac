@@ -83,6 +83,8 @@ public class FractalParameters
 
 	public FractalParameters(FractalParameters p)
 	{
+		// Important: Do *NOT* copy the "saved" flag!
+
 		// Copy primitives
 		type = p.type;
 		nmax = p.nmax;
