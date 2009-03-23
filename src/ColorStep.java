@@ -18,7 +18,7 @@
 import java.awt.*;
 import java.io.*;
 
-public class ColorStep
+public class ColorStep implements Comparable<ColorStep>
 {
 	private static final int VERSION = 0;
 
@@ -46,6 +46,17 @@ public class ColorStep
 	public String toString()
 	{
 		return "CS[" + pos + ", " + color + "]";
+	}
+
+	@Override
+	public int compareTo(ColorStep other)
+	{
+		if (pos < other.pos)
+			return -1;
+		else if (pos == other.pos)
+			return 0;
+		else 
+			return 1;
 	}
 
 	public void writeToStream(DataOutputStream out) throws IOException

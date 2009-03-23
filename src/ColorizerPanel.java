@@ -124,6 +124,9 @@ public class ColorizerPanel extends JPanel
 		}
 
 		// Then, maintain order
+		Collections.sort(gg());
+		dumpGradient(gg());
+
 	}
 
 	private void zoomIn()
@@ -254,6 +257,12 @@ public class ColorizerPanel extends JPanel
 				if (shift && !wasDragged && lastPicked != -1 && lastSelected == -1)
 				{
 					selector.unselect(lastPicked);
+				}
+				// Deselect all and only keep last picked?
+				else if (!shift && !wasDragged)
+				{
+					selector.clear();
+					selector.select(lastPicked);
 				}
 
 				//System.out.println("Released: " + selectedHandle);
@@ -408,6 +417,8 @@ public class ColorizerPanel extends JPanel
 			System.out.println("g.add(new ColorStep(" + Float.toString(g.get(i).pos) + "f"
 					+ ", new Color(0x" + Integer.toHexString(argb) + ")));");
 		}
+
+		System.out.println();
 	}
 
 	@Override

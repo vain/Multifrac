@@ -27,8 +27,6 @@ public class Selector
 			sel.remove(new Integer(i));
 		else
 			sel.add(i);
-
-		System.out.println(sel);
 	}
 
 	public int select(int i)
@@ -36,7 +34,6 @@ public class Selector
 		if (!sel.contains(i))
 		{
 			sel.add(i);
-			System.out.println(sel);
 			return i;
 		}
 		else
@@ -48,7 +45,6 @@ public class Selector
 	public void unselect(int i)
 	{
 		sel.remove(new Integer(i));
-		System.out.println(sel);
 	}
 
 	public void clear()
