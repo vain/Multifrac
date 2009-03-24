@@ -36,7 +36,10 @@ public class ColorizerPanel extends JPanel
 	private ParameterStack paramStack = null;
 	private boolean dragHasPushed = false;
 
+	private Point mouseStart = null;
 	private Point lastMouseDrag = null;
+	private int mouseButton = -1;
+
 	protected double zoom = 1.0;
 	protected double offsetX = 0.0;
 
@@ -189,6 +192,31 @@ public class ColorizerPanel extends JPanel
 		return true;
 	}
 
+	private void selectHandlesBox()
+	{
+		if (mouseStart == null || lastMouseDrag == null)
+			return;
+
+		float a = toWorld(mouseStart.x);
+		float b = toWorld(lastMouseDrag.x);
+
+		// Sort
+		if (a > b)
+		{
+			float t = a;
+			a = b;
+			b = t;
+		}
+
+		System.out.println("Selecting from " + a + " to " + b);
+		for (int i = 0; i < gg().size(); i++)
+		{
+			float p = gg().get(i).pos;
+			if (a <= p && p <= b)
+				selector.select(i);
+		}
+	}
+
 	private void zoomIn()
 	{
 		zoom *= ZOOM_STEP;
@@ -223,27 +251,33 @@ public class ColorizerPanel extends JPanel
 				triggerCallback = false;
 				dragHasPushed = false;
 				wasDragged = false;
+				mouseStart = e.getPoint();
+				mouseButton = e.getButton();
 
 				// ----- PICKING
-				boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
-
-				// Clear selected handles if SHIFT is *NOT* pressed
-				// and if there's only *ONE* selected handle
-				if (!shift && selector.single())
-					selector.clear();
-
 				int picked = pick(e.getPoint().x);
 				lastPicked = picked; // for use in mouseReleased
-				if (picked != -1)
+
+				// Only the left mouse causes changes to the current selection
+				if (e.getButton() == MouseEvent.BUTTON1)
 				{
-					// Add to selection in any case
-					lastSelected = selector.select(picked); // savefor use in mouseReleased
-				}
-				else if (!shift)
-				{
-					// If picking failed and shift is not pressed,
-					// clear selection.
-					selector.clear();
+					boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
+
+					// Clear selected handles if SHIFT is *NOT* pressed
+					// and if there's only *ONE* selected handle
+					if (!shift && selector.single())
+						selector.clear();
+					if (picked != -1)
+					{
+						// Add to selection in any case
+						lastSelected = selector.select(picked); // savefor use in mouseReleased
+					}
+					else if (!shift)
+					{
+						// If picking failed and shift is not pressed,
+						// clear selection.
+						selector.clear();
+					}
 				}
 
 				// Save mouse position
@@ -280,7 +314,7 @@ public class ColorizerPanel extends JPanel
 				}
 
 				// ----- SWAPPING / COPYING
-				if (e.getButton() == MouseEvent.BUTTON2 && selector.pair())
+				if (e.getButton() == MouseEvent.BUTTON2 && selector.pair() && lastPicked != -1)
 				{
 					int from = selector.pair(lastPicked);
 					int to   = lastPicked;
@@ -321,22 +355,32 @@ public class ColorizerPanel extends JPanel
 				}
 				else
 				{
-					// Remove handle under cursor under certain
-					// circumstances (uh, queer.)
-					if (shift && !wasDragged && lastPicked != -1 && lastSelected == -1)
+					if (!wasDragged)
 					{
-						selector.unselect(lastPicked);
+						// Remove handle under cursor under certain
+						// circumstances (uh, queer.)
+						if (shift && lastPicked != -1 && lastSelected == -1)
+						{
+							selector.unselect(lastPicked);
+						}
+						// Deselect all and only keep last picked?
+						else if (!shift && lastPicked != -1)
+						{
+							selector.clear();
+							selector.select(lastPicked);
+						}
 					}
-					// Deselect all and only keep last picked?
-					else if (!shift && !wasDragged && lastPicked != -1)
+					else if (e.getButton() == MouseEvent.BUTTON1)
 					{
-						selector.clear();
-						selector.select(lastPicked);
+						// Select all handles which are in the drawn box
+						selectHandlesBox();
 					}
 				}
 
 				// Reset value for dragging the panel
 				lastMouseDrag = null;
+
+				repaint();
 			}
 
 			@Override
@@ -377,12 +421,12 @@ public class ColorizerPanel extends JPanel
 					double fdx = toWorldOnlyScale(dx);
 
 					// Translate handles
-					if (!selector.nothingSelected())
+					if (!selector.nothingSelected() && lastPicked != -1)
 					{
 						triggerCallback = translateSelectedHandles((float)fdx);
 					}
-					// Scroll panel
-					else
+					// Scroll panel if not button 1
+					else if (mouseButton != MouseEvent.BUTTON1)
 					{
 						offsetX -= fdx;
 					}
@@ -527,6 +571,32 @@ public class ColorizerPanel extends JPanel
 			g2.fill(new Rectangle2D.Double(
 						toScreen(gg().get(i).pos) - wid, yCorner,
 						2.0 * wid, yHeight));
+		}
+
+		// SelectionBox
+		if (mouseButton == MouseEvent.BUTTON1 && lastPicked == -1 && mouseStart != null && lastMouseDrag != null)
+		{
+			double x, w;
+
+			if (mouseStart.x < lastMouseDrag.x)
+				x = mouseStart.x;
+			else
+				x = lastMouseDrag.x;
+
+			w = Math.abs(mouseStart.x - lastMouseDrag.x);
+
+			g2.setPaint(new Color(0x70000000, true));
+			g2.fill(new Rectangle2D.Double(
+						x, yCorner,
+						w, yHeight));
+
+			g2.setPaint(Color.black);
+			g2.draw(new Line2D.Double(
+						x, yCorner, x,
+						yCorner + yHeight)); // this describes a Point, not "start" and "width"!
+			g2.draw(new Line2D.Double(
+						x + w, yCorner,
+						x + w, yCorner + yHeight));
 		}
 	}
 }

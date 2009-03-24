@@ -248,6 +248,7 @@ public class Multifrac extends JFrame
 		paramStack.pop();
 		setCompValues(paramStack.get());
 		rend.dispatchRedraw();
+		colorizer.selector.clear();
 		colorizer.repaint();
 		colorInside.repaint();
 	}
@@ -257,6 +258,7 @@ public class Multifrac extends JFrame
 		paramStack.unpop();
 		setCompValues(paramStack.get());
 		rend.dispatchRedraw();
+		colorizer.selector.clear();
 		colorizer.repaint();
 		colorInside.repaint();
 	}
