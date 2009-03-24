@@ -17,19 +17,12 @@
 
 import java.util.*;
 
+/**
+ * Maintain multi-selection in ColorizerPanel
+ */
 public class Selector
 {
 	private ArrayList<Integer> sel = new ArrayList<Integer>();
-
-	/*
-	public void toggle(int i)
-	{
-		if (sel.contains(i))
-			sel.remove(new Integer(i));
-		else
-			sel.add(i);
-	}
-	*/
 
 	public int select(int i)
 	{
@@ -67,6 +60,22 @@ public class Selector
 	public boolean single()
 	{
 		return (sel.size() == 1);
+	}
+
+	public boolean pair()
+	{
+		return (sel.size() == 2);
+	}
+
+	public int pair(int i)
+	{
+		if (!pair())
+			return -1;
+
+		if (sel.get(0) == i)
+			return sel.get(1);
+		else
+			return sel.get(0);
 	}
 
 	public int firstSelected()

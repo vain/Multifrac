@@ -181,7 +181,6 @@ public class ColorizerPanel extends JPanel
 			if (handleTranslatable(selected[i]))
 			{
 				gg().remove(selected[i].intValue());
-				System.out.println("Deleted: " + selected[i] + ", " + gg().size());
 				dumpGradient(gg());
 			}
 		}
@@ -280,30 +279,33 @@ public class ColorizerPanel extends JPanel
 					}
 				}
 
-				/*
-				if (lastSelected != -1 && selectedHandle != -1 && e.getButton() == MouseEvent.BUTTON2)
+				// ----- SWAPPING / COPYING
+				if (e.getButton() == MouseEvent.BUTTON2 && selector.pair())
 				{
+					int from = selector.pair(lastPicked);
+					int to   = lastPicked;
+
+					//System.out.println(from + " --> " + to);
+
+					// Save current status
+					paramStack.push();
+
+					// CTRL? Then copy.
 					if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
 					{
-						// Same as below but with CTRL pressed, so *copy* the color from "last" to "now".
-						paramStack.push();
-						gg().get(selectedHandle).color = new Color(gg().get(lastSelected).color.getRGB());
-						triggerCallback = true;
+						gg().get(to).color = new Color(gg().get(from).color.getRGB());
 					}
+					// No CTRL? Then swap.
 					else
 					{
-						// Was there something selected and now there's something new selected?
-						// If this has been done with the middle button, then swap colors.
-						paramStack.push();
-						Color temp = gg().get(lastSelected).color;
-						gg().get(lastSelected).color = gg().get(selectedHandle).color;
-						gg().get(selectedHandle).color = temp;
-						triggerCallback = true;
+						Color temp = gg().get(from).color;
+						gg().get(from).color = gg().get(to).color;
+						gg().get(to).color = temp;
 					}
-				}
-				*/
 
-				dumpGradient(gg());
+					triggerCallback = true;
+				}
+
 				repaint();
 			}
 
