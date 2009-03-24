@@ -154,6 +154,7 @@ public class Multifrac extends JFrame
 
 		// repaint stuff
 		rend.dispatchRedraw();
+		colorizer.selector.clear();
 		colorizer.repaint();
 		colorInside.repaint();
 		setCompValues(paramStack.get());
@@ -174,6 +175,7 @@ public class Multifrac extends JFrame
 
 		// repaint stuff
 		rend.dispatchRedraw();
+		colorizer.selector.clear();
 		colorizer.repaint();
 		colorInside.repaint();
 		setCompValues(paramStack.get());

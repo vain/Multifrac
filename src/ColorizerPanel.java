@@ -28,7 +28,7 @@ public class ColorizerPanel extends JPanel
 	private static final double PICKING_EPSILON = 0.01;
 	private boolean triggerCallback = false;
 
-	private Selector selector = new Selector();
+	protected Selector selector = new Selector();
 	private int lastPicked   = -1;
 	private int lastSelected = -1;
 	private boolean wasDragged = false;
