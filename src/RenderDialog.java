@@ -73,12 +73,14 @@ public class RenderDialog extends JDialog
 		File dir = null;
 		if (tfile != null)
 			dir = tfile.getParentFile();
+		/*
 		if (dir == null || !dir.canWrite())
 		{
 			JOptionPane.showMessageDialog(this,
 				"I won't be able to write to this file.", "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
+		*/
 		
 		// Save a copy
 		lastSize = new Dimension(param.size);
@@ -398,6 +400,9 @@ public class RenderDialog extends JDialog
 							}
 							catch (Exception e)
 							{
+								JOptionPane.showMessageDialog(me,
+									"Error while writing the file:\n" + e
+									+ "\n\nSee console for details.", "Error", JOptionPane.ERROR_MESSAGE);
 								e.printStackTrace();
 							}
 
