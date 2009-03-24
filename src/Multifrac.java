@@ -564,11 +564,15 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().centerOffset.setLocation(
-					new Double(c_loc_re.getText()),
-					paramStack.get().centerOffset.getY());
-				rend.dispatchRedraw();
+				try
+				{
+					paramStack.push();
+					paramStack.get().centerOffset.setLocation(
+						new Double(c_loc_re.getText()),
+						paramStack.get().centerOffset.getY());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
 			}
 		});
 		c_loc_im.addActionListener(new ActionListener()
@@ -576,11 +580,15 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().centerOffset.setLocation(
-					paramStack.get().centerOffset.getX(),
-					(new Double(c_loc_im.getText())) * (-1.0)); // Y has to be mirrored...
-				rend.dispatchRedraw();
+				try
+				{
+					paramStack.push();
+					paramStack.get().centerOffset.setLocation(
+						paramStack.get().centerOffset.getX(),
+						(new Double(c_loc_im.getText())) * (-1.0)); // Y has to be mirrored...
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
 			}
 		});
 		c_zoom.addActionListener(new ActionListener()
@@ -588,9 +596,13 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().setZoom(new Double(c_zoom.getText()));
-				rend.dispatchRedraw();
+				try
+				{
+					paramStack.push();
+					paramStack.get().setZoom(new Double(c_zoom.getText()));
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
 			}
 		});
 
@@ -768,9 +780,13 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().nmax = new Integer(c_nmax.getText());
-				rend.dispatchRedraw();
+				try
+				{
+					paramStack.push();
+					paramStack.get().nmax = new Integer(c_nmax.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
 			}
 		});
 		c_escape.addActionListener(new ActionListener()
@@ -778,9 +794,13 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().escape = new Double(c_escape.getText());
-				rend.dispatchRedraw();
+				try
+				{
+					paramStack.push();
+					paramStack.get().escape = new Double(c_escape.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
 			}
 		});
 		c_julia_re.addActionListener(new ActionListener()
@@ -788,9 +808,13 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().julia_re = new Double(c_julia_re.getText());
-				rend.dispatchRedraw();
+				try
+				{
+					paramStack.push();
+					paramStack.get().julia_re = new Double(c_julia_re.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
 			}
 		});
 		c_julia_im.addActionListener(new ActionListener()
@@ -798,9 +822,13 @@ public class Multifrac extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				paramStack.push();
-				paramStack.get().julia_im = new Double(c_julia_im.getText());
-				rend.dispatchRedraw();
+				try
+				{
+					paramStack.push();
+					paramStack.get().julia_im = new Double(c_julia_im.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
 			}
 		});
 
