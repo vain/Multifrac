@@ -291,6 +291,14 @@ public class ColorizerPanel extends JPanel
 						//System.out.println("INSERT");
 						int i = 1;
 						float relative = toWorld(e.getPoint().x);
+
+						// assure valid position
+						if (relative <= 0.0f)
+							relative = (float)pickingEpsilon();
+						else if (relative >= 1.0f)
+							relative = 1.0f - (float)pickingEpsilon();
+
+						// Find position
 						while (i < gg().size() && relative > gg().get(i).pos)
 							i++;
 
