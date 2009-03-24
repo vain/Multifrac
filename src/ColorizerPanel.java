@@ -254,8 +254,7 @@ public class ColorizerPanel extends JPanel
 				mouseButton = e.getButton();
 
 				// ----- PICKING
-				int picked = pick(e.getPoint().x);
-				lastPicked = picked; // for use in mouseReleased
+				lastPicked = pick(e.getPoint().x);
 
 				// Only the left mouse causes changes to the current selection
 				if (e.getButton() == MouseEvent.BUTTON1)
@@ -266,10 +265,10 @@ public class ColorizerPanel extends JPanel
 					// and if there's only *ONE* selected handle
 					if (!shift && selector.single())
 						selector.clear();
-					if (picked != -1)
+					if (lastPicked != -1)
 					{
 						// Add to selection in any case
-						lastSelected = selector.select(picked); // savefor use in mouseReleased
+						lastSelected = selector.select(lastPicked); // save for use in mouseReleased
 					}
 					else if (!shift)
 					{
@@ -313,7 +312,7 @@ public class ColorizerPanel extends JPanel
 				}
 
 				// ----- SWAPPING / COPYING
-				if (e.getButton() == MouseEvent.BUTTON2 && selector.pair() && lastPicked != -1)
+				if (e.getButton() == MouseEvent.BUTTON2 && selector.pair() && selector.isSelected(lastPicked))
 				{
 					int from = selector.pair(lastPicked);
 					int to   = lastPicked;
