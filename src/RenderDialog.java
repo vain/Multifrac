@@ -68,19 +68,31 @@ public class RenderDialog extends JDialog
 			return;
 		}
 
-		File tfile = new File(c_file.getText());
+		File tfile = new File(c_file.getText()).getAbsoluteFile();
 
 		File dir = null;
 		if (tfile != null)
 			dir = tfile.getParentFile();
-		/*
-		if (dir == null || !dir.canWrite())
+		if (dir == null)
 		{
 			JOptionPane.showMessageDialog(this,
-				"I won't be able to write to this file.", "Error", JOptionPane.ERROR_MESSAGE);
+				"I won't be able to write to this file: You have chosen the root directory.", "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		*/
+		
+		if (!dir.canWrite())
+		{
+			JOptionPane.showMessageDialog(this,
+				"I won't be able to create this file: Target directory not writable.", "Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		
+		if (tfile.exists() && !tfile.isFile())
+		{
+			JOptionPane.showMessageDialog(this,
+				"I won't be able to create this file: Target file is not a regular file.", "Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 		
 		// Save a copy
 		lastSize = new Dimension(param.size);
