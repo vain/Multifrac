@@ -84,11 +84,16 @@ public class ParameterStack
 
 	private void dump()
 	{
+		System.out.println("UNDO: " + undo.size());
+		System.out.println("REDO: " + redo.size());
+
+		/*
 		System.out.println("CURRENT:" + current);
 		System.out.println("UNDO STACK:");
 		System.out.println(undo);
 		System.out.println("REDO STACK:");
 		System.out.println(redo);
 		System.out.println();
+		*/
 	}
 }

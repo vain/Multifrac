@@ -184,7 +184,6 @@ public class ColorizerPanel extends JPanel
 			if (handleTranslatable(selected[i]))
 			{
 				gg().remove(selected[i].intValue());
-				dumpGradient(gg());
 			}
 		}
 
