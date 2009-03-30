@@ -281,7 +281,9 @@ public class Multifrac extends JFrame
 		JMenuBar menuBar = new JMenuBar();
 
 
+		// =========================================================
 		// --- File menu
+
 		JMenu menuFile = new JMenu("File");
 		menuFile.setMnemonic(KeyEvent.VK_F);
 
@@ -341,7 +343,9 @@ public class Multifrac extends JFrame
 		menuBar.add(menuFile);
 
 
+		// =========================================================
 		// --- Edit menu
+
 		JMenu menuEdit = new JMenu("Edit");
 		menuEdit.setMnemonic(KeyEvent.VK_E);
 
@@ -388,7 +392,9 @@ public class Multifrac extends JFrame
 		menuBar.add(menuEdit);
 
 
+		// =========================================================
 		// --- Preview menu
+
 		JMenu menuPreview = new JMenu("Preview");
 		menuPreview.setMnemonic(KeyEvent.VK_P);
 
@@ -481,7 +487,10 @@ public class Multifrac extends JFrame
 
 		menuBar.add(menuPreview);
 
+
+		// =========================================================
 		// --- Render menu
+
 		JMenu menuRender = new JMenu("Render");
 		menuRender.setMnemonic(KeyEvent.VK_R);
 		JMenuItem miRenderToFile = new JMenuItem("Render to File...", KeyEvent.VK_R);
@@ -502,13 +511,18 @@ public class Multifrac extends JFrame
 		});
 
 
-		// Components
+		// =========================================================
+		// --- Components
+
 		SimpleGridBag sgb_main = new SimpleGridBag(getContentPane());
 		setLayout(sgb_main);
 		//Border commonBorder = BorderFactory.createLoweredBevelBorder();
 		Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
-		// Instantiate RenderPanel
+
+		// =========================================================
+		// --- Instantiate RenderPanel
+
 		rend = new DisplayPanel(paramStack, new Runnable()
 		{
 			// Note: This is also used for init of the component values.
@@ -524,7 +538,10 @@ public class Multifrac extends JFrame
 		rend.setVisible(true);
 		sgb_main.add(rend, 0, 2, 3, 1, 1.0, 1.0);
 
-		// OptionPanel
+
+		// =========================================================
+		// --- OptionPanel
+
 		JPanel opts = new JPanel();
 		SimpleGridBag sgb_opts = new SimpleGridBag(opts);
 		opts.setLayout(sgb_opts);
@@ -548,7 +565,152 @@ public class Multifrac extends JFrame
 
 		sgb_main.add(opts, 0, 0, 3, 1, 1.0, 0.0);
 
-		// LocationPanel
+
+		// =========================================================
+		// --- Listeners: TYPE
+
+		// An action listener which catches the users clicks.
+		// An item state listener which takes care of the edit boxes.
+		ItemListener typeChanged = new ItemListener()
+		{
+			@Override
+			public void itemStateChanged(ItemEvent e)
+			{
+				if (c_mandel.isSelected())
+				{
+					setActiveType(FractalParameters.TYPE_MANDELBROT);
+				}
+				else if (c_julia.isSelected())
+				{
+					setActiveType(FractalParameters.TYPE_JULIA);
+				}
+			}
+		};
+		ActionListener typeAction = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (c_mandel.isSelected())
+				{
+					paramStack.push();
+					paramStack.get().type = FractalParameters.TYPE_MANDELBROT;
+					rend.dispatchRedraw();
+				}
+				else if (c_julia.isSelected())
+				{
+					paramStack.push();
+					paramStack.get().type = FractalParameters.TYPE_JULIA;
+					rend.dispatchRedraw();
+				}
+			}
+		};
+		c_mandel.addItemListener(typeChanged);
+		c_julia.addItemListener(typeChanged);
+		c_mandel.addActionListener(typeAction);
+		c_julia.addActionListener(typeAction);
+
+
+		// =========================================================
+		// --- Listener: ADAPTIVE
+
+		// An action listener which catches the users clicks.
+		// An item state listener which toggles the edit box.
+		c_adaptive.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				paramStack.push();
+				paramStack.get().setAdaptive(c_adaptive.isSelected());
+				rend.dispatchRedraw();
+			}
+		});
+		c_adaptive.addItemListener(new ItemListener()
+		{
+			@Override
+			public void itemStateChanged(ItemEvent e)
+			{
+				if (c_adaptive.isSelected())
+					c_nmax.setEnabled(false);
+				else
+					c_nmax.setEnabled(true);
+			}
+		});
+
+
+		// =========================================================
+		// --- Listeners: Key input
+
+		c_nmax.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				try
+				{
+					paramStack.push();
+					paramStack.get().nmax = new Integer(c_nmax.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
+			}
+		});
+		c_escape.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				try
+				{
+					paramStack.push();
+					paramStack.get().escape = new Double(c_escape.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
+			}
+		});
+		c_julia_re.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				try
+				{
+					paramStack.push();
+					paramStack.get().julia_re = new Double(c_julia_re.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
+			}
+		});
+		c_julia_im.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				try
+				{
+					paramStack.push();
+					paramStack.get().julia_im = new Double(c_julia_im.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
+			}
+		});
+
+
+		// =========================================================
+		// --- Listeners: SELECT ALL ON FOCUS GAINED
+
+		JTextField[] av = new JTextField[]
+					{ c_nmax, c_escape, c_julia_re, c_julia_im, c_loc_re, c_loc_im, c_zoom };
+		CompHelp.addSelectOnFocus(av);
+
+
+		// =========================================================
+		// --- LocationPanel
+
 		JPanel loc = new JPanel();
 		loc.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 2));
 		loc.setBorder(BorderFactory.createTitledBorder(commonBorder, "Location"));
@@ -608,7 +770,10 @@ public class Multifrac extends JFrame
 
 		sgb_main.add(loc, 0, 1, 3, 1, 1.0, 0.0);
 
-		// ColorChooser MeasureBar and Panel
+
+		// =========================================================
+		// --- ColorChooser MeasureBar and Panel
+
 		final JPanel measureBar = new JPanel()
 		{
 			@Override
@@ -660,55 +825,19 @@ public class Multifrac extends JFrame
 		colorizer.setBorder(commonBorder);
 		sgb_main.add(colorizer, 0, 4, 1, 1, 1.0, 0.0);
 
-		// BackgroundColorPanel
+
+		// =========================================================
+		// --- BackgroundColorPanel
+
 		colorInside = new SingleColorPanel("Inside", this, paramStack, colorOnChange);
 		colorInside.setBorder(commonBorder);
 		colorInside.setPreferredSize(new Dimension(50, 50));
 		sgb_main.add(colorInside, 1, 3, 1, 2, 0.0, 0.0);
 
-		// Listeners: TYPE
-		// An action listener which catches the users clicks.
-		// An item state listener which takes care of the edit boxes.
-		ItemListener typeChanged = new ItemListener()
-		{ 
-			@Override
-			public void itemStateChanged(ItemEvent e)
-			{ 
-				if (c_mandel.isSelected())
-				{
-					setActiveType(FractalParameters.TYPE_MANDELBROT);
-				}
-				else if (c_julia.isSelected())
-				{
-					setActiveType(FractalParameters.TYPE_JULIA);
-				}
-			} 
-		};
-		ActionListener typeAction = new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				if (c_mandel.isSelected())
-				{
-					paramStack.push();
-					paramStack.get().type = FractalParameters.TYPE_MANDELBROT;
-					rend.dispatchRedraw();
-				}
-				else if (c_julia.isSelected())
-				{
-					paramStack.push();
-					paramStack.get().type = FractalParameters.TYPE_JULIA;
-					rend.dispatchRedraw();
-				}
-			}
-		};
-		c_mandel.addItemListener(typeChanged);
-		c_julia.addItemListener(typeChanged);
-		c_mandel.addActionListener(typeAction);
-		c_julia.addActionListener(typeAction);
-		
-		// PanicPanel - well, it's more like a "ButtonPanel" now...
+
+		// =========================================================
+		// --- PanicPanel - well, it's more like a "ButtonPanel" now...
+
 		JPanel panicpanel = new JPanel();
 		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
 
@@ -749,95 +878,10 @@ public class Multifrac extends JFrame
 		
 		sgb_main.add(panicpanel, 0, 5, 3, 1, 1.0, 0.0);
 
-		// Listener: ADAPTIVE
-		// An action listener which catches the users clicks.
-		// An item state listener which toggles the edit box.
-		c_adaptive.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				paramStack.push();
-				paramStack.get().setAdaptive(c_adaptive.isSelected());
-				rend.dispatchRedraw();
-			}
-		});
-		c_adaptive.addItemListener(new ItemListener()
-		{
-			@Override
-			public void itemStateChanged(ItemEvent e)
-			{
-				if (c_adaptive.isSelected())
-					c_nmax.setEnabled(false);
-				else
-					c_nmax.setEnabled(true);
-			}
-		});
 
-		// Listeners: Key input
-		c_nmax.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				try
-				{
-					paramStack.push();
-					paramStack.get().nmax = new Integer(c_nmax.getText());
-					rend.dispatchRedraw();
-				}
-				catch (NumberFormatException ignore) {}
-			}
-		});
-		c_escape.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				try
-				{
-					paramStack.push();
-					paramStack.get().escape = new Double(c_escape.getText());
-					rend.dispatchRedraw();
-				}
-				catch (NumberFormatException ignore) {}
-			}
-		});
-		c_julia_re.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				try
-				{
-					paramStack.push();
-					paramStack.get().julia_re = new Double(c_julia_re.getText());
-					rend.dispatchRedraw();
-				}
-				catch (NumberFormatException ignore) {}
-			}
-		});
-		c_julia_im.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				try
-				{
-					paramStack.push();
-					paramStack.get().julia_im = new Double(c_julia_im.getText());
-					rend.dispatchRedraw();
-				}
-				catch (NumberFormatException ignore) {}
-			}
-		});
+		// =========================================================
+		// --- Properties of the window itself
 
-		// Listeners: SELECT ALL ON FOCUS GAINED
-		JTextField[] av = new JTextField[]
-					{ c_nmax, c_escape, c_julia_re, c_julia_im, c_loc_re, c_loc_im, c_zoom };
-		CompHelp.addSelectOnFocus(av);
-
-		// Properties of the window itself
 		setTitle("Multifrac");
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
@@ -860,8 +904,15 @@ public class Multifrac extends JFrame
 			}
 		});
 
-		// Set initial "saved" item
+
+		// =========================================================
+		// --- Set initial "saved" item
+
 		setSaved(paramStack.get());
+
+
+		// =========================================================
+		// --- Pack and finally show the window.
 
 		pack();
 		setLocationRelativeTo(null);
