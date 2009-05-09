@@ -1,0 +1,54 @@
+README for Multifrac
+====================
+
+Multifrac is a multithreaded fractal renderer (Mandelbrot set and Julia
+sets) written in Java. It's intended to generate detailed high
+resolution images in a reasonable time. It's *NOT* a realtime fractal
+explorer.
+
+
+Some more features:
+
+ - Smooth coloring without color banding (well, still 24bit RGB).
+ - A zoomable colorizer panel let's you easily set up your gradients.
+ - Mouse navigation as well as direct parameter input.
+ - Adaptive iteration depth depending on your current zoom level.
+ - 2x2, 4x4 supersampling.
+ - Loading/Saving "scenes" and the gradients of other scenes.
+ - Undo/Redo stack.
+ - ...
+
+
+Build / Usage
+=============
+
+Apache ant should be used to create the .jar file, a build.xml is included.
+This means that you can simply build the project via:
+
+ $ cd /path/to/git/repo
+ $ ant
+
+In order to render high resolution images, you should increase memory size used
+by java. Given your system has ~2GB of RAM, you could run the application via:
+
+ $ java -Xmx1800m -jar dist/Multifrac.jar
+
+If you get an "out of memory" error during the *save* process, you can try to
+use my TIFF writer instead of the builtin java libraries. You do so by simply
+saving the file as "*.tif" or "*.tiff".
+
+The application tries to warn you, in advance, if the image you want to render
+doesn't fit in your memory. However, in some cases, it may still fail. With 2GB
+of RAM, you should be able render images of the following sizes:
+
+ - 20'400 x 20'400 pixels without supersampling
+ - 4300 x 4300 pixels with 4x4 supersampling
+
+A "render directly to file" functionality is not yet included (but may be added
+in the future).
+
+
+Contact
+=======
+
+http://www.uninformativ.de
