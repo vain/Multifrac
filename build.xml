@@ -26,7 +26,7 @@
 		<!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
 		<jar jarfile="${dist}/${ant.project.name}.jar" basedir="${build}">
 			<manifest>
-				<attribute name="Main-Class" value="Multifrac"/>
+				<attribute name="Main-Class" value="multifrac.Multifrac"/>
 			</manifest>
 		</jar>
 	</target>

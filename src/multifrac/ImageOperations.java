@@ -17,6 +17,8 @@
 	along with Multifrac. If not, see <http://www.gnu.org/licenses/>.
 */
 
+package multifrac;
+
 /**
  * Operations on int[]-Images which try to not be memory-intensive.
  */

@@ -17,6 +17,8 @@
 	along with Multifrac. If not, see <http://www.gnu.org/licenses/>.
 */
 
+package multifrac;
+
 import java.util.Deque;
 import java.util.ArrayDeque;
 

@@ -1,3 +1,5 @@
+package multifrac;
+
 /*
 	Copyright 2009 Peter Hofmann
 

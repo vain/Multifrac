@@ -17,6 +17,8 @@
 	along with Multifrac. If not, see <http://www.gnu.org/licenses/>.
 */
 
+package multifrac;
+
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.border.*;
