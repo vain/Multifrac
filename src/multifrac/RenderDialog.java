@@ -1,5 +1,3 @@
-package multifrac;
-
 /*
 	Copyright 2009 Peter Hofmann
 
@@ -18,6 +16,8 @@ package multifrac;
 	You should have received a copy of the GNU General Public License
 	along with Multifrac. If not, see <http://www.gnu.org/licenses/>.
 */
+
+package multifrac;
 
 import javax.swing.*;
 import javax.swing.filechooser.*;
