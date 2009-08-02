@@ -42,9 +42,12 @@ public class Node
 		{
 			DataInputStream din;
 			DataOutputStream dout;
+			DataOutputStream bout;
 
 			din  = new DataInputStream(c.getInputStream());
 			dout = new DataOutputStream(c.getOutputStream());
+			bout = new DataOutputStream(
+					new BufferedOutputStream(c.getOutputStream()));
 
 			while (true)
 			{
@@ -96,7 +99,8 @@ public class Node
 						msg("Done, sending image...");
 						int[] px = job.getPixels();
 						for (int i = 0; i < px.length; i++)
-							dout.writeInt(px[i]);
+							bout.writeInt(px[i]);
+						bout.flush();
 						msg("Done.");
 						break;
 

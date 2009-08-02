@@ -41,12 +41,15 @@ public class TestClient
 		try
 		{
 			DataInputStream din;
+			DataInputStream bin;
 			DataOutputStream dout;
 
 			// Connect and send settings
 			System.out.println("Connecting and sending job...");
 			Socket s = new Socket(args[0], new Integer(args[1]));
 			din  = new DataInputStream(s.getInputStream());
+			bin  = new DataInputStream(
+					new BufferedInputStream(s.getInputStream()));
 			dout = new DataOutputStream(s.getOutputStream());
 
 			dout.writeInt(1000);
@@ -55,24 +58,36 @@ public class TestClient
 
 			dout.writeInt(1001);
 			NetRenderSettings n = new NetRenderSettings();
-			n.width  = 320;
-			n.height = 240;
+			n.width  = 1920 * 2;
+			n.height = 1200 * 2;
 			n.start  = 0;
-			n.end    = 240;
+			n.end    = 1200 * 2;
 			n.writeToStream(dout);
 
 			// Start rendering
 			dout.writeInt(1100);
 
 			// Receive result when done
+			long startTime = -1;
 			int[] px = new int[n.width * n.height];
 			for (int i = 0; i < px.length; i++)
 			{
-				px[i] = din.readInt();
-				if ((i % 100) == 0)
+				px[i] = bin.readInt();
+
+				if (i == 0)
+					startTime = System.currentTimeMillis();
+
+				if ((i % 100000) == 0)
 					System.out.print(".");
 			}
 			System.out.println("\nReceived image as int[].");
+
+			// Timing
+			long endTime = System.currentTimeMillis();
+			long diff    = endTime - startTime;
+			System.out.println("Done. " + (diff / 1000.0) + " sec.");
+			System.out.println(
+					(4 * px.length / 1000.0) / (diff / 1000.0) + " kb/s");
 
 			// Save image
 			save(px, n.width, n.height);
