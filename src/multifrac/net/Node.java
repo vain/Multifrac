@@ -91,15 +91,18 @@ public class Node
 								+ "\t.length() : " + job.getPixels().length
 								);
 
-						msg("Starting render process.");
+						msg("Starting render process. "
+								+ System.currentTimeMillis());
 						FractalRenderer rend =
 							new FractalRenderer(job, null);
 						rend.renderPass(start, end);
 
 						msg("Done, sending image...");
+						int at = start * job.getWidth();
 						int[] px = job.getPixels();
-						for (int i = 0; i < px.length; i++)
-							bout.writeInt(px[i]);
+						for (int y = start; y < end; y++)
+							for (int x = 0; x < job.getWidth(); x++)
+								bout.writeInt(px[at++]);
 						bout.flush();
 						msg("Done.");
 						break;
