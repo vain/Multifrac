@@ -71,25 +71,23 @@ public class Node
 						int h = din.readInt();
 						params.updateSize(new Dimension(w, h));
 						msg("Done.");
-						break;
 
-					case 1001:
-						msg("Receiving TokenSettings...");
-						start = din.readInt();
-						end   = din.readInt();
-						msg("Done.");
-						break;
-
-					case 1100:
 						job = new FractalRenderer.Job(params, 1, -1, null);
 						msg("Current settings:" + params
-								+ "\n\n"
+								+ "\n"
 								+ "\t.getWidth() : " + params.getWidth()
 								+ "\n"
 								+ "\t.getHeight(): " + params.getHeight()
 								+ "\n"
 								+ "\t.length() : " + job.getPixels().length
 								);
+						break;
+
+					case 1001:
+						msg("Receiving TokenSettings...");
+						start = din.readInt();
+						end   = din.readInt();
+						msg("Done: " + start + ", " + end);
 
 						msg("Starting render process. "
 								+ System.currentTimeMillis());

@@ -66,9 +66,6 @@ public class TestClient
 			dout.writeInt(0);
 			dout.writeInt(h);
 
-			// Start rendering
-			dout.writeInt(1100);
-
 			// Receive result when done
 			long startTime = -1;
 			int[] px = new int[w * h];

@@ -89,7 +89,6 @@ public class TestMultiClient
 						dout.writeInt(start);
 						dout.writeInt(end);
 
-						dout.writeInt(1100);
 						System.out.println(hashCode() + " rendering...");
 
 						// Receive
