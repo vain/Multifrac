@@ -29,13 +29,16 @@ import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
 
+import java.util.concurrent.Semaphore;
+
 public class TestMultiClient
 {
 	public TestMultiClient(
 			final String host,
 			final int port,
 			final FractalRenderer.Job job,
-			final int[] coordinator)
+			final int[] coordinator,
+			final Semaphore synch)
 	{
 		Thread t = new Thread()
 		{
@@ -44,9 +47,6 @@ public class TestMultiClient
 			{
 				try
 				{
-					// Timing
-					long startTime = System.currentTimeMillis();
-
 					// Connect
 					DataInputStream bin = null;
 					DataOutputStream dout = null;
@@ -93,34 +93,60 @@ public class TestMultiClient
 						System.out.println(hashCode() + " rendering...");
 
 						// Receive
-						System.out.println(hashCode() + " recv...");
 						int at = start * job.getWidth();
 						int[] px = job.getPixels();
+						boolean first = true;
 						for (int y = start; y < end; y++)
 						{
 							for (int x = 0; x < job.getWidth(); x++)
 							{
 								px[at++] = bin.readInt();
+								if (first)
+								{
+									first = false;
+									System.out.println(hashCode()
+											+ " recv...");
+								}
 							}
 						}
 						System.out.println(hashCode() + " recv done.");
 					}
 
-					long endTime = System.currentTimeMillis();
-					long diff    = endTime - startTime;
 					System.out.println(hashCode() + " done.");
-					System.out.println(hashCode() + ": " + (diff / 1000.0));
 					dout.writeInt(0);
 				}
 				catch (Exception e)
 				{
 					System.err.println("Error in " + hashCode() + ":");
 					e.printStackTrace();
-					return;
 				}
+
+				synch.release();
 			}
 		};
 		t.start();
+	}
+
+	public static FractalParameters loadParameters(String f)
+	{
+		FractalParameters paramOut = null;
+		File tfile = new File(f);
+		try
+		{
+			FileInputStream fis = new FileInputStream(tfile);
+			DataInputStream dis = new DataInputStream(fis);
+
+			paramOut = new FractalParameters(dis);
+
+			fis.close();
+		}
+		catch (Exception ex)
+		{
+			paramOut = null; // just to be sure...
+			ex.printStackTrace();
+		}
+
+		return paramOut;
 	}
 
 	public static void main(String[] args)
@@ -132,15 +158,48 @@ public class TestMultiClient
 			{ 1338, 1338, 1338, 1338 };
 
 		// Image parameters
-		FractalParameters p = new FractalParameters();
-		p.updateSize(new Dimension(1920, 1200));
-		FractalRenderer.Job job = new FractalRenderer.Job(p, 2, -1, null);
+		FractalParameters p = loadParameters(args[0]);
+		if (p == null)
+			return;
+		p.updateSize(new Dimension(
+					new Integer(args[1]),
+					new Integer(args[2])));
+		FractalRenderer.Job job = new FractalRenderer.Job(p, 1, -1, null);
 
 		// Local coordinator
 		int[] coord = new int[1];
 		coord[0] = 0;
 
+		Semaphore synch = new Semaphore(-hosts.length + 1);
+		long startTime = System.currentTimeMillis();
+
 		for (int i = 0; i < hosts.length; i++)
-			new TestMultiClient(hosts[i], ports[i], job, coord);
+			new TestMultiClient(hosts[i], ports[i], job, coord, synch);
+
+		try
+		{
+			synch.acquire();
+		}
+		catch (InterruptedException e)
+		{
+			System.err.println("Uhuh. Interrupted while waiting for sema.");
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+		long endTime = System.currentTimeMillis();
+
+		System.out.println("Overall done!");
+		System.out.println(((endTime - startTime) / 1000.0) + " seconds.");
+
+		try
+		{
+			TIFFWriter.writeRGBImage(new File("/tmp/hurz.tiff"),
+					job.getPixels(), job.getWidth(), job.getHeight());
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 }
