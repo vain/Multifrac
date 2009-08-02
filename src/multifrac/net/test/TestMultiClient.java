@@ -111,7 +111,8 @@ public class TestMultiClient
 						System.out.println(hashCode() + " recv done.");
 					}
 
-					System.out.println(hashCode() + " done.");
+					System.out.println(hashCode() + " No more tokens. "
+							+ "Good bye.");
 					dout.writeInt(0);
 				}
 				catch (Exception e)
@@ -163,7 +164,8 @@ public class TestMultiClient
 		p.updateSize(new Dimension(
 					new Integer(args[1]),
 					new Integer(args[2])));
-		FractalRenderer.Job job = new FractalRenderer.Job(p, 1, -1, null);
+		FractalRenderer.Job job = new FractalRenderer.Job(p,
+				new Integer(args[3]), -1, null);
 
 		// Local coordinator
 		int[] coord = new int[1];
@@ -191,6 +193,10 @@ public class TestMultiClient
 		System.out.println("Overall done!");
 		System.out.println(((endTime - startTime) / 1000.0) + " seconds.");
 
+		System.out.println("Downscaling...");
+		job.resizeBack();
+
+		System.out.println("Saving the image...");
 		try
 		{
 			TIFFWriter.writeRGBImage(new File("/tmp/hurz.tiff"),
