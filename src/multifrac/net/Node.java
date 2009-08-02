@@ -28,7 +28,7 @@ import java.awt.*;
 public class Node
 {
 	protected FractalParameters params = null;
-	protected NetRenderSettings netset = null;
+	protected int start, end;
 	protected FractalRenderer.Job job  = null;
 
 	/**
@@ -65,24 +65,24 @@ public class Node
 						break;
 
 					case 1000:
-						msg("Receiving FractalParameters...");
+						msg("Receiving FractalParameters and size...");
 						params = new FractalParameters(din);
+						int w = din.readInt();
+						int h = din.readInt();
+						params.updateSize(new Dimension(w, h));
 						msg("Done.");
 						break;
 
 					case 1001:
-						msg("Receiving NetRenderSettings...");
-						netset = new NetRenderSettings(din);
+						msg("Receiving TokenSettings...");
+						start = din.readInt();
+						end   = din.readInt();
 						msg("Done.");
-
-						params.updateSize(new Dimension(netset.width,
-								netset.height));
-						msg("Updated size in FractalParameters.");
 						break;
 
 					case 1100:
 						job = new FractalRenderer.Job(params, 1, -1, null);
-						msg("Current settings:" + params + netset
+						msg("Current settings:" + params
 								+ "\n\n"
 								+ "\t.getWidth() : " + params.getWidth()
 								+ "\n"
@@ -94,7 +94,7 @@ public class Node
 						msg("Starting render process.");
 						FractalRenderer rend =
 							new FractalRenderer(job, null);
-						rend.renderPass(netset.start, netset.end);
+						rend.renderPass(start, end);
 
 						msg("Done, sending image...");
 						int[] px = job.getPixels();

@@ -52,24 +52,26 @@ public class TestClient
 					new BufferedInputStream(s.getInputStream()));
 			dout = new DataOutputStream(s.getOutputStream());
 
+			// Global parameters
 			dout.writeInt(1000);
 			FractalParameters p = new FractalParameters();
 			p.writeToStream(dout);
+			int w = 1920 * 2;
+			int h = 1200 * 2;
+			dout.writeInt(w);
+			dout.writeInt(h);
 
+			// This token
 			dout.writeInt(1001);
-			NetRenderSettings n = new NetRenderSettings();
-			n.width  = 1920 * 2;
-			n.height = 1200 * 2;
-			n.start  = 0;
-			n.end    = 1200 * 2;
-			n.writeToStream(dout);
+			dout.writeInt(0);
+			dout.writeInt(h);
 
 			// Start rendering
 			dout.writeInt(1100);
 
 			// Receive result when done
 			long startTime = -1;
-			int[] px = new int[n.width * n.height];
+			int[] px = new int[w * h];
 			for (int i = 0; i < px.length; i++)
 			{
 				px[i] = bin.readInt();
@@ -90,7 +92,7 @@ public class TestClient
 					(4 * px.length / 1000.0) / (diff / 1000.0) + " kb/s");
 
 			// Save image
-			save(px, n.width, n.height);
+			save(px, w, h);
 			System.out.println("Saved.");
 
 			// Quit
