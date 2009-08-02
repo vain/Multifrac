@@ -189,7 +189,7 @@ public class FractalRenderer extends Thread
 	 * so this is the actual part which will be executed in parallel somewhere
 	 * in the background.
 	 */
-	private void renderPass(int tstart, int tend)
+	public void renderPass(int tstart, int tend)
 	{
 		// This is where the magic happens.
 		//System.out.println("Executing " + myJob + " (" + myToken + ") on " + Thread.currentThread());

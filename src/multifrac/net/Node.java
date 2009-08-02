@@ -1,10 +1,36 @@
+/*
+	Copyright 2009 Peter Hofmann
+
+	This file is part of Multifrac.
+
+	Multifrac is free software: you can redistribute it and/or modify it
+	under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Multifrac is distributed in the hope that it will be useful, but
+	WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with Multifrac. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package multifrac.net;
+
+import multifrac.*;
 
 import java.net.*;
 import java.io.*;
+import java.awt.*;
 
 public class Node
 {
+	protected FractalParameters params = null;
+	protected NetRenderSettings netset = null;
+	protected FractalRenderer.Job job  = null;
+
 	/**
 	 * Main node loop, receiving commands.
 	 */
@@ -33,6 +59,45 @@ public class Node
 					case 1:
 						msg("PONG");
 						dout.writeInt(1);
+						break;
+
+					case 1000:
+						msg("Receiving FractalParameters...");
+						params = new FractalParameters(din);
+						msg("Done.");
+						break;
+
+					case 1001:
+						msg("Receiving NetRenderSettings...");
+						netset = new NetRenderSettings(din);
+						msg("Done.");
+
+						params.updateSize(new Dimension(netset.width,
+								netset.height));
+						msg("Updated size in FractalParameters.");
+						break;
+
+					case 1100:
+						job = new FractalRenderer.Job(params, 1, -1, null);
+						msg("Current settings:" + params + netset
+								+ "\n\n"
+								+ "\t.getWidth() : " + params.getWidth()
+								+ "\n"
+								+ "\t.getHeight(): " + params.getHeight()
+								+ "\n"
+								+ "\t.length() : " + job.getPixels().length
+								);
+
+						msg("Starting render process.");
+						FractalRenderer rend =
+							new FractalRenderer(job, null);
+						rend.renderPass(netset.start, netset.end);
+
+						msg("Done, sending image...");
+						int[] px = job.getPixels();
+						for (int i = 0; i < px.length; i++)
+							dout.writeInt(px[i]);
+						msg("Done.");
 						break;
 
 					default:
