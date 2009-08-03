@@ -33,6 +33,9 @@ public class Multifrac extends JFrame
 	public static int numthreads = Runtime.getRuntime().availableProcessors();
 	public static final String EXTENSION = "muf";
 
+	//public static Border commonBorder = BorderFactory.createLoweredBevelBorder();
+	public static Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+
 	protected DisplayPanel rend = null;
 	protected ColorizerPanel colorizer = null;
 	protected JLabel colorInside = null;
@@ -532,8 +535,6 @@ public class Multifrac extends JFrame
 
 		SimpleGridBag sgb_main = new SimpleGridBag(getContentPane());
 		setLayout(sgb_main);
-		//Border commonBorder = BorderFactory.createLoweredBevelBorder();
-		Border commonBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
 
 		// =========================================================

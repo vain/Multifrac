@@ -30,6 +30,12 @@ public class RenderNetDialog extends JDialog
 		new DefaultListModel();
 	protected final JList remoteList = new JList(remoteListModel);
 
+	protected static JTextField c_width  = new JTextField();
+	protected static JTextField c_height = new JTextField();
+	protected static JTextField c_file   = new JTextField(20);
+	protected static JButton    c_file_chooser = new JButton("...");
+	protected static JComboBox  c_super  = null;
+
 	/**
 	 * Construct and show the dialog
 	 */
@@ -47,11 +53,9 @@ public class RenderNetDialog extends JDialog
 		listPanel.setLayout(sgb);
 
 		// listPanel border
-		Border commonBorder = BorderFactory.createEtchedBorder(
-				EtchedBorder.RAISED);
 		listPanel.setBorder(
 				BorderFactory.createTitledBorder(
-					commonBorder, "Remote hosts"));
+					Multifrac.commonBorder, "Remote hosts"));
 
 		// IP list
 		JScrollPane remoteListScroller = new JScrollPane(remoteList);
@@ -64,6 +68,9 @@ public class RenderNetDialog extends JDialog
 		sgb.add(newRemote, 0, 1, 1, 1, 1.0, 1.0);
 		sgb.add(c_add,     1, 1, 1, 1, 1.0, 1.0);
 
+		// Panel for render settings
+		JPanel setPanel = buildSetPanel();
+
 		// Buttons at bottom/right
 		JPanel buttonPanel = new JPanel();
 		JButton c_ok       = new JButton("OK");
@@ -72,9 +79,10 @@ public class RenderNetDialog extends JDialog
 		buttonPanel.add(c_ok);
 		buttonPanel.add(c_cancel);
 
-		// Add the two panels
+		// Add the panels
 		sgbMain.add(listPanel,   0, 0, 1, 1, 1.0, 1.0);
-		sgbMain.add(buttonPanel, 0, 1, 1, 1, 1.0, 1.0);
+		sgbMain.add(setPanel,    0, 1, 1, 1, 1.0, 1.0);
+		sgbMain.add(buttonPanel, 0, 2, 1, 1, 1.0, 1.0);
 
 		// Action listeners for the IP list controls
 		ActionListener actionAdd = new ActionListener()
@@ -141,6 +149,54 @@ public class RenderNetDialog extends JDialog
 	protected void pingRemote(String url)
 	{
 		System.out.println("PING: " + url);
+	}
+
+	/**
+	 * Construct the panel which contains render settings controls
+	 */
+	protected JPanel buildSetPanel()
+	{
+		// Component and layout
+		JPanel setPanel = new JPanel();
+		SimpleGridBag sgbSet = new SimpleGridBag(setPanel);
+		setPanel.setLayout(sgbSet);
+		setPanel.setBorder(
+				BorderFactory.createTitledBorder(
+					Multifrac.commonBorder, "Render settings"));
+
+		// Controls for render settings panel
+		if (c_super == null)
+			c_super = new JComboBox(new String[]
+					{ "None", "2x2", "4x4", "8x8" });
+
+		sgbSet.add(new JLabel("Width:"),
+				0, 0, 1, 1, 1.0, 1.0);
+
+		sgbSet.add(c_width,
+				1, 0, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
+
+		sgbSet.add(new JLabel("Height:"),
+				0, 1, 1, 1, 1.0, 1.0);
+
+		sgbSet.add(c_height,
+				1, 1, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
+
+		sgbSet.add(new JLabel("Supersampling:"),
+				0, 2, 1, 1, 1.0, 1.0);
+
+		sgbSet.add(c_super,
+				1, 2, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
+
+		sgbSet.add(new JLabel("File:"),
+				0, 3, 1, 1, 1.0, 1.0);
+
+		sgbSet.add(c_file,
+				1, 3, 1, 1, 1.0, 1.0);
+
+		sgbSet.add(c_file_chooser,
+				2, 3, 1, 1, 1.0, 1.0);
+
+		return setPanel;
 	}
 
 	/**
