@@ -150,6 +150,41 @@ public class NetClient
 	}
 
 	/**
+	 * Use a trivial challenge-response-ping-test.
+	 */
+	public static String ping(String host, int port)
+	{
+		try
+		{
+			DataInputStream din;
+			DataOutputStream dout;
+
+			Socket s = new Socket(host, port);
+
+			din  = new DataInputStream(s.getInputStream());
+			dout = new DataOutputStream(s.getOutputStream());
+
+			int challenge = (int)(Math.random() * Integer.MAX_VALUE * 0.5);
+			dout.writeInt(1);
+			dout.writeInt(challenge);
+
+			int response = din.readInt();
+
+			if (response != challenge + 1)
+				return "Invalid ping reply: " + response;
+
+			dout.writeInt(0);
+
+			return "Remote host did respond properly.";
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			return e.getMessage();
+		}
+	}
+
+	/**
 	 * Use this method to start and keep track of a distributed rendering
 	 * process.
 	 */
@@ -392,6 +427,8 @@ public class NetClient
 	 */
 	public static void main(String[] args)
 	{
+		System.out.println(ping("localhost", 7331));
+
 		NetRenderSettings nset = new NetRenderSettings();
 
 		// Remotes
