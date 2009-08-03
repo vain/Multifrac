@@ -139,12 +139,17 @@ public class RenderNetDialog extends JDialog
 	}
 
 	/**
-	 * TODO.
+	 * Start rendering.
 	 */
 	protected void startRendering()
 	{
 		saveValues();
 		System.out.println("Rendering.");
+
+		// Spawn a new console (which, in turn, will launch clients...).
+		RenderNetConsole output = new RenderNetConsole(this);
+		if (output.start())
+			dispose();
 	}
 
 	/**
