@@ -24,7 +24,7 @@ import java.io.*;
 /**
  * "High-performance" TIFF-Writer, saves memory and should be used for really large images.
  */
-class TIFFWriter
+public class TIFFWriter
 {
 	/**
 	 * Write the image to the file. It'll be uncompressed.
