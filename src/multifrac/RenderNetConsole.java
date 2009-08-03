@@ -105,5 +105,6 @@ public class RenderNetConsole extends JDialog implements NetConsole
 	public void finish()
 	{
 		close.setEnabled(true);
+		CompHelp.addDisposeOnEscape(this);
 	}
 }
