@@ -500,7 +500,6 @@ public class Multifrac extends JFrame
 		JMenuItem miRenderToFile = new JMenuItem("Render to File...", KeyEvent.VK_R);
 		miRenderToFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
 		
-		menuRender.add(miRenderToFile);
 		menuBar.add(menuRender);
 
 		setJMenuBar(menuBar);
@@ -513,6 +512,19 @@ public class Multifrac extends JFrame
 				new RenderDialog(parent, paramStack);
 			}
 		});
+		menuRender.add(miRenderToFile);
+
+		JMenuItem miNet = new JMenuItem("Distributed rendering...", KeyEvent.VK_D);
+		miNet.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
+		miNet.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				new RenderNetDialog(parent, paramStack.get());
+			}
+		});
+		menuRender.add(miNet);
 
 
 		// =========================================================
