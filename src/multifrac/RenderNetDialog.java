@@ -124,7 +124,7 @@ public class RenderNetDialog extends JDialog
 		if (lastHeight.equals(""))
 			c_height.setText(Integer.toString(param.size.height));
 		else
-			c_height.setText(lastWidth);
+			c_height.setText(lastHeight);
 
 		c_file.setText(lastFile);
 		c_super.setSelectedIndex(lastSuper);
