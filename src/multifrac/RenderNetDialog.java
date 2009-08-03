@@ -26,15 +26,22 @@ import java.awt.event.*;
 
 public class RenderNetDialog extends JDialog
 {
+	// Static components to keep settings/input
 	protected final static DefaultListModel remoteListModel =
 		new DefaultListModel();
-	protected final JList remoteList = new JList(remoteListModel);
 
 	protected static JTextField c_width  = new JTextField();
 	protected static JTextField c_height = new JTextField();
 	protected static JTextField c_file   = new JTextField(20);
-	protected static JButton    c_file_chooser = new JButton("...");
 	protected static JComboBox  c_super  = null;
+
+	// Regular main components
+	protected final JList remoteList     = new JList(remoteListModel);
+	protected final JTextField newRemote = new JTextField(30);
+	protected JButton c_file_chooser     = new JButton("...");
+	protected JButton c_ok               = new JButton("OK");
+	protected JButton c_cancel           = new JButton("Cancel");
+	protected JButton c_add              = new JButton("Add");
 
 	/**
 	 * Construct and show the dialog
@@ -43,10 +50,45 @@ public class RenderNetDialog extends JDialog
 	{
 		super(parent, "Distributed rendering", true);
 
-		// SimpleGridBag for the two panels
+		// SimpleGridBag for the panels
 		SimpleGridBag sgbMain = new SimpleGridBag(getContentPane());
 		setLayout(sgbMain);
 
+		// Build all the panels
+		JPanel listPanel   = buildListPanel();
+		JPanel setPanel    = buildSetPanel();
+		JPanel buttonPanel = buildButtonPanel();
+
+		// Add the panels
+		sgbMain.add(listPanel,   0, 0, 1, 1, 1.0, 1.0);
+		sgbMain.add(setPanel,    0, 1, 1, 1, 1.0, 1.0);
+		sgbMain.add(buttonPanel, 0, 2, 1, 1, 1.0, 1.0);
+
+		// Ways to close this dialog
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		CompHelp.addDisposeOnEscape(this);
+		CompHelp.addDisposeOnAction(c_cancel, this);
+
+		// Show it
+		pack();
+		newRemote.requestFocusInWindow();
+		CompHelp.center(this, parent);
+		setVisible(true);
+	}
+
+	/**
+	 * TODO: Implement protocol specific pinging.
+	 */
+	protected void pingRemote(String url)
+	{
+		System.out.println("PING: " + url);
+	}
+
+	/**
+	 * Construct the panel which contains the remote host list
+	 */
+	protected JPanel buildListPanel()
+	{
 		// SimpleGridBag for IP list and its controls
 		JPanel listPanel = new JPanel();
 		SimpleGridBag sgb = new SimpleGridBag(listPanel);
@@ -63,26 +105,8 @@ public class RenderNetDialog extends JDialog
 		sgb.add(remoteListScroller, 0, 0, 2, 1, 1.0, 1.0);
 
 		// Controls for IP list
-		JButton c_add = new JButton("Add");
-		final JTextField newRemote = new JTextField(30);
 		sgb.add(newRemote, 0, 1, 1, 1, 1.0, 1.0);
 		sgb.add(c_add,     1, 1, 1, 1, 1.0, 1.0);
-
-		// Panel for render settings
-		JPanel setPanel = buildSetPanel();
-
-		// Buttons at bottom/right
-		JPanel buttonPanel = new JPanel();
-		JButton c_ok       = new JButton("OK");
-		JButton c_cancel   = new JButton("Cancel");
-		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
-		buttonPanel.add(c_ok);
-		buttonPanel.add(c_cancel);
-
-		// Add the panels
-		sgbMain.add(listPanel,   0, 0, 1, 1, 1.0, 1.0);
-		sgbMain.add(setPanel,    0, 1, 1, 1, 1.0, 1.0);
-		sgbMain.add(buttonPanel, 0, 2, 1, 1, 1.0, 1.0);
 
 		// Action listeners for the IP list controls
 		ActionListener actionAdd = new ActionListener()
@@ -131,24 +155,21 @@ public class RenderNetDialog extends JDialog
 			}
 		});
 
-		// Ways to close this dialog
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		CompHelp.addDisposeOnEscape(this);
-		CompHelp.addDisposeOnAction(c_cancel, this);
-
-		// Show it
-		pack();
-		newRemote.requestFocusInWindow();
-		CompHelp.center(this, parent);
-		setVisible(true);
+		return listPanel;
 	}
 
 	/**
-	 * TODO: Implement protocol specific pinging.
+	 * Construct the panel which contains the control buttons
 	 */
-	protected void pingRemote(String url)
+	protected JPanel buildButtonPanel()
 	{
-		System.out.println("PING: " + url);
+		// Buttons at bottom/right
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
+		buttonPanel.add(c_ok);
+		buttonPanel.add(c_cancel);
+
+		return buttonPanel;
 	}
 
 	/**
