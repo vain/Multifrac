@@ -98,4 +98,20 @@ public class CompHelp
 			}
 		});
 	}
+
+	/**
+	 * Add an action listener which causes the associated dialog
+	 * to be disposed.
+	 */
+	public static void addDisposeOnAction(AbstractButton which, final JDialog dia)
+	{
+		which.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				dia.dispose();
+			}
+		});
+	}
 }
