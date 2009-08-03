@@ -270,7 +270,7 @@ public class NetClient
 		// Remotes
 		nset.hosts = new String[]
 			{ "localhost", "localhost", "192.168.0.33", "192.168.0.33" };
-		nset.ports = new int[]
+		nset.ports = new Integer[]
 			{ 1338, 1338, 1338, 1338 };
 
 		// Image parameters
