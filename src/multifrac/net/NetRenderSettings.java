@@ -24,8 +24,8 @@ import java.io.*;
 
 public class NetRenderSettings
 {
-	public String[] hosts = null;
-	public int[]    ports = null;
+	public String[]  hosts = null;
+	public Integer[] ports = null;
 
 	public FractalParameters param         = null;
 	public int               supersampling = 1;

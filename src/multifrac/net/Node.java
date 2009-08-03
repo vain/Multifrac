@@ -27,6 +27,8 @@ import java.awt.*;
 
 public class Node
 {
+	public static final int defaultPort = 7331;
+
 	protected FractalParameters params = null;
 	protected int start, end;
 	protected FractalRenderer.Job job  = null;
@@ -148,10 +150,22 @@ public class Node
 	 */
 	public static void main(String[] args)
 	{
-		if (args.length != 2)
+		String host = "localhost";
+		int    port = defaultPort;
+
+		if (args.length == 1)
 		{
-			System.out.println("Need arguments: host port");
-			System.exit(1);
+			host = args[0];
+		}
+		else if (args.length == 2)
+		{
+			host = args[0];
+			port = new Integer(args[1]);
+		}
+		else
+		{
+			System.out.println(
+					"Note: Pass <host> [<port>] as arguments if needed.");
 		}
 
 		System.out.println("Rendernode starting...");
@@ -159,8 +173,6 @@ public class Node
 		try
 		{
 			ServerSocket s = null;
-			String host = args[0];
-			int    port = new Integer(args[1]);
 
 			s = new ServerSocket(port, 0, InetAddress.getByName(host));
 			System.out.println("ServerSocket up: " + s);

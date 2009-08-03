@@ -185,14 +185,30 @@ public class NetClient
 		try
 		{
 			int got = 0;
+			int errors = 0;
 			while (got < nset.hosts.length)
 			{
 				Integer result = messenger.take();
 				if (result != 0)
 				{
-					out.println("Failure in one thread: Code "
-							+ result + ". "
-							+ "Trying to continue.");
+					errors++;
+					String msg =
+						"Failure in one thread: Code "
+						+ result
+						+ ".";
+
+					if (errors < nset.hosts.length)
+						out.println(msg + " Trying to continue.");
+					else
+					{
+						out.println(msg + " All clients failed! Aborting!");
+
+						// Callback
+						if (callback != null)
+							SwingUtilities.invokeLater(callback);
+
+						return;
+					}
 				}
 				got++;
 			}
@@ -228,6 +244,8 @@ public class NetClient
 			out.println("Oops while saving: " + e.getMessage());
 			e.printStackTrace();
 		}
+
+		out.println("We're done. Have a nice day!");
 
 		// Callback
 		if (callback != null)
@@ -270,7 +288,7 @@ public class NetClient
 		// Remotes
 		nset.hosts = new String[]
 			{ "localhost", "localhost", "192.168.0.33", "192.168.0.33" };
-		nset.ports = new int[]
+		nset.ports = new Integer[]
 			{ 1338, 1338, 1338, 1338 };
 
 		// Image parameters
