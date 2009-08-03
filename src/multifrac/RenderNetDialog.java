@@ -140,11 +140,25 @@ public class RenderNetDialog extends JDialog
 	}
 
 	/**
-	 * TODO: Implement protocol specific pinging.
+	 * Ping the remote host.
 	 */
-	protected void pingRemote(String url)
+	protected void pingRemote(String remote)
 	{
-		System.out.println("PING: " + url);
+		String[] oneS = new String[1];
+		int[]    oneI = new int[1];
+		if (!parseRemote(remote, oneS, oneI))
+		{
+			JOptionPane.showMessageDialog(this,
+				"Cannot parse remote host: \"" + remote + "\"",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		JOptionPane.showMessageDialog(this,
+			NetClient.ping(oneS[0], oneI[0]),
+			"Ping",
+			JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	/**
