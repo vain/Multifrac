@@ -43,7 +43,8 @@ public class NetClient
 			final FractalRenderer.Job job,
 			final int[] coordinator,
 			final LinkedBlockingQueue<Integer> messenger,
-			final NetConsole con)
+			final NetConsole con,
+			final int bunch)
 	{
 		Thread t = new Thread()
 		{
@@ -71,9 +72,8 @@ public class NetClient
 					dout.writeInt(job.getHeight());
 
 					// Do the tokens
-					int start, end, max, bunch;
+					int start, end, max;
 					max = job.getHeight();
-					bunch = 100;
 
 					while (true)
 					{
@@ -175,21 +175,91 @@ public class NetClient
 		long startTime = System.currentTimeMillis();
 
 		// Now start all clients
+		int numClients = 0;
 		for (int i = 0; i < nset.hosts.length; i++)
-			dispatchClient(
-					nset.hosts[i],
-					nset.ports[i],
-					job,
-					coord,
-					messenger,
-					out);
+		{
+			// Connect
+			msg(out, null, "Connecting to "
+					+ nset.hosts[i]
+					+ ":"
+					+ nset.ports[i]
+					+ "...");
+
+			try
+			{
+				DataInputStream din;
+				DataOutputStream dout;
+
+				Socket s = new Socket(nset.hosts[i], nset.ports[i]);
+				msg(out, null, "Connected.");
+
+				din  = new DataInputStream(s.getInputStream());
+				dout = new DataOutputStream(s.getOutputStream());
+
+				// Query initial bunch size
+				msg(out, null, "Getting initial bunch size...");
+				dout.writeInt(3);
+				int bunch = din.readInt();
+				msg(out, null, "Got it: " + bunch);
+
+				// Query number of processors
+				msg(out, null, "Getting number of CPUs...");
+				dout.writeInt(2);
+				int cpus = din.readInt();
+				msg(out, null, "Got it: " + cpus);
+
+				msg(out, null, "Closing control connection with "
+						+ nset.hosts[i]
+						+ ":"
+						+ nset.ports[i]);
+				dout.writeInt(0);
+
+				// Launch clients for this host
+				for (int k = 0; k < cpus; k++)
+				{
+					msg(out, null, "Launch client number " + (k + 1)
+							+ " for "
+							+ nset.hosts[i]
+							+ ":"
+							+ nset.ports[i]
+							+ "...");
+
+					dispatchClient(
+							nset.hosts[i],
+							nset.ports[i],
+							job,
+							coord,
+							messenger,
+							out,
+							bunch);
+
+					numClients++;
+				}
+			}
+			catch (Exception e)
+			{
+				msg(out, null, "Could not spawn the last client: "
+						+ e.getMessage());
+			}
+		}
+
+		if (numClients == 0)
+		{
+			msg(out, null, "No clients were started!");
+
+			// Callback
+			if (callback != null)
+				SwingUtilities.invokeLater(callback);
+
+			return;
+		}
 
 		// Wait for them to finish
 		try
 		{
 			int got = 0;
 			int errors = 0;
-			while (got < nset.hosts.length)
+			while (got < numClients)
 			{
 				Integer result = messenger.take();
 				if (result != 0)
@@ -326,9 +396,9 @@ public class NetClient
 
 		// Remotes
 		nset.hosts = new String[]
-			{ "localhost", "localhost", "192.168.0.33", "192.168.0.33" };
+			{ "localhost", "192.168.0.234" };
 		nset.ports = new Integer[]
-			{ 1338, 7331, 7331, 1338 };
+			{ 7331, 7331 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
