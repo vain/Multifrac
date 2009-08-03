@@ -36,7 +36,7 @@ public class Node
 	/**
 	 * Main node loop, receiving commands.
 	 */
-	public Node(Socket c)
+	public Node(Socket c, int bunch)
 	{
 		msg("Connected: " + c);
 
@@ -73,7 +73,7 @@ public class Node
 
 					case 3:
 						msg("Advertising initial bunch-size.");
-						dout.writeInt(100);
+						dout.writeInt(bunch);
 						break;
 
 					case 1000:
@@ -101,8 +101,7 @@ public class Node
 						end   = din.readInt();
 						msg("Done: " + start + ", " + end);
 
-						msg("Starting render process. "
-								+ System.currentTimeMillis());
+						msg("Starting render process.");
 						FractalRenderer rend =
 							new FractalRenderer(job, null);
 						rend.renderPass(start, end);
@@ -152,20 +151,32 @@ public class Node
 	{
 		String host = "localhost";
 		int    port = defaultPort;
+		int   bunch = 100;
 
-		if (args.length == 1)
+		try
 		{
-			host = args[0];
+			for (int i = 0; i < args.length; i++)
+			{
+				if (args[i].toUpperCase().equals("-H"))
+					host = args[++i];
+				else if (args[i].toUpperCase().equals("-P"))
+					port = new Integer(args[++i]);
+				else if (args[i].toUpperCase().equals("-B"))
+					bunch = new Integer(args[++i]);
+				else if (args[i].toUpperCase().equals("--HELP"))
+				{
+					System.out.println(
+							"Arguments: [-h host] [-p port] [-b bunch]"
+							+ " [--help]");
+					return;
+				}
+			}
 		}
-		else if (args.length == 2)
+		catch (Exception e)
 		{
-			host = args[0];
-			port = new Integer(args[1]);
-		}
-		else
-		{
-			System.out.println(
-					"Note: Pass <host> [<port>] as arguments if needed.");
+			System.err.println("Could not parse arguments.");
+			e.printStackTrace();
+			return;
 		}
 
 		System.out.println("Rendernode starting...");
@@ -173,9 +184,11 @@ public class Node
 		try
 		{
 			ServerSocket s = null;
+			final int finalbunch = bunch;
 
 			s = new ServerSocket(port, 0, InetAddress.getByName(host));
 			System.out.println("ServerSocket up: " + s);
+			System.out.println("Configured bunch size: " + finalbunch);
 
 			while (true)
 			{
@@ -185,7 +198,7 @@ public class Node
 					@Override
 					public void run()
 					{
-						new Node(client);
+						new Node(client, finalbunch);
 					}
 				};
 				t.start();
