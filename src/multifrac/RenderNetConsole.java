@@ -19,20 +19,27 @@
 
 package multifrac;
 
+import multifrac.net.*;
+
 import javax.swing.*;
 import java.awt.*;
 
-public class RenderNetConsole extends JDialog
+public class RenderNetConsole extends JDialog implements NetConsole
 {
 	protected final JTextArea con = new JTextArea();
 	protected final JButton close = new JButton("Close");
 
+	protected final NetRenderSettings nset;
+
 	/**
 	 * Construct the dialog.
 	 */
-	public RenderNetConsole(JDialog parent)
+	public RenderNetConsole(RenderNetDialog parent, NetRenderSettings nset)
 	{
 		super(parent, "Console", true);
+
+		// Save settings
+		this.nset = nset;
 
 		// Components
 		SimpleGridBag sgbMain = new SimpleGridBag(getContentPane());
@@ -58,24 +65,45 @@ public class RenderNetConsole extends JDialog
 	/**
 	 * Start the actual process.
 	 */
-	public boolean start()
+	public void start()
 	{
+		final RenderNetConsole out = this;
+		Thread t = new Thread()
+		{
+			@Override
+			public void run()
+			{
+				// Start the client(s) and give them a callback
+				NetClient.start(nset, out,
+						new Runnable()
+						{
+							@Override
+							public void run()
+							{
+								out.finish();
+							}
+						});
+			}
+		};
+		t.start();
 		setVisible(true);
-		return true;
 	}
 
 	/**
 	 * Print something on the console (threadsafe).
 	 */
+	@Override
 	synchronized public void println(String s)
 	{
 		con.append(s + "\n");
+		con.setCaretPosition(con.getText().length());
 	}
 
 	/**
-	 * This has to be called when one client is done.
+	 * Reactivate the close button.
 	 */
-	public void release()
+	public void finish()
 	{
+		close.setEnabled(true);
 	}
 }

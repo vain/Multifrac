@@ -19,6 +19,8 @@
 
 package multifrac;
 
+import multifrac.net.*;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -34,6 +36,9 @@ public class RenderNetDialog extends JDialog
 	protected static String lastFile   = "";
 	protected static int    lastSuper  = 2;
 
+	// Fractal settings
+	protected FractalParameters param = null;
+
 	// Regular main components
 	protected JTextField c_width  = new JTextField();
 	protected JTextField c_height = new JTextField();
@@ -43,8 +48,8 @@ public class RenderNetDialog extends JDialog
 	protected final JList remoteList     = new JList(remoteListModel);
 	protected final JTextField newRemote = new JTextField(30);
 	protected JButton c_file_chooser     = new JButton("...");
-	protected JButton c_ok               = new JButton("OK");
-	protected JButton c_cancel           = new JButton("Cancel");
+	protected JButton c_ok               = new JButton("Start");
+	protected JButton c_cancel           = new JButton("Close");
 	protected JButton c_add              = new JButton("Add");
 
 	/**
@@ -53,6 +58,9 @@ public class RenderNetDialog extends JDialog
 	public RenderNetDialog(final Frame parent, FractalParameters param)
 	{
 		super(parent, "Distributed rendering", true);
+
+		// Create a copy of the given settings
+		this.param = new FractalParameters(param);
 
 		// SimpleGridBag for the panels
 		SimpleGridBag sgbMain = new SimpleGridBag(getContentPane());
@@ -144,12 +152,86 @@ public class RenderNetDialog extends JDialog
 	protected void startRendering()
 	{
 		saveValues();
-		System.out.println("Rendering.");
+
+		// Build settings
+		NetRenderSettings nset = new NetRenderSettings();
+		nset.hosts = new String[] { "localhost", "localhost" };
+		nset.ports = new int[]    { 1338,        1338 };
+		nset.param = param;
+
+		// Usability checks
+		try
+		{
+			nset.param.updateSize(new Dimension(
+						new Integer(lastWidth),
+						new Integer(lastHeight)));
+		}
+		catch (NumberFormatException e)
+		{
+			JOptionPane.showMessageDialog(this,
+				"Non-numeric input for width and/or height.",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		nset.tfile = new File(c_file.getText()).getAbsoluteFile();
+
+		File dir = null;
+		if (nset.tfile != null)
+			dir = nset.tfile.getParentFile();
+		if (dir == null)
+		{
+			// TODO: Is that useful?
+			JOptionPane.showMessageDialog(this,
+				"I won't be able to write to this file: "
+				+ "You have chosen the root directory.",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		if (!dir.canWrite())
+		{
+			JOptionPane.showMessageDialog(this,
+				"I won't be able to create this file: "
+				+ "Target directory not writable.",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		if (nset.tfile.exists() && !nset.tfile.isFile())
+		{
+			JOptionPane.showMessageDialog(this,
+				"I won't be able to create this file: "
+				+ "Target file is not a regular file.",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		// Index 0 = Factor 1
+		// Index 1 = Factor 2
+		// Index 2 = Factor 4 ... --> 2^Index
+		nset.supersampling = (int)Math.pow(2.0, lastSuper);
+
+		// Ok, we're ready to go. Overwrite existing file?
+		// This should be the last question.
+		if (nset.tfile.exists())
+		{
+			int ret = JOptionPane.showConfirmDialog(this,
+				nset.tfile.getAbsolutePath() + "\n" +
+				"File already exists. Overwrite?",
+				"File exists",
+				JOptionPane.YES_NO_OPTION);
+			if (ret != JOptionPane.YES_OPTION)
+				return;
+		}
 
 		// Spawn a new console (which, in turn, will launch clients...).
-		RenderNetConsole output = new RenderNetConsole(this);
-		if (output.start())
-			dispose();
+		RenderNetConsole output = new RenderNetConsole(this, nset);
+		output.start();
 	}
 
 	/**
