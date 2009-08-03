@@ -20,8 +20,10 @@
 package multifrac;
 
 import javax.swing.*;
+import javax.swing.filechooser.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 
 public class CompHelp
 {
@@ -111,6 +113,55 @@ public class CompHelp
 			public void actionPerformed(ActionEvent e)
 			{
 				dia.dispose();
+			}
+		});
+	}
+
+	/**
+	 * Add an action listener which presents a common file dialog.
+	 */
+	public static void addFileOnAction(
+			AbstractButton button,
+			final JTextField textField,
+			final JDialog parent)
+	{
+		button.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JFileChooser chooser = new JFileChooser();
+
+				// try to set the old directory and file
+				File old = new File(textField.getText());
+				chooser.setSelectedFile(old);
+
+				// set up filters
+				FileNameExtensionFilter tiff =
+					new FileNameExtensionFilter(
+						"TIFF (large images)", "tif", "tiff");
+				FileNameExtensionFilter png =
+					new FileNameExtensionFilter(
+						"PNG & JPG (regular images)", "png", "jpg");
+
+				chooser.addChoosableFileFilter(png);
+				chooser.addChoosableFileFilter(tiff);
+
+				// choose current filter
+				if (tiff.accept(old))
+					chooser.setFileFilter(tiff);
+				else if (png.accept(old))
+					chooser.setFileFilter(png);
+				else
+					chooser.setAcceptAllFileFilterUsed(true);
+
+				// fire up the dialog
+				int returnVal = chooser.showSaveDialog(parent);
+				if (returnVal == JFileChooser.APPROVE_OPTION)
+				{
+					textField.setText(
+							chooser.getSelectedFile().getAbsolutePath());
+				}
 			}
 		});
 	}

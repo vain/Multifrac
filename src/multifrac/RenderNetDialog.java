@@ -20,7 +20,6 @@
 package multifrac;
 
 import javax.swing.*;
-import javax.swing.filechooser.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -90,45 +89,7 @@ public class RenderNetDialog extends JDialog
 		c_ok.addActionListener(starter);
 
 		// Action listener to present the file dialog
-		c_file_chooser.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				JFileChooser chooser = new JFileChooser();
-
-				// try to set the old directory and file
-				File old = new File(subparent.c_file.getText());
-				chooser.setSelectedFile(old);
-
-				// set up filters
-				FileNameExtensionFilter tiff =
-					new FileNameExtensionFilter(
-						"TIFF (large images)", "tif", "tiff");
-				FileNameExtensionFilter png =
-					new FileNameExtensionFilter(
-						"PNG & JPG (regular images)", "png", "jpg");
-
-				chooser.addChoosableFileFilter(png);
-				chooser.addChoosableFileFilter(tiff);
-
-				// choose current filter
-				if (tiff.accept(old))
-					chooser.setFileFilter(tiff);
-				else if (png.accept(old))
-					chooser.setFileFilter(png);
-				else
-					chooser.setAcceptAllFileFilterUsed(true);
-
-				// fire up the dialog
-				int returnVal = chooser.showSaveDialog(subparent);
-				if (returnVal == JFileChooser.APPROVE_OPTION)
-				{
-					subparent.c_file.setText(
-							chooser.getSelectedFile().getAbsolutePath());
-				}
-			}
-		});
+		CompHelp.addFileOnAction(c_file_chooser, c_file, subparent);
 
 		// Focus listeners for all text fields
 		JTextField[] av = new JTextField[]
