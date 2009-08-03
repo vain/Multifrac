@@ -25,6 +25,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.*;
 
 public class RenderNetDialog extends JDialog
 {
@@ -153,11 +154,63 @@ public class RenderNetDialog extends JDialog
 	{
 		saveValues();
 
+		if (remoteListModel.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this,
+				"No remote hosts entered.",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
 		// Build settings
 		NetRenderSettings nset = new NetRenderSettings();
-		nset.hosts = new String[] { "localhost", "localhost" };
-		nset.ports = new int[]    { 1338,        1338 };
 		nset.param = param;
+
+		// Parse hosts
+		ArrayDeque<String>  hosts = new ArrayDeque<String>();
+		ArrayDeque<Integer> ports = new ArrayDeque<Integer>();
+		for (Object o : remoteListModel.toArray())
+		{
+			boolean error = false;
+			String remote = (String)o;
+			String[] split = remote.split(":");
+
+			if (split.length == 0)
+			{
+				error = true;
+			}
+			else if (split.length == 1)
+			{
+				hosts.addLast(split[0]);
+				ports.addLast(Node.defaultPort);
+			}
+			else if (split.length == 2)
+			{
+				try
+				{
+					ports.addLast(new Integer(split[1]));
+					hosts.addLast(split[0]);
+				}
+				catch (NumberFormatException e)
+				{
+					error = true;
+				}
+			}
+
+			if (error)
+			{
+				JOptionPane.showMessageDialog(this,
+					"Cannot parse remote host: \"" + remote + "\"",
+					"Error",
+					JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+		}
+
+		// Convert into regular arrays
+		nset.hosts = hosts.toArray(new String[0]);
+		nset.ports = ports.toArray(new Integer[0]);
 
 		// Usability checks
 		try
