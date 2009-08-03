@@ -20,9 +20,10 @@
 package multifrac;
 
 import javax.swing.*;
-import javax.swing.border.*;
+import javax.swing.filechooser.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 
 public class RenderNetDialog extends JDialog
 {
@@ -88,13 +89,54 @@ public class RenderNetDialog extends JDialog
 		c_file.addActionListener(starter);
 		c_ok.addActionListener(starter);
 
+		// Action listener to present the file dialog
+		c_file_chooser.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JFileChooser chooser = new JFileChooser();
+
+				// try to set the old directory and file
+				File old = new File(subparent.c_file.getText());
+				chooser.setSelectedFile(old);
+
+				// set up filters
+				FileNameExtensionFilter tiff =
+					new FileNameExtensionFilter(
+						"TIFF (large images)", "tif", "tiff");
+				FileNameExtensionFilter png =
+					new FileNameExtensionFilter(
+						"PNG & JPG (regular images)", "png", "jpg");
+
+				chooser.addChoosableFileFilter(png);
+				chooser.addChoosableFileFilter(tiff);
+
+				// choose current filter
+				if (tiff.accept(old))
+					chooser.setFileFilter(tiff);
+				else if (png.accept(old))
+					chooser.setFileFilter(png);
+				else
+					chooser.setAcceptAllFileFilterUsed(true);
+
+				// fire up the dialog
+				int returnVal = chooser.showSaveDialog(subparent);
+				if (returnVal == JFileChooser.APPROVE_OPTION)
+				{
+					subparent.c_file.setText(
+							chooser.getSelectedFile().getAbsolutePath());
+				}
+			}
+		});
+
 		// Focus listeners for all text fields
 		JTextField[] av = new JTextField[]
 			{ newRemote, c_width, c_height, c_file };
 		CompHelp.addSelectOnFocus(av);
 
 		// Reload old values
-		reloadValues();
+		reloadValues(param);
 
 		// Show it
 		pack();
@@ -103,10 +145,18 @@ public class RenderNetDialog extends JDialog
 		setVisible(true);
 	}
 
-	protected void reloadValues()
+	protected void reloadValues(FractalParameters param)
 	{
-		c_width.setText(lastWidth);
-		c_height.setText(lastHeight);
+		if (lastWidth.equals(""))
+			c_width.setText(Integer.toString(param.size.width));
+		else
+			c_width.setText(lastWidth);
+
+		if (lastHeight.equals(""))
+			c_height.setText(Integer.toString(param.size.height));
+		else
+			c_height.setText(lastWidth);
+
 		c_file.setText(lastFile);
 		c_super.setSelectedIndex(lastSuper);
 	}
