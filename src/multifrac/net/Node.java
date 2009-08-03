@@ -63,7 +63,7 @@ public class Node
 
 					case 1:
 						msg("PONG");
-						dout.writeInt(1);
+						dout.writeInt(din.readInt() + 1);
 						break;
 
 					case 2:
