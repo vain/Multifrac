@@ -239,8 +239,44 @@ public class NetClient
 		msg(out, null, "Saving the image...");
 		try
 		{
-			TIFFWriter.writeRGBImage(nset.tfile,
-					job.getPixels(), job.getWidth(), job.getHeight());
+			int w = job.getWidth();
+			int h = job.getHeight();
+			int[] px = job.getPixels();
+
+			// Determine which writer to use
+			String a = nset.tfile.getName();
+			String ext = a.substring(a.lastIndexOf('.') + 1).toUpperCase();
+
+			if (ext.equals("TIF") || ext.equals("TIFF"))
+			{
+				// Use own tiff writer
+				TIFFWriter.writeRGBImage(nset.tfile, px, w, h);
+			}
+			else
+			{
+				// Use Java-Libraries
+
+				// Create an image resource from the int[]
+				Image img = Toolkit.getDefaultToolkit().createImage(
+						new MemoryImageSource(w, h, px, 0, w));
+
+				// ImageIO.write() demands a RenderedImage.
+				// BufferedImage implements this interface.
+				BufferedImage rendered = new BufferedImage(
+						w, h, BufferedImage.TYPE_INT_ARGB);
+
+				// That buffer is still empty. We need to write the
+				// actual image into that buffer. To do so, we need its
+				// Graphics2D object.
+				Graphics2D g2 = (Graphics2D)rendered.createGraphics();
+
+				// Draw the image into our buffer
+				g2.drawImage(img, new java.awt.geom.AffineTransform(
+							1f, 0f, 0f, 1f, 0, 0), null);
+
+				// Save the image to disk.
+				ImageIO.write(rendered, ext, nset.tfile);
+			}
 		}
 		catch (IOException e)
 		{
@@ -304,7 +340,7 @@ public class NetClient
 					new Integer(args[2])));
 
 		nset.supersampling = new Integer(args[3]);
-		nset.tfile = new File("/tmp/hurz.tiff");
+		nset.tfile = new File(args[4]);
 
 		// System.out as a NetConsole
 		NetConsole out = new NetConsole()
