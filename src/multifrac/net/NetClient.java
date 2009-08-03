@@ -33,9 +33,9 @@ import java.util.concurrent.*;
 public class NetClient
 {
 	/**
-	 * Spawns a new client in the background which tries to use the given
-	 * remote host as a rendering node. It will pick a job and render it. The
-	 * result will be written to job's pixel buffer.
+	 * Spawns a new client in the background which tries to use the
+	 * given remote host as a rendering node. It will pick a job and
+	 * render it. The result will be written to job's pixel buffer.
 	 */
 	public static void dispatchClient(
 			final String host,
@@ -53,12 +53,16 @@ public class NetClient
 				try
 				{
 					// Connect
+					msg(con, this,
+							"Connecting to " + host + ":" + port + "...");
 					DataInputStream bin = null;
 					DataOutputStream dout = null;
 					Socket s = new Socket(host, port);
 					bin  = new DataInputStream(
 							new BufferedInputStream(s.getInputStream()));
 					dout = new DataOutputStream(s.getOutputStream());
+
+					msg(con, this, "Connected!");
 
 					// Init
 					dout.writeInt(1000);
@@ -87,15 +91,12 @@ public class NetClient
 							end = max;
 
 						// Now render this particular token.
-						if (con != null)
-							con.println(hashCode() +
-									", " + start + ", " + end);
+						msg(con, this, "Rows " + start + " -> " + end);
 						dout.writeInt(1001);
 						dout.writeInt(start);
 						dout.writeInt(end);
 
-						if (con != null)
-							con.println(hashCode() + " rendering...");
+						msg(con, this, "Rendering...");
 
 						// Receive
 						int at = start * job.getWidth();
@@ -109,29 +110,20 @@ public class NetClient
 								if (first)
 								{
 									first = false;
-									if (con != null)
-										con.println(hashCode()
-												+ " recv...");
+									msg(con, this, "Receiving...");
 								}
 							}
 						}
-						if (con != null)
-							con.println(hashCode() + " recv done.");
+						msg(con, this, "Receiving done.");
 					}
 
-					if (con != null)
-						con.println(hashCode() + " No more tokens. "
-								+ "Good bye.");
+					msg(con, this, "No more tokens left. Closing.");
 					dout.writeInt(0);
 				}
 				catch (Exception e)
 				{
-					if (con != null)
-					{
-						con.println("Error in " + hashCode() + ": "
-								+ e.getMessage());
-						e.printStackTrace();
-					}
+					msg(con, this, "Error: " +  e.getMessage());
+					e.printStackTrace();
 
 					// Send failure message
 					// TODO: More critical errors get higher numbers
@@ -144,6 +136,17 @@ public class NetClient
 			}
 		};
 		t.start();
+	}
+
+	public static void msg(NetConsole con, Object who, String msg)
+	{
+		if (con == null)
+			return;
+
+		if (who != null)
+			con.println("[" + who.hashCode() + "] " + msg);
+		else
+			con.println("[main] " + msg);
 	}
 
 	/**
@@ -192,16 +195,16 @@ public class NetClient
 				if (result != 0)
 				{
 					errors++;
-					String msg =
+					String err =
 						"Failure in one thread: Code "
 						+ result
 						+ ".";
 
 					if (errors < nset.hosts.length)
-						out.println(msg + " Trying to continue.");
+						msg(out, null, err + " Trying to continue.");
 					else
 					{
-						out.println(msg + " All clients failed! Aborting!");
+						msg(out, null, err + " All clients failed!");
 
 						// Callback
 						if (callback != null)
@@ -215,7 +218,7 @@ public class NetClient
 		}
 		catch (InterruptedException e)
 		{
-			out.println("Uhuh. Interrupted while waiting.");
+			msg(out, null, "Uhuh. Interrupted while waiting.");
 			e.printStackTrace();
 
 			// Callback
@@ -227,25 +230,61 @@ public class NetClient
 
 		long endTime = System.currentTimeMillis();
 
-		out.println("Job done!");
-		out.println(((endTime - startTime) / 1000.0) + " seconds.");
+		msg(out, null, "Job done!");
+		msg(out, null, ((endTime - startTime) / 1000.0) + " seconds.");
 
-		out.println("Downscaling...");
+		msg(out, null, "Downscaling...");
 		job.resizeBack();
 
-		out.println("Saving the image...");
+		msg(out, null, "Saving the image...");
 		try
 		{
-			TIFFWriter.writeRGBImage(nset.tfile,
-					job.getPixels(), job.getWidth(), job.getHeight());
+			int w = job.getWidth();
+			int h = job.getHeight();
+			int[] px = job.getPixels();
+
+			// Determine which writer to use
+			String a = nset.tfile.getName();
+			String ext = a.substring(a.lastIndexOf('.') + 1).toUpperCase();
+
+			if (ext.equals("TIF") || ext.equals("TIFF"))
+			{
+				// Use own tiff writer
+				TIFFWriter.writeRGBImage(nset.tfile, px, w, h);
+			}
+			else
+			{
+				// Use Java-Libraries
+
+				// Create an image resource from the int[]
+				Image img = Toolkit.getDefaultToolkit().createImage(
+						new MemoryImageSource(w, h, px, 0, w));
+
+				// ImageIO.write() demands a RenderedImage.
+				// BufferedImage implements this interface.
+				BufferedImage rendered = new BufferedImage(
+						w, h, BufferedImage.TYPE_INT_ARGB);
+
+				// That buffer is still empty. We need to write the
+				// actual image into that buffer. To do so, we need its
+				// Graphics2D object.
+				Graphics2D g2 = (Graphics2D)rendered.createGraphics();
+
+				// Draw the image into our buffer
+				g2.drawImage(img, new java.awt.geom.AffineTransform(
+							1f, 0f, 0f, 1f, 0, 0), null);
+
+				// Save the image to disk.
+				ImageIO.write(rendered, ext, nset.tfile);
+			}
 		}
 		catch (IOException e)
 		{
-			out.println("Oops while saving: " + e.getMessage());
+			msg(out, null, "Oops while saving: " + e.getMessage());
 			e.printStackTrace();
 		}
 
-		out.println("We're done. Have a nice day!");
+		msg(out, null, "We're done. Have a nice day!");
 
 		// Callback
 		if (callback != null)
@@ -289,7 +328,7 @@ public class NetClient
 		nset.hosts = new String[]
 			{ "localhost", "localhost", "192.168.0.33", "192.168.0.33" };
 		nset.ports = new Integer[]
-			{ 1338, 1338, 1338, 1338 };
+			{ 1338, 7331, 7331, 1338 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
@@ -301,7 +340,7 @@ public class NetClient
 					new Integer(args[2])));
 
 		nset.supersampling = new Integer(args[3]);
-		nset.tfile = new File("/tmp/hurz.tiff");
+		nset.tfile = new File(args[4]);
 
 		// System.out as a NetConsole
 		NetConsole out = new NetConsole()
