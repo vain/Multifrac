@@ -64,6 +64,16 @@ public class Node
 						dout.writeInt(1);
 						break;
 
+					case 2:
+						msg("Advertising number of processors.");
+						dout.writeInt(Multifrac.numthreads);
+						break;
+
+					case 3:
+						msg("Advertising initial bunch-size.");
+						dout.writeInt(100);
+						break;
+
 					case 1000:
 						msg("Receiving FractalParameters and size...");
 						params = new FractalParameters(din);
