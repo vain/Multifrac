@@ -172,39 +172,21 @@ public class RenderNetDialog extends JDialog
 		ArrayDeque<Integer> ports = new ArrayDeque<Integer>();
 		for (Object o : remoteListModel.toArray())
 		{
-			boolean error = false;
 			String remote = (String)o;
-			String[] split = remote.split(":");
-
-			if (split.length == 0)
-			{
-				error = true;
-			}
-			else if (split.length == 1)
-			{
-				hosts.addLast(split[0]);
-				ports.addLast(Node.defaultPort);
-			}
-			else if (split.length == 2)
-			{
-				try
-				{
-					ports.addLast(new Integer(split[1]));
-					hosts.addLast(split[0]);
-				}
-				catch (NumberFormatException e)
-				{
-					error = true;
-				}
-			}
-
-			if (error)
+			String[] oneS = new String[1];
+			int[]    oneI = new int[1];
+			if (!parseRemote(remote, oneS, oneI))
 			{
 				JOptionPane.showMessageDialog(this,
 					"Cannot parse remote host: \"" + remote + "\"",
 					"Error",
 					JOptionPane.ERROR_MESSAGE);
 				return;
+			}
+			else
+			{
+				hosts.addLast(oneS[0]);
+				ports.addLast(oneI[0]);
 			}
 		}
 
@@ -285,6 +267,41 @@ public class RenderNetDialog extends JDialog
 		// Spawn a new console (which, in turn, will launch clients...).
 		RenderNetConsole output = new RenderNetConsole(this, nset);
 		output.start();
+	}
+
+	/**
+	 * Parse a remote-host-descriptor.
+	 */
+	protected boolean parseRemote(
+			String remote,
+			String[] oneS,
+			int[]    oneI)
+	{
+		String[] split = remote.split(":");
+
+		if (split.length == 0)
+		{
+			return false;
+		}
+		else if (split.length == 1)
+		{
+			oneS[0] = split[0];
+			oneI[0] = Node.defaultPort;
+		}
+		else if (split.length == 2)
+		{
+			try
+			{
+				oneI[0] = new Integer(split[1]);
+				oneS[0] = split[0];
+			}
+			catch (NumberFormatException e)
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
