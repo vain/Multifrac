@@ -26,16 +26,20 @@ import java.awt.event.*;
 
 public class RenderNetDialog extends JDialog
 {
-	// Static components to keep settings/input
+	// Static values to keep some settings
 	protected final static DefaultListModel remoteListModel =
 		new DefaultListModel();
-
-	protected static JTextField c_width  = new JTextField();
-	protected static JTextField c_height = new JTextField();
-	protected static JTextField c_file   = new JTextField(20);
-	protected static JComboBox  c_super  = null;
+	protected static String lastWidth  = "";
+	protected static String lastHeight = "";
+	protected static String lastFile   = "";
+	protected static int    lastSuper  = 2;
 
 	// Regular main components
+	protected JTextField c_width  = new JTextField();
+	protected JTextField c_height = new JTextField();
+	protected JTextField c_file   = new JTextField(20);
+	protected JComboBox  c_super  = null;
+
 	protected final JList remoteList     = new JList(remoteListModel);
 	protected final JTextField newRemote = new JTextField(30);
 	protected JButton c_file_chooser     = new JButton("...");
@@ -69,11 +73,50 @@ public class RenderNetDialog extends JDialog
 		CompHelp.addDisposeOnEscape(this);
 		CompHelp.addDisposeOnAction(c_cancel, this);
 
+		// One action listener that will fire up the rendering process
+		final RenderNetDialog subparent = this;
+		ActionListener starter = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				subparent.startRendering();
+			}
+		};
+		c_width.addActionListener(starter);
+		c_height.addActionListener(starter);
+		c_file.addActionListener(starter);
+		c_ok.addActionListener(starter);
+
+		// Focus listeners for all text fields
+		JTextField[] av = new JTextField[]
+			{ newRemote, c_width, c_height, c_file };
+		CompHelp.addSelectOnFocus(av);
+
+		// Reload old values
+		reloadValues();
+
 		// Show it
 		pack();
 		newRemote.requestFocusInWindow();
 		CompHelp.center(this, parent);
 		setVisible(true);
+	}
+
+	protected void reloadValues()
+	{
+		c_width.setText(lastWidth);
+		c_height.setText(lastHeight);
+		c_file.setText(lastFile);
+		c_super.setSelectedIndex(lastSuper);
+	}
+
+	protected void saveValues()
+	{
+		lastWidth  = c_width.getText();
+		lastHeight = c_height.getText();
+		lastFile   = c_file.getText();
+		lastSuper  = c_super.getSelectedIndex();
 	}
 
 	/**
@@ -82,6 +125,15 @@ public class RenderNetDialog extends JDialog
 	protected void pingRemote(String url)
 	{
 		System.out.println("PING: " + url);
+	}
+
+	/**
+	 * TODO.
+	 */
+	protected void startRendering()
+	{
+		saveValues();
+		System.out.println("Rendering.");
 	}
 
 	/**
@@ -186,9 +238,8 @@ public class RenderNetDialog extends JDialog
 					Multifrac.commonBorder, "Render settings"));
 
 		// Controls for render settings panel
-		if (c_super == null)
-			c_super = new JComboBox(new String[]
-					{ "None", "2x2", "4x4", "8x8" });
+		c_super = new JComboBox(new String[]
+				{ "None", "2x2", "4x4", "8x8" });
 
 		sgbSet.add(new JLabel("Width:"),
 				0, 0, 1, 1, 1.0, 1.0);
