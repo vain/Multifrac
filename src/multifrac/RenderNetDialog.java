@@ -265,6 +265,31 @@ public class RenderNetDialog extends JDialog
 		// Index 2 = Factor 4 ... --> 2^Index
 		nset.supersampling = (int)Math.pow(2.0, lastSuper);
 
+		// Check if the image fits into memory
+		double w = (double)nset.param.getWidth();
+		double h = (double)nset.param.getHeight();
+		double av = (double)Runtime.getRuntime().maxMemory();
+		double sz = 0;
+
+		if (nset.supersampling == 1)
+			sz = w * h * 4;
+		if (nset.supersampling >= 2)
+			sz = w * h * nset.supersampling * nset.supersampling * 1.5 * 4;
+
+		if (av < sz)
+		{
+			JOptionPane.showMessageDialog(this,
+				"I'm sorry, " + RenderDialog.toSize(sz) + " memory "
+				+ "needed to process this image but only "
+				+ RenderDialog.toSize(av) + " available.\n"
+				+ "This also applies to distributed rendering as I "
+				+ "need to assemble the image on this computer.\n"
+				+ "Try increasing your heap space with \"-Xmx...\".",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
 		// Ok, we're ready to go. Overwrite existing file?
 		// This should be the last question.
 		if (nset.tfile.exists())

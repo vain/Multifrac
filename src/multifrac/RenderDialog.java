@@ -43,7 +43,7 @@ public class RenderDialog extends JDialog
 
 	private FractalParameters param = null;
 
-	private String toSize(double s)
+	public static String toSize(double s)
 	{
 		String[] suff = new String[] { "Bytes", "KB", "MB", "GB", "TB" };
 		int i = 0;
