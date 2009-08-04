@@ -163,7 +163,7 @@ public class Node
 	{
 		String host = "localhost";
 		int    port = defaultPort;
-		int   bunch = 100;
+		int   bunch = 10;
 		int threads = Multifrac.numthreads;
 
 		try
