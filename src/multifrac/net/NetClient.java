@@ -89,6 +89,7 @@ public class NetClient
 					job.param.writeToStream(dout);
 					dout.writeInt(job.getWidth());
 					dout.writeInt(job.getHeight());
+					dout.writeInt(szBunch * bunch);
 
 					// Do the tokens
 					int start, end, max;
@@ -386,8 +387,8 @@ public class NetClient
 				din  = new DataInputStream(s.getInputStream());
 				dout = new DataOutputStream(s.getOutputStream());
 
-				// Query initial bunch size
-				msg(out, -1, "Getting initial bunch count...");
+				// Query bunch size
+				msg(out, -1, "Getting bunch count...");
 				dout.writeInt(3);
 				int bunch = din.readInt();
 				msg(out, -1, "Got it: " + bunch);
