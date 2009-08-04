@@ -32,18 +32,25 @@ import java.util.concurrent.*;
 
 public class NetClient
 {
+	protected static final int szBunch = 10;
+	protected static final int CONST_FREE = 0;
+	protected static final int CONST_DONE = 1;
+	protected static       int lastID = 10;
+
 	/**
 	 * Spawns a new client in the background which tries to use the
 	 * given remote host as a rendering node. It will pick a job and
 	 * render it. The result will be written to job's pixel buffer.
 	 */
 	public static void dispatchClient(
+			final int ID,
 			final String host,
 			final int port,
 			final FractalRenderer.Job job,
 			final int[] coordinator,
 			final LinkedBlockingQueue<Integer> messenger,
 			final NetConsole con,
+			final NetBarDriver bar,
 			final int bunch)
 	{
 		Thread t = new Thread()
@@ -51,10 +58,14 @@ public class NetClient
 			@Override
 			public void run()
 			{
+				int i      = 0;
+				int bstart = -1;
+				int bend   = -1;
+
 				try
 				{
 					// Connect
-					msg(con, this,
+					msg(con, ID,
 							"Connecting to " + host + ":" + port + "...");
 					DataInputStream bin = null;
 					DataOutputStream dout = null;
@@ -63,7 +74,7 @@ public class NetClient
 							new BufferedInputStream(s.getInputStream()));
 					dout = new DataOutputStream(s.getOutputStream());
 
-					msg(con, this, "Connected!");
+					msg(con, ID, "Connected!");
 
 					// Init
 					dout.writeInt(1000);
@@ -77,26 +88,87 @@ public class NetClient
 
 					while (true)
 					{
+						// One single render node can fail but the
+						// others may be able to continue their work.
+						// Hence, we can't use a simple coordinator
+						// like in the local multithreaded process.
+						//
+						// The image is split up into "bunches". Every
+						// bunch has 3 states:
+						//
+						//  - unrendered/CONST_FREE: 0
+						//  - finished/CONST_DONE: 1
+						//  - WIP: ID of the local thread
+						//
+						// If a thread grabs a bunch, it marks it as
+						// being "WIP" with its ID. Once a bunch is
+						// completed, it's marked as "finished". If a
+						// thread *fails*, the bunch will be marked
+						// again as "unrendered".
 						synchronized (coordinator)
 						{
-							if (coordinator[0] >= max)
+							// Grab as many contiguous bunches as
+							// possible. If you hit a boundary (end of
+							// the image or bunches that are WIP on
+							// other threads), then stop grabbing. If
+							// there are no more bunches left, quit the
+							// thread.
+
+							// If this is not the first run, mark the
+							// bunches of the last run as "finished".
+							if (bstart != -1)
+							{
+								for (i = bstart; i < bend; i++)
+								{
+									//msg(con, ID, "MARK: "  + i);
+									coordinator[i] = CONST_DONE;
+								}
+							}
+
+							if (bar != null)
+								bar.update(coordinator);
+
+							// Find first free bunch.
+							for (i = 0;
+									i < coordinator.length
+									&& coordinator[i] != CONST_FREE; i++);
+							bstart = i;
+
+							// Start beyond image boundary? Then we're
+							// done.
+							if (bstart >= coordinator.length)
 								break;
 
-							start = coordinator[0];
-							coordinator[0] += bunch;
-							end = coordinator[0];
+							// Find last free bunch and mark those in
+							// between.
+							while (i < coordinator.length
+									&& (i - bstart) < bunch
+									&& coordinator[i] == CONST_FREE)
+							{
+								coordinator[i] = ID;
+								i++;
+							}
+							bend = i;
+
+							if (bar != null)
+								bar.update(coordinator);
 						}
+
+						// Calc real rows.
+						msg(con, ID, "Bunch " + bstart + " -> " + bend);
+						start = bstart * szBunch;
+						end   = bend   * szBunch;
 
 						if (end >= max)
 							end = max;
 
 						// Now render this particular token.
-						msg(con, this, "Rows " + start + " -> " + end);
+						msg(con, ID, "Rows " + start + " -> " + end);
 						dout.writeInt(1001);
 						dout.writeInt(start);
 						dout.writeInt(end);
 
-						msg(con, this, "Rendering...");
+						msg(con, ID, "Rendering...");
 
 						// Receive
 						int at = start * job.getWidth();
@@ -110,23 +182,39 @@ public class NetClient
 								if (first)
 								{
 									first = false;
-									msg(con, this, "Receiving...");
+									msg(con, ID, "Receiving...");
 								}
 							}
 						}
-						msg(con, this, "Receiving done.");
+						msg(con, ID, "Receiving done.");
 					}
 
-					msg(con, this, "No more tokens left. Closing.");
+					msg(con, ID, "No more bunches left. Closing.");
 					dout.writeInt(0);
 				}
 				catch (Exception e)
 				{
-					msg(con, this, "Error: "
+					msg(con, ID, "Error: "
 							+ e.getClass().getSimpleName() + ", "
 							+ "\"" + e.getMessage() + "\"");
 
 					e.printStackTrace();
+
+					synchronized (coordinator)
+					{
+						// Reset WIP-bunches
+						if (bstart != -1)
+						{
+							for (i = bstart; i < bend; i++)
+							{
+								//msg(con, ID, "RESET: " + i);
+								coordinator[i] = CONST_FREE;
+							}
+
+							if (bar != null)
+								bar.update(coordinator);
+						}
+					}
 
 					// Send failure message
 					// TODO: More critical errors get higher numbers
@@ -141,13 +229,13 @@ public class NetClient
 		t.start();
 	}
 
-	public static void msg(NetConsole con, Object who, String msg)
+	public static void msg(NetConsole con, int who, String msg)
 	{
 		if (con == null)
 			return;
 
-		if (who != null)
-			con.println("[" + who.hashCode() + "] " + msg);
+		if (who != -1)
+			con.println("[" + who + "] " + msg);
 		else
 			con.println("[main] " + msg);
 	}
@@ -189,11 +277,24 @@ public class NetClient
 	}
 
 	/**
+	 * Create an ID for a thread. This is nothing special, so we can use
+	 * a counter. Just make sure it's none of the constants.
+	 */
+	protected static int createID()
+	{
+		lastID++;
+		while (lastID == CONST_FREE || lastID == CONST_DONE)
+			lastID++;
+
+		return lastID;
+	}
+
+	/**
 	 * Use this method to start and keep track of a distributed rendering
 	 * process.
 	 */
 	public static void start(NetRenderSettings nset, NetConsole out,
-			Runnable callback)
+			NetBarDriver bar, Runnable callback)
 	{
 		// Create new job item
 		FractalRenderer.Job job = new FractalRenderer.Job(
@@ -202,9 +303,14 @@ public class NetClient
 				-1,
 				null);
 
-		// Local coordinator
-		int[] coord = new int[1];
-		coord[0] = 0;
+		// Local coordinator to maintain the bunches.
+		int numbunch = (int)Math.ceil(job.getHeight() / (double)szBunch);
+		msg(out, -1, "Number of bunches: " + numbunch);
+		int[] coord = new int[numbunch];
+
+		// Inform the bar driver about this size
+		if (bar != null)
+			bar.setSize(numbunch);
 
 		// Message queue
 		LinkedBlockingQueue<Integer> messenger =
@@ -218,7 +324,7 @@ public class NetClient
 		for (int i = 0; i < nset.hosts.length; i++)
 		{
 			// Connect
-			msg(out, null, "Connecting to "
+			msg(out, -1, "Connecting to "
 					+ nset.hosts[i]
 					+ ":"
 					+ nset.ports[i]
@@ -230,24 +336,24 @@ public class NetClient
 				DataOutputStream dout;
 
 				Socket s = new Socket(nset.hosts[i], nset.ports[i]);
-				msg(out, null, "Connected.");
+				msg(out, -1, "Connected.");
 
 				din  = new DataInputStream(s.getInputStream());
 				dout = new DataOutputStream(s.getOutputStream());
 
 				// Query initial bunch size
-				msg(out, null, "Getting initial bunch size...");
+				msg(out, -1, "Getting initial bunch count...");
 				dout.writeInt(3);
 				int bunch = din.readInt();
-				msg(out, null, "Got it: " + bunch);
+				msg(out, -1, "Got it: " + bunch);
 
 				// Query number of processors
-				msg(out, null, "Getting number of CPUs...");
+				msg(out, -1, "Getting number of CPUs...");
 				dout.writeInt(2);
 				int cpus = din.readInt();
-				msg(out, null, "Got it: " + cpus);
+				msg(out, -1, "Got it: " + cpus);
 
-				msg(out, null, "Closing control connection with "
+				msg(out, -1, "Closing control connection with "
 						+ nset.hosts[i]
 						+ ":"
 						+ nset.ports[i]);
@@ -256,7 +362,7 @@ public class NetClient
 				// Launch clients for this host
 				for (int k = 0; k < cpus; k++)
 				{
-					msg(out, null, "Launch client number " + (k + 1)
+					msg(out, -1, "Launch client number " + (k + 1)
 							+ " for "
 							+ nset.hosts[i]
 							+ ":"
@@ -264,12 +370,14 @@ public class NetClient
 							+ "...");
 
 					dispatchClient(
+							createID(),
 							nset.hosts[i],
 							nset.ports[i],
 							job,
 							coord,
 							messenger,
 							out,
+							bar,
 							bunch);
 
 					numClients++;
@@ -277,7 +385,7 @@ public class NetClient
 			}
 			catch (Exception e)
 			{
-				msg(out, null, "Could not spawn the last client: "
+				msg(out, -1, "Could not spawn the last client: "
 						+ e.getClass().getSimpleName() + ", "
 						+ "\"" + e.getMessage() + "\"");
 			}
@@ -285,7 +393,7 @@ public class NetClient
 
 		if (numClients == 0)
 		{
-			msg(out, null, "No clients were started!");
+			msg(out, -1, "No clients were started!");
 
 			// Callback
 			if (callback != null)
@@ -306,15 +414,19 @@ public class NetClient
 				{
 					errors++;
 					String err =
-						"Failure in one thread: Code "
+						"Failure in a thread: Code "
 						+ result
 						+ ".";
 
 					if (errors < numClients)
-						msg(out, null, err + " Trying to continue.");
+						msg(out, -1, err
+								+ " " + errors
+								+ " client" + (errors == 1 ? "" : "s")
+								+ " failed. "
+								+ "Trying to continue.");
 					else
 					{
-						msg(out, null, err + " All clients failed!");
+						msg(out, -1, err + " All clients failed!");
 
 						// Callback
 						if (callback != null)
@@ -328,7 +440,7 @@ public class NetClient
 		}
 		catch (InterruptedException e)
 		{
-			msg(out, null, "Uhuh. Interrupted while waiting.");
+			msg(out, -1, "Uhuh. Interrupted while waiting.");
 			e.printStackTrace();
 
 			// Callback
@@ -340,13 +452,13 @@ public class NetClient
 
 		long endTime = System.currentTimeMillis();
 
-		msg(out, null, "Job done!");
-		msg(out, null, ((endTime - startTime) / 1000.0) + " seconds.");
+		msg(out, -1, "Job done!");
+		msg(out, -1, ((endTime - startTime) / 1000.0) + " seconds.");
 
-		msg(out, null, "Downscaling...");
+		msg(out, -1, "Downscaling...");
 		job.resizeBack();
 
-		msg(out, null, "Saving the image...");
+		msg(out, -1, "Saving the image...");
 		try
 		{
 			int w = job.getWidth();
@@ -388,7 +500,7 @@ public class NetClient
 				ImageIO.write(rendered, ext, nset.tfile);
 			}
 
-			msg(out, null, "We're done. Have a nice day!");
+			msg(out, -1, "We're done. Have a nice day!");
 
 			// Callback
 			if (callback != null)
@@ -396,7 +508,7 @@ public class NetClient
 		}
 		catch (Exception e)
 		{
-			msg(out, null, "Oops while saving: "
+			msg(out, -1, "Oops while saving: "
 					+ e.getClass().getSimpleName() + ", "
 					+ "\"" + e.getMessage() + "\"");
 			e.printStackTrace();
@@ -434,15 +546,13 @@ public class NetClient
 	 */
 	public static void main(String[] args)
 	{
-		System.out.println(ping("localhoast", 7331));
-
 		NetRenderSettings nset = new NetRenderSettings();
 
 		// Remotes
 		nset.hosts = new String[]
-			{ "quatsch", "localhost", "192.168.0.234" };
+			{ "192.168.0.234", "localhost" };
 		nset.ports = new Integer[]
-			{ 7331, 7331, 7331 };
+			{ 7331, 7331 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
@@ -457,7 +567,7 @@ public class NetClient
 		nset.tfile = new File(args[4]);
 
 		// System.out as a NetConsole
-		NetConsole out = new NetConsole()
+		final NetConsole out = new NetConsole()
 		{
 			@Override
 			synchronized public void println(String s)
@@ -466,7 +576,38 @@ public class NetClient
 			}
 		};
 
+		NetBarDriver bar = new NetBarDriver()
+		{
+			@Override
+			public void setSize(int size)
+			{
+				out.println("Bar driver got informed about a size of "
+						+ size + ".");
+			}
+
+			@Override
+			public void update(int[] coord)
+			{
+				String s = "";
+				for (int i = 0; i < coord.length; i++)
+				{
+					switch (coord[i])
+					{
+						case CONST_FREE:
+							s += "-";
+							break;
+						case CONST_DONE:
+							s += "#";
+							break;
+						default:
+							s += "x";
+					}
+				}
+				out.println(s);
+			}
+		};
+
 		// Now start it (no callback)
-		start(nset, out, null);
+		start(nset, out, bar, null);
 	}
 }
