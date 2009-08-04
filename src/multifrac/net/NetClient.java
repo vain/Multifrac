@@ -122,7 +122,10 @@ public class NetClient
 				}
 				catch (Exception e)
 				{
-					msg(con, this, "Error: " +  e.getMessage());
+					msg(con, this, "Error: "
+							+ e.getClass().getSimpleName() + ", "
+							+ "\"" + e.getMessage() + "\"");
+
 					e.printStackTrace();
 
 					// Send failure message
@@ -180,7 +183,8 @@ public class NetClient
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			return e.getMessage();
+			return e.getClass().getSimpleName() + ", "
+					+ "\"" + e.getMessage() + "\"";
 		}
 	}
 
@@ -274,7 +278,8 @@ public class NetClient
 			catch (Exception e)
 			{
 				msg(out, null, "Could not spawn the last client: "
-						+ e.getMessage());
+						+ e.getClass().getSimpleName() + ", "
+						+ "\"" + e.getMessage() + "\"");
 			}
 		}
 
@@ -305,7 +310,7 @@ public class NetClient
 						+ result
 						+ ".";
 
-					if (errors < nset.hosts.length)
+					if (errors < numClients)
 						msg(out, null, err + " Trying to continue.");
 					else
 					{
@@ -382,18 +387,20 @@ public class NetClient
 				// Save the image to disk.
 				ImageIO.write(rendered, ext, nset.tfile);
 			}
+
+			msg(out, null, "We're done. Have a nice day!");
+
+			// Callback
+			if (callback != null)
+				SwingUtilities.invokeLater(callback);
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
-			msg(out, null, "Oops while saving: " + e.getMessage());
+			msg(out, null, "Oops while saving: "
+					+ e.getClass().getSimpleName() + ", "
+					+ "\"" + e.getMessage() + "\"");
 			e.printStackTrace();
 		}
-
-		msg(out, null, "We're done. Have a nice day!");
-
-		// Callback
-		if (callback != null)
-			SwingUtilities.invokeLater(callback);
 	}
 
 	/**
@@ -427,15 +434,15 @@ public class NetClient
 	 */
 	public static void main(String[] args)
 	{
-		System.out.println(ping("localhost", 7331));
+		System.out.println(ping("localhoast", 7331));
 
 		NetRenderSettings nset = new NetRenderSettings();
 
 		// Remotes
 		nset.hosts = new String[]
-			{ "localhost", "192.168.0.234" };
+			{ "quatsch", "localhost", "192.168.0.234" };
 		nset.ports = new Integer[]
-			{ 7331, 7331 };
+			{ 7331, 7331, 7331 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
