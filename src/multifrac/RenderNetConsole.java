@@ -23,12 +23,14 @@ import multifrac.net.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class RenderNetConsole extends JDialog implements NetConsole
 {
 	protected final RenderNetDialog parent;
 	protected final JTextArea con = new JTextArea();
 	protected final JButton close = new JButton("Close");
+	protected final JButton abort = new JButton("Abort...");
 
 	/**
 	 * Construct the dialog.
@@ -48,11 +50,27 @@ public class RenderNetConsole extends JDialog implements NetConsole
 		scroller.setPreferredSize(new Dimension(400, 300));
 		con.setEditable(false);
 
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
+		buttonPanel.add(abort);
+		buttonPanel.add(close);
+
 		final RenderNetBar bar = new RenderNetBar(this);
 
-		sgbMain.add(scroller, 0, 0, 1, 1, 1.0, 1.0);
-		sgbMain.add(bar,      0, 1, 1, 1, 1.0, 1.0);
-		sgbMain.add(close,    0, 2, 1, 1, 1.0, 1.0);
+		sgbMain.add(scroller,    0, 0, 1, 1, 1.0, 1.0);
+		sgbMain.add(bar,         0, 1, 1, 1, 1.0, 1.0);
+		sgbMain.add(buttonPanel, 0, 2, 1, 1, 1.0, 1.0);
+
+		// Abort action
+		abort.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				NetClient.setCanceled(true);
+				println("[control] Abort requested. Please wait.");
+			}
+		});
 
 		// Ways (not) to close this dialog
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -110,6 +128,7 @@ public class RenderNetConsole extends JDialog implements NetConsole
 	public void finish()
 	{
 		close.setEnabled(true);
+		abort.setEnabled(false);
 		CompHelp.addDisposeOnEscape(this);
 	}
 }
