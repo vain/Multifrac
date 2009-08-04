@@ -123,14 +123,26 @@ public class Node
 		}
 		catch (EOFException e)
 		{
-			msg("Peer hung up. Quitting thread.");
-			return;
+			msg("Peer hung up. Thread quitting.");
 		}
-		catch (Exception e)
+		catch (SocketException e)
 		{
-			err("Fatal error, quitting this thread:");
+			msg("Socket gone. Thread quitting.");
 			e.printStackTrace();
-			return;
+		}
+		catch (Throwable e)
+		{
+			err("Unexpected error! Thread quitting.");
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (c != null)
+					c.close();
+			}
+			catch (IOException ignore) {}
 		}
 	}
 
@@ -181,9 +193,9 @@ public class Node
 
 		System.out.println("Rendernode starting...");
 
+		ServerSocket s = null;
 		try
 		{
-			ServerSocket s = null;
 			final int finalbunch = bunch;
 
 			s = new ServerSocket(port, 0, InetAddress.getByName(host));
@@ -204,11 +216,20 @@ public class Node
 				t.start();
 			}
 		}
-		catch (Exception e)
+		catch (Throwable e)
 		{
-			System.err.println("Fatal error, node quitting:");
+			System.err.println("Fatal error! Node quitting.");
 			e.printStackTrace();
 			System.exit(1);
+		}
+		finally
+		{
+			try
+			{
+				if (s != null)
+					s.close();
+			}
+			catch (IOException ignore) {}
 		}
 	}
 }
