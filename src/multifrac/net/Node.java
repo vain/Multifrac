@@ -36,7 +36,7 @@ public class Node
 	/**
 	 * Main node loop, receiving commands.
 	 */
-	public Node(Socket c, int bunch)
+	public Node(Socket c, int bunch, int numthreads)
 	{
 		msg("Connected: " + c);
 
@@ -68,7 +68,7 @@ public class Node
 
 					case 2:
 						msg("Advertising number of processors.");
-						dout.writeInt(Multifrac.numthreads);
+						dout.writeInt(numthreads);
 						break;
 
 					case 3:
@@ -164,6 +164,7 @@ public class Node
 		String host = "localhost";
 		int    port = defaultPort;
 		int   bunch = 100;
+		int threads = Multifrac.numthreads;
 
 		try
 		{
@@ -175,11 +176,13 @@ public class Node
 					port = new Integer(args[++i]);
 				else if (args[i].toUpperCase().equals("-B"))
 					bunch = new Integer(args[++i]);
+				else if (args[i].toUpperCase().equals("-T"))
+					threads = new Integer(args[++i]);
 				else if (args[i].toUpperCase().equals("--HELP"))
 				{
 					System.out.println(
 							"Arguments: [-h host] [-p port] [-b bunch]"
-							+ " [--help]");
+							+ " [-t threads] [--help]");
 					return;
 				}
 			}
@@ -197,10 +200,19 @@ public class Node
 		try
 		{
 			final int finalbunch = bunch;
+			final int finalthreads = threads;
 
 			s = new ServerSocket(port, 0, InetAddress.getByName(host));
 			System.out.println("ServerSocket up: " + s);
-			System.out.println("Configured bunch size: " + finalbunch);
+			System.out.println("Configured options:\n"
+					+ "\tbunch   = " + finalbunch + "\n"
+					+ "\tthreads = " + finalthreads);
+
+			if (finalbunch < 1 || finalthreads < 1)
+			{
+				System.err.println("Those options are not useful.");
+				return;
+			}
 
 			while (true)
 			{
@@ -210,7 +222,7 @@ public class Node
 					@Override
 					public void run()
 					{
-						new Node(client, finalbunch);
+						new Node(client, finalbunch, finalthreads);
 					}
 				};
 				t.start();
