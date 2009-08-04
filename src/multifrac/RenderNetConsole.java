@@ -26,6 +26,7 @@ import java.awt.*;
 
 public class RenderNetConsole extends JDialog implements NetConsole
 {
+	protected final RenderNetDialog parent;
 	protected final JTextArea con = new JTextArea();
 	protected final JButton close = new JButton("Close");
 
@@ -37,6 +38,7 @@ public class RenderNetConsole extends JDialog implements NetConsole
 			final NetRenderSettings nset)
 	{
 		super(parent, "Console", true);
+		this.parent = parent;
 
 		// Components
 		SimpleGridBag sgbMain = new SimpleGridBag(getContentPane());
@@ -46,8 +48,11 @@ public class RenderNetConsole extends JDialog implements NetConsole
 		scroller.setPreferredSize(new Dimension(400, 300));
 		con.setEditable(false);
 
+		final RenderNetBar bar = new RenderNetBar(this);
+
 		sgbMain.add(scroller, 0, 0, 1, 1, 1.0, 1.0);
-		sgbMain.add(close,    0, 1, 1, 1, 1.0, 1.0);
+		sgbMain.add(bar,      0, 1, 1, 1, 1.0, 1.0);
+		sgbMain.add(close,    0, 2, 1, 1, 1.0, 1.0);
 
 		// Ways (not) to close this dialog
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -56,7 +61,7 @@ public class RenderNetConsole extends JDialog implements NetConsole
 
 		// Finish
 		pack();
-		CompHelp.center(this, parent);
+		centerMe();
 
 		// Start the actual process.
 		final RenderNetConsole out = this;
@@ -66,7 +71,7 @@ public class RenderNetConsole extends JDialog implements NetConsole
 			public void run()
 			{
 				// Start the client(s) and give them a callback
-				NetClient.start(nset, out,
+				NetClient.start(nset, out, bar,
 						new Runnable()
 						{
 							@Override
@@ -78,7 +83,15 @@ public class RenderNetConsole extends JDialog implements NetConsole
 			}
 		};
 		t.start();
-		setVisible(true);
+	}
+
+	/**
+	 * Center this dialog. Will be called from RenderNetBar once it has
+	 * created all its children.
+	 */
+	public void centerMe()
+	{
+		CompHelp.center(this, parent);
 	}
 
 	/**
