@@ -37,6 +37,8 @@ public class NetClient
 	public static final int CONST_FREE = 0;
 	public static final int CONST_DONE = 1;
 
+	public static final int CONST_SUCCESS = 0;
+	public static final int CONST_ERROR   = 1;
 	public static final int CONST_ABORTED = 2;
 
 	protected static boolean isCanceled = false;
@@ -65,6 +67,8 @@ public class NetClient
 				int i      = 0;
 				int bstart = -1;
 				int bend   = -1;
+				boolean aborted = false;
+				Socket s = null;
 
 				try
 				{
@@ -73,7 +77,7 @@ public class NetClient
 							"Connecting to " + host + ":" + port + "...");
 					DataInputStream bin = null;
 					DataOutputStream dout = null;
-					Socket s = new Socket(host, port);
+					s = new Socket(host, port);
 					bin  = new DataInputStream(
 							new BufferedInputStream(s.getInputStream()));
 					dout = new DataOutputStream(s.getOutputStream());
@@ -92,9 +96,11 @@ public class NetClient
 
 					while (true)
 					{
+						// Aborted? Then get out of this loop to do a
+						// proper shutdown.
 						if (getCanceled())
 						{
-							messenger.offer(new Integer(CONST_ABORTED));
+							aborted = true;
 							break;
 						}
 
@@ -199,12 +205,24 @@ public class NetClient
 						msg(con, ID, "Receiving done.");
 					}
 
-					msg(con, ID, "Okay, gracefully quitting.");
+					// Send message depending on state
+					if (!aborted)
+					{
+						msg(con, ID, "No more bunches left. Quitting.");
+						messenger.offer(new Integer(CONST_SUCCESS));
+					}
+					else
+					{
+						msg(con, ID, "Aborted.");
+						messenger.offer(new Integer(CONST_ABORTED));
+					}
+
+					// The famous last words.
 					dout.writeInt(0);
 				}
 				catch (Exception e)
 				{
-					msg(con, ID, "Error: "
+					msg(con, ID, "Unexpected error! Thread quitting: "
 							+ e.getClass().getSimpleName() + ", "
 							+ "\"" + e.getMessage() + "\"");
 
@@ -228,12 +246,17 @@ public class NetClient
 
 					// Send failure message
 					// TODO: More critical errors get higher numbers
-					messenger.offer(new Integer(1));
-					return;
+					messenger.offer(new Integer(CONST_ERROR));
 				}
-
-				// Send success message
-				messenger.offer(new Integer(0));
+				finally
+				{
+					try
+					{
+						if (s != null)
+							s.close();
+					}
+					catch (IOException ignore) {}
+				}
 			}
 		};
 		t.start();
@@ -442,7 +465,7 @@ public class NetClient
 
 					return;
 				}
-				else if (result != 0)
+				else if (result != CONST_SUCCESS)
 				{
 					errors++;
 					String err =
@@ -638,6 +661,22 @@ public class NetClient
 				out.println(s);
 			}
 		};
+
+		/*
+		Thread t = new Thread()
+		{
+			public void run()
+			{
+				try
+				{
+					Thread.sleep(1000);
+					NetClient.setCanceled(true);
+				}
+				catch (Exception ignore) {}
+			}
+		};
+		t.start();
+		*/
 
 		// Now start it (no callback)
 		start(nset, out, bar, null);
