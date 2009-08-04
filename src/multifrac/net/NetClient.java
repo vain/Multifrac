@@ -50,30 +50,11 @@ public class NetClient
 			final int[] coordinator,
 			final LinkedBlockingQueue<Integer> messenger,
 			final NetConsole con,
+			final NetBarDriver bar,
 			final int bunch)
 	{
 		Thread t = new Thread()
 		{
-			// Later, this could be shown in a nifty GUI.
-			public void dumpCoord(int[] coord)
-			{
-				for (int i = 0; i < coord.length; i++)
-				{
-					switch (coord[i])
-					{
-						case CONST_FREE:
-							System.out.print("-");
-							break;
-						case CONST_DONE:
-							System.out.print("#");
-							break;
-						default:
-							System.out.print("x");
-					}
-				}
-				System.out.println();
-			}
-
 			@Override
 			public void run()
 			{
@@ -144,7 +125,8 @@ public class NetClient
 								}
 							}
 
-							dumpCoord(coordinator);
+							if (bar != null)
+								bar.update(coordinator);
 
 							// Find first free bunch.
 							for (i = 0;
@@ -168,7 +150,8 @@ public class NetClient
 							}
 							bend = i;
 
-							dumpCoord(coordinator);
+							if (bar != null)
+								bar.update(coordinator);
 						}
 
 						// Calc real rows.
@@ -228,7 +211,8 @@ public class NetClient
 								coordinator[i] = CONST_FREE;
 							}
 
-							dumpCoord(coordinator);
+							if (bar != null)
+								bar.update(coordinator);
 						}
 					}
 
@@ -310,7 +294,7 @@ public class NetClient
 	 * process.
 	 */
 	public static void start(NetRenderSettings nset, NetConsole out,
-			Runnable callback)
+			NetBarDriver bar, Runnable callback)
 	{
 		// Create new job item
 		FractalRenderer.Job job = new FractalRenderer.Job(
@@ -323,6 +307,10 @@ public class NetClient
 		int numbunch = (int)Math.ceil(job.getHeight() / (double)szBunch);
 		msg(out, -1, "Number of bunches: " + numbunch);
 		int[] coord = new int[numbunch];
+
+		// Inform the bar driver about this size
+		if (bar != null)
+			bar.setSize(numbunch);
 
 		// Message queue
 		LinkedBlockingQueue<Integer> messenger =
@@ -389,6 +377,7 @@ public class NetClient
 							coord,
 							messenger,
 							out,
+							bar,
 							bunch);
 
 					numClients++;
@@ -578,7 +567,7 @@ public class NetClient
 		nset.tfile = new File(args[4]);
 
 		// System.out as a NetConsole
-		NetConsole out = new NetConsole()
+		final NetConsole out = new NetConsole()
 		{
 			@Override
 			synchronized public void println(String s)
@@ -587,7 +576,38 @@ public class NetClient
 			}
 		};
 
+		NetBarDriver bar = new NetBarDriver()
+		{
+			@Override
+			public void setSize(int size)
+			{
+				out.println("Bar driver got informed about a size of "
+						+ size + ".");
+			}
+
+			@Override
+			public void update(int[] coord)
+			{
+				String s = "";
+				for (int i = 0; i < coord.length; i++)
+				{
+					switch (coord[i])
+					{
+						case CONST_FREE:
+							s += "-";
+							break;
+						case CONST_DONE:
+							s += "#";
+							break;
+						default:
+							s += "x";
+					}
+				}
+				out.println(s);
+			}
+		};
+
 		// Now start it (no callback)
-		start(nset, out, null);
+		start(nset, out, bar, null);
 	}
 }
