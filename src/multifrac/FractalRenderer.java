@@ -51,10 +51,17 @@ public class FractalRenderer extends Thread
 		public long stamp = 0;
 		public int supersampling = 1;
 		public Publisher pub = null;
+		public boolean isCropped = false;
 
 		private boolean canceled = false;
 
 		public Job(FractalParameters p, int supsam, long s, Publisher pu)
+		{
+			this(p, supsam, s, pu, -1);
+		}
+
+		public Job(FractalParameters p, int supsam, long s, Publisher pu,
+				int cropRows)
 		{
 			param = new FractalParameters(p);
 
@@ -62,7 +69,14 @@ public class FractalRenderer extends Thread
 			param.size.width  *= supsam;
 			param.size.height *= supsam;
 
-			pixels = new int[param.getWidth() * param.getHeight()];
+			// The buffer can either be fullsized or cropped.
+			if (cropRows == -1)
+				pixels = new int[param.getWidth() * param.getHeight()];
+			else
+			{
+				pixels = new int[param.getWidth() * cropRows];
+				isCropped = true;
+			}
 
 			stamp = s;
 
@@ -205,7 +219,11 @@ public class FractalRenderer extends Thread
 		double w = myJob.getWidth();
 		double muh = 0.0;
 
-		int index = tstart * myJob.getWidth();
+		// Choose starting index depending on buffer type
+		int index = 0;
+		if (!myJob.isCropped)
+			index = tstart * myJob.getWidth();
+
 		for (int coord_y = tstart; coord_y < tend; coord_y++)
 		{
 			//zeichY = (-1.0 + 2.0 * (double)coord_y * resrezi);

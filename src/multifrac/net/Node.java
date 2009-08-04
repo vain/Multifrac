@@ -72,7 +72,7 @@ public class Node
 						break;
 
 					case 3:
-						msg("Advertising initial bunch-size.");
+						msg("Advertising bunch-size.");
 						dout.writeInt(bunch);
 						break;
 
@@ -81,10 +81,17 @@ public class Node
 						params = new FractalParameters(din);
 						int w = din.readInt();
 						int h = din.readInt();
+						int rows = din.readInt();
 						params.updateSize(new Dimension(w, h));
 						msg("Done.");
 
-						job = new FractalRenderer.Job(params, 1, -1, null);
+						job = new FractalRenderer.Job(
+								params,
+								1,
+								-1,
+								null,
+								rows);
+
 						msg("Current settings:" + params
 								+ "\n"
 								+ "\t.getWidth() : " + params.getWidth()
@@ -107,7 +114,7 @@ public class Node
 						rend.renderPass(start, end);
 
 						msg("Done, sending image...");
-						int at = start * job.getWidth();
+						int at = 0;
 						int[] px = job.getPixels();
 						for (int y = start; y < end; y++)
 							for (int x = 0; x < job.getWidth(); x++)
