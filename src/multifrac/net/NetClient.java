@@ -33,9 +33,9 @@ import java.util.concurrent.*;
 public class NetClient
 {
 	protected static final int szBunch = 10;
-	protected static final int CONST_FREE = 0;
-	protected static final int CONST_DONE = 1;
-	protected static       int lastID = 10;
+	protected static       int lastID  = 10;
+	public static final int CONST_FREE = 0;
+	public static final int CONST_DONE = 1;
 
 	/**
 	 * Spawns a new client in the background which tries to use the
