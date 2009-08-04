@@ -451,11 +451,11 @@ public class NetClient
 		// Wait for them to finish
 		try
 		{
-			int got = 0;
-			int errors = 0;
-			while (got < numClients)
+			while (numClients > 0)
 			{
 				Integer result = messenger.take();
+				numClients--;
+
 				if (result == CONST_ABORTED)
 				{
 					msg(out, -1, "Aborted!");
@@ -468,18 +468,15 @@ public class NetClient
 				}
 				else if (result != CONST_SUCCESS)
 				{
-					errors++;
 					String err =
 						"Failure in a thread: Code "
 						+ result
 						+ ".";
 
-					if (errors < numClients)
+					if (numClients > 0)
 						msg(out, -1, err
-								+ " " + errors
-								+ " client" + (errors == 1 ? "" : "s")
-								+ " failed. "
-								+ "Trying to continue.");
+								+ " Other clients still running, "
+								+ "trying to continue.");
 					else
 					{
 						msg(out, -1, err + " All clients failed!");
@@ -491,7 +488,6 @@ public class NetClient
 						return;
 					}
 				}
-				got++;
 			}
 		}
 		catch (InterruptedException e)
@@ -606,9 +602,9 @@ public class NetClient
 
 		// Remotes
 		nset.hosts = new String[]
-			{ "192.168.0.234", "localhost" };
+			{ "192.168.0.234", "localhost", "localhost" };
 		nset.ports = new Integer[]
-			{ 7331, 7331 };
+			{ 7331, 7331, 7332 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
