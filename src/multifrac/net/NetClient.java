@@ -37,6 +37,12 @@ public class NetClient
 	public static final int CONST_FREE = 0;
 	public static final int CONST_DONE = 1;
 
+	public static final int CONST_SUCCESS = 0;
+	public static final int CONST_ERROR   = 1;
+	public static final int CONST_ABORTED = 2;
+
+	protected static boolean isCanceled = false;
+
 	/**
 	 * Spawns a new client in the background which tries to use the
 	 * given remote host as a rendering node. It will pick a job and
@@ -61,6 +67,8 @@ public class NetClient
 				int i      = 0;
 				int bstart = -1;
 				int bend   = -1;
+				boolean aborted = false;
+				Socket s = null;
 
 				try
 				{
@@ -69,7 +77,7 @@ public class NetClient
 							"Connecting to " + host + ":" + port + "...");
 					DataInputStream bin = null;
 					DataOutputStream dout = null;
-					Socket s = new Socket(host, port);
+					s = new Socket(host, port);
 					bin  = new DataInputStream(
 							new BufferedInputStream(s.getInputStream()));
 					dout = new DataOutputStream(s.getOutputStream());
@@ -88,6 +96,14 @@ public class NetClient
 
 					while (true)
 					{
+						// Aborted? Then get out of this loop to do a
+						// proper shutdown.
+						if (getCanceled())
+						{
+							aborted = true;
+							break;
+						}
+
 						// One single render node can fail but the
 						// others may be able to continue their work.
 						// Hence, we can't use a simple coordinator
@@ -189,12 +205,24 @@ public class NetClient
 						msg(con, ID, "Receiving done.");
 					}
 
-					msg(con, ID, "No more bunches left. Closing.");
+					// Send message depending on state
+					if (!aborted)
+					{
+						msg(con, ID, "No more bunches left. Quitting.");
+						messenger.offer(new Integer(CONST_SUCCESS));
+					}
+					else
+					{
+						msg(con, ID, "Aborted.");
+						messenger.offer(new Integer(CONST_ABORTED));
+					}
+
+					// The famous last words.
 					dout.writeInt(0);
 				}
 				catch (Exception e)
 				{
-					msg(con, ID, "Error: "
+					msg(con, ID, "Unexpected error! Thread quitting: "
 							+ e.getClass().getSimpleName() + ", "
 							+ "\"" + e.getMessage() + "\"");
 
@@ -218,15 +246,30 @@ public class NetClient
 
 					// Send failure message
 					// TODO: More critical errors get higher numbers
-					messenger.offer(new Integer(1));
-					return;
+					messenger.offer(new Integer(CONST_ERROR));
 				}
-
-				// Send success message
-				messenger.offer(new Integer(0));
+				finally
+				{
+					try
+					{
+						if (s != null)
+							s.close();
+					}
+					catch (IOException ignore) {}
+				}
 			}
 		};
 		t.start();
+	}
+
+	synchronized public static void setCanceled(boolean b)
+	{
+		isCanceled = b;
+	}
+
+	synchronized public static boolean getCanceled()
+	{
+		return isCanceled;
 	}
 
 	public static void msg(NetConsole con, int who, String msg)
@@ -296,6 +339,8 @@ public class NetClient
 	public static void start(NetRenderSettings nset, NetConsole out,
 			NetBarDriver bar, Runnable callback)
 	{
+		setCanceled(false);
+
 		// Create new job item
 		FractalRenderer.Job job = new FractalRenderer.Job(
 				nset.param,
@@ -410,7 +455,17 @@ public class NetClient
 			while (got < numClients)
 			{
 				Integer result = messenger.take();
-				if (result != 0)
+				if (result == CONST_ABORTED)
+				{
+					msg(out, -1, "Aborted!");
+
+					// Callback
+					if (callback != null)
+						SwingUtilities.invokeLater(callback);
+
+					return;
+				}
+				else if (result != CONST_SUCCESS)
 				{
 					errors++;
 					String err =
@@ -606,6 +661,22 @@ public class NetClient
 				out.println(s);
 			}
 		};
+
+		/*
+		Thread t = new Thread()
+		{
+			public void run()
+			{
+				try
+				{
+					Thread.sleep(1000);
+					NetClient.setCanceled(true);
+				}
+				catch (Exception ignore) {}
+			}
+		};
+		t.start();
+		*/
 
 		// Now start it (no callback)
 		start(nset, out, bar, null);
