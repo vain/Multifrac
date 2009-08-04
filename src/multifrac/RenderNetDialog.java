@@ -279,8 +279,7 @@ public class RenderNetDialog extends JDialog
 		}
 
 		// Spawn a new console (which, in turn, will launch clients...).
-		RenderNetConsole output = new RenderNetConsole(this, nset);
-		output.start();
+		new RenderNetConsole(this, nset);
 	}
 
 	/**

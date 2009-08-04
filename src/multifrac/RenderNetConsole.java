@@ -29,17 +29,14 @@ public class RenderNetConsole extends JDialog implements NetConsole
 	protected final JTextArea con = new JTextArea();
 	protected final JButton close = new JButton("Close");
 
-	protected final NetRenderSettings nset;
-
 	/**
 	 * Construct the dialog.
 	 */
-	public RenderNetConsole(RenderNetDialog parent, NetRenderSettings nset)
+	public RenderNetConsole(
+			final RenderNetDialog parent,
+			final NetRenderSettings nset)
 	{
 		super(parent, "Console", true);
-
-		// Save settings
-		this.nset = nset;
 
 		// Components
 		SimpleGridBag sgbMain = new SimpleGridBag(getContentPane());
@@ -60,13 +57,8 @@ public class RenderNetConsole extends JDialog implements NetConsole
 		// Finish
 		pack();
 		CompHelp.center(this, parent);
-	}
 
-	/**
-	 * Start the actual process.
-	 */
-	public void start()
-	{
+		// Start the actual process.
 		final RenderNetConsole out = this;
 		Thread t = new Thread()
 		{
