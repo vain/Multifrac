@@ -37,6 +37,10 @@ public class NetClient
 	public static final int CONST_FREE = 0;
 	public static final int CONST_DONE = 1;
 
+	public static final int CONST_ABORTED = 2;
+
+	protected static boolean isCanceled = false;
+
 	/**
 	 * Spawns a new client in the background which tries to use the
 	 * given remote host as a rendering node. It will pick a job and
@@ -88,6 +92,12 @@ public class NetClient
 
 					while (true)
 					{
+						if (getCanceled())
+						{
+							messenger.offer(new Integer(CONST_ABORTED));
+							break;
+						}
+
 						// One single render node can fail but the
 						// others may be able to continue their work.
 						// Hence, we can't use a simple coordinator
@@ -189,7 +199,7 @@ public class NetClient
 						msg(con, ID, "Receiving done.");
 					}
 
-					msg(con, ID, "No more bunches left. Closing.");
+					msg(con, ID, "Okay, gracefully quitting.");
 					dout.writeInt(0);
 				}
 				catch (Exception e)
@@ -227,6 +237,16 @@ public class NetClient
 			}
 		};
 		t.start();
+	}
+
+	synchronized public static void setCanceled(boolean b)
+	{
+		isCanceled = b;
+	}
+
+	synchronized public static boolean getCanceled()
+	{
+		return isCanceled;
 	}
 
 	public static void msg(NetConsole con, int who, String msg)
@@ -296,6 +316,8 @@ public class NetClient
 	public static void start(NetRenderSettings nset, NetConsole out,
 			NetBarDriver bar, Runnable callback)
 	{
+		setCanceled(false);
+
 		// Create new job item
 		FractalRenderer.Job job = new FractalRenderer.Job(
 				nset.param,
@@ -410,7 +432,17 @@ public class NetClient
 			while (got < numClients)
 			{
 				Integer result = messenger.take();
-				if (result != 0)
+				if (result == CONST_ABORTED)
+				{
+					msg(out, -1, "Aborted!");
+
+					// Callback
+					if (callback != null)
+						SwingUtilities.invokeLater(callback);
+
+					return;
+				}
+				else if (result != 0)
 				{
 					errors++;
 					String err =
