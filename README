@@ -9,6 +9,7 @@ explorer.
 
 Some more features:
 
+ - Support for distributed/network rendering.
  - Smooth coloring without color banding (well, still 24bit RGB).
  - A zoomable colorizer panel let's you easily set up your gradients.
  - Mouse navigation as well as direct parameter input.
@@ -46,6 +47,47 @@ of RAM, you should be able render images of the following sizes:
 
 A "render directly to file" functionality is not yet included (but may be added
 in the future).
+
+
+Distributed Rendering
+=====================
+
+As each pixel in a Mandelbrot or Julia image is independent from all other
+pixels, the rendering process can be split up into seperate jobs. Internally,
+this is already done when running Multifrac on a multiprocessor system -- since
+version 1.1, you can also distribute that process among a network.
+
+A render node can be started via:
+
+ $ java -cp dist/Multifrac.jar multifrac.net.Node
+
+Add the argument "--help" to see all available options. This is just a simple
+CLI program which can be run over SSH without any GUI. Keep in mind that a lot
+of data is transferred, so you may want to avoid slow network connections.
+
+The "Render" menu in the main program offers an item called "Distributed
+rendering". The interface is pretty straightforward: Just enter the IPs of your
+nodes like "192.168.0.3:7331". 7331 is the standard port and can be omitted.
+You may most probably want to add "localhost" as well to include your local
+machine (but keep in mind that you have to start a render node on this machine,
+too).
+
+Usually, the master node (the one on which the main Multifrac instance is
+running) creates a big buffer where it stores the results of the rendering
+nodes. Once all jobs are done, that buffer is saved to disk after downscaling.
+So if you're about to render *very* large images, it may happen that they don't
+fit into the memory of your master node. Hence, there's a "stream to disk"
+option (only TIFF files for now). Be aware that these files can grow quite a
+bit. ;)
+
+For now, no downscaling is done when streaming directly to disk -- that is, no
+"anti aliasing" will happen. You can use a tool like ImageMagick to do the
+actual downscaling.
+
+About "bunch sizes": Each node advertises how many bunches of rows per job
+it'll render. Faster nodes will need larger bunch sizes, you have to set them
+manually with the "-b" argument. In the future, there will be an automatic
+mechanism that will determine the bunch size by itself.
 
 
 Contact
