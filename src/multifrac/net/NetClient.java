@@ -625,10 +625,6 @@ public class NetClient
 				}
 
 				msg(out, -1, "We're done. Have a nice day!");
-
-				// Callback
-				if (callback != null)
-					SwingUtilities.invokeLater(callback);
 			}
 			catch (Exception e)
 			{
@@ -638,6 +634,14 @@ public class NetClient
 				e.printStackTrace();
 			}
 		}
+		else
+		{
+			msg(out, -1, "We're done. Have a nice day!");
+		}
+
+		// Callback
+		if (callback != null)
+			SwingUtilities.invokeLater(callback);
 	}
 
 	/**
@@ -693,7 +697,7 @@ public class NetClient
 		nset.supersampling = new Integer(args[3]);
 		nset.tfile = new File(args[4]);
 
-		nset.directStream = true;
+		//nset.directStream = true;
 
 		// System.out as a NetConsole
 		final NetConsole out = new NetConsole()
