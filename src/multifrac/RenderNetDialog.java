@@ -36,6 +36,7 @@ public class RenderNetDialog extends JDialog
 	protected static String lastHeight = "";
 	protected static String lastFile   = "";
 	protected static int    lastSuper  = 2;
+	protected static boolean lastStream = false;
 
 	// Fractal settings
 	protected FractalParameters param = null;
@@ -45,6 +46,7 @@ public class RenderNetDialog extends JDialog
 	protected JTextField c_height = new JTextField();
 	protected JTextField c_file   = new JTextField(20);
 	protected JComboBox  c_super  = null;
+	protected JCheckBox  c_stream = null;
 
 	protected final JList remoteList     = new JList(remoteListModel);
 	protected final JTextField newRemote = new JTextField(30);
@@ -129,6 +131,8 @@ public class RenderNetDialog extends JDialog
 
 		c_file.setText(lastFile);
 		c_super.setSelectedIndex(lastSuper);
+
+		c_stream.setSelected(lastStream);
 	}
 
 	protected void saveValues()
@@ -260,6 +264,9 @@ public class RenderNetDialog extends JDialog
 			return;
 		}
 
+		// Stream to disk?
+		nset.directStream = lastStream;
+
 		// Index 0 = Factor 1
 		// Index 1 = Factor 2
 		// Index 2 = Factor 4 ... --> 2^Index
@@ -276,7 +283,7 @@ public class RenderNetDialog extends JDialog
 		if (nset.supersampling >= 2)
 			sz = w * h * nset.supersampling * nset.supersampling * 1.5 * 4;
 
-		if (av < sz)
+		if (av < sz && !lastStream)
 		{
 			JOptionPane.showMessageDialog(this,
 				"I'm sorry, " + RenderDialog.toSize(sz) + " memory "
@@ -284,7 +291,8 @@ public class RenderNetDialog extends JDialog
 				+ RenderDialog.toSize(av) + " available.\n"
 				+ "This also applies to distributed rendering as I "
 				+ "need to assemble the image on this computer.\n"
-				+ "Try increasing your heap space with \"-Xmx...\".",
+				+ "Try streaming a TIFF file to disk or increase "
+				+ "your heap space with \"-Xmx...\".",
 				"Error",
 				JOptionPane.ERROR_MESSAGE);
 			return;
@@ -447,6 +455,8 @@ public class RenderNetDialog extends JDialog
 		c_super = new JComboBox(new String[]
 				{ "None", "2x2", "4x4", "8x8" });
 
+		c_stream = new JCheckBox("Stream TIFF to disk (no downscaling)");
+
 		sgbSet.add(new JLabel("Width:"),
 				0, 0, 1, 1, 1.0, 1.0);
 
@@ -474,7 +484,29 @@ public class RenderNetDialog extends JDialog
 		sgbSet.add(c_file_chooser,
 				2, 3, 1, 1, 1.0, 1.0);
 
+		sgbSet.add(new JLabel("Type:"),
+				0, 4, 1, 1, 1.0, 1.0);
+
+		sgbSet.add(c_stream,
+				1, 4, GridBagConstraints.REMAINDER, 1, 1.0, 1.0);
+
+		// Keep track of the check box's state
+		c_stream.addItemListener(new ItemListener()
+		{
+			@Override
+			public void itemStateChanged(ItemEvent e)
+			{
+				setStreamType(
+					!(e.getStateChange() == ItemEvent.DESELECTED));
+			}
+		});
+
 		return setPanel;
+	}
+
+	protected void setStreamType(boolean b)
+	{
+		lastStream = b;
 	}
 
 	/**
