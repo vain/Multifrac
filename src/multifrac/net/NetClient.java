@@ -84,11 +84,14 @@ public class NetClient
 
 					msg(con, ID, "Connected!");
 
-					// Init
-					dout.writeInt(1000);
+					// Send parameters and size
+					dout.writeInt(Node.CMD_PARAM);
 					job.param.writeToStream(dout);
 					dout.writeInt(job.getWidth());
 					dout.writeInt(job.getHeight());
+
+					// Send row count
+					dout.writeInt(Node.CMD_ROWS);
 					dout.writeInt(szBunch * bunch);
 
 					// Do the tokens
@@ -181,7 +184,7 @@ public class NetClient
 
 						// Now render this particular token.
 						msg(con, ID, "Rows " + start + " -> " + end);
-						dout.writeInt(1001);
+						dout.writeInt(Node.CMD_JOB);
 						dout.writeInt(start);
 						dout.writeInt(end);
 
@@ -219,7 +222,7 @@ public class NetClient
 					}
 
 					// The famous last words.
-					dout.writeInt(0);
+					dout.writeInt(Node.CMD_CLOSE);
 				}
 				catch (Exception e)
 				{
@@ -300,7 +303,7 @@ public class NetClient
 			dout = new DataOutputStream(s.getOutputStream());
 
 			int challenge = (int)(Math.random() * Integer.MAX_VALUE * 0.5);
-			dout.writeInt(1);
+			dout.writeInt(Node.CMD_PING);
 			dout.writeInt(challenge);
 
 			int response = din.readInt();
@@ -308,7 +311,7 @@ public class NetClient
 			if (response != challenge + 1)
 				return "Invalid ping reply: " + response;
 
-			dout.writeInt(0);
+			dout.writeInt(Node.CMD_CLOSE);
 
 			return "Remote host did respond properly.";
 		}
@@ -389,13 +392,13 @@ public class NetClient
 
 				// Query bunch size
 				msg(out, -1, "Getting bunch count...");
-				dout.writeInt(3);
+				dout.writeInt(Node.CMD_ADBUNCH);
 				int bunch = din.readInt();
 				msg(out, -1, "Got it: " + bunch);
 
 				// Query number of processors
 				msg(out, -1, "Getting number of CPUs...");
-				dout.writeInt(2);
+				dout.writeInt(Node.CMD_ADCPUS);
 				int cpus = din.readInt();
 				msg(out, -1, "Got it: " + cpus);
 
@@ -403,7 +406,7 @@ public class NetClient
 						+ nset.hosts[i]
 						+ ":"
 						+ nset.ports[i]);
-				dout.writeInt(0);
+				dout.writeInt(Node.CMD_CLOSE);
 
 				// Launch clients for this host
 				for (int k = 0; k < cpus; k++)
@@ -598,6 +601,8 @@ public class NetClient
 	 */
 	public static void main(String[] args)
 	{
+		System.out.println(NetClient.ping("localhost", 7331));
+
 		NetRenderSettings nset = new NetRenderSettings();
 
 		// Remotes

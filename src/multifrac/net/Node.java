@@ -33,6 +33,16 @@ public class Node
 	protected int start, end;
 	protected FractalRenderer.Job job  = null;
 
+	public static final int CMD_CLOSE   = 0;
+	public static final int CMD_PING    = 1;
+	public static final int CMD_ADCPUS  = 2;
+	public static final int CMD_ADBUNCH = 3;
+
+	public static final int CMD_PARAM = 1000;
+	public static final int CMD_ROWS  = 1010;
+	public static final int CMD_JOB   = 1100;
+
+
 	/**
 	 * Main node loop, receiving commands.
 	 */
@@ -56,34 +66,42 @@ public class Node
 				int cmd = din.readInt();
 				switch (cmd)
 				{
-					case 0:
+					case CMD_CLOSE:
 						msg("Closing as requested.");
 						c.close();
 						return;
 
-					case 1:
+					case CMD_PING:
 						msg("PONG");
 						dout.writeInt(din.readInt() + 1);
 						break;
 
-					case 2:
+					case CMD_ADCPUS:
 						msg("Advertising number of processors.");
 						dout.writeInt(numthreads);
 						break;
 
-					case 3:
+					case CMD_ADBUNCH:
 						msg("Advertising bunch-size.");
 						dout.writeInt(bunch);
 						break;
 
-					case 1000:
+					case CMD_PARAM:
 						msg("Receiving FractalParameters and size...");
 						params = new FractalParameters(din);
 						int w = din.readInt();
 						int h = din.readInt();
-						int rows = din.readInt();
 						params.updateSize(new Dimension(w, h));
-						msg("Done.");
+						msg("Done. Current settings:" + params
+								+ "\t.getWidth() : " + params.getWidth()
+								+ "\n"
+								+ "\t.getHeight(): " + params.getHeight()
+								);
+						break;
+
+					case CMD_ROWS:
+						msg("Receiving row count...");
+						int rows = din.readInt();
 
 						job = new FractalRenderer.Job(
 								params,
@@ -92,17 +110,12 @@ public class Node
 								null,
 								rows);
 
-						msg("Current settings:" + params
-								+ "\n"
-								+ "\t.getWidth() : " + params.getWidth()
-								+ "\n"
-								+ "\t.getHeight(): " + params.getHeight()
-								+ "\n"
-								+ "\t.length() : " + job.getPixels().length
-								);
+						int len = job.getPixels().length;
+						msg("Done. Buffer allocated: " + len + " * 4 = "
+								+ (len * 4) + " Bytes");
 						break;
 
-					case 1001:
+					case CMD_JOB:
 						msg("Receiving TokenSettings...");
 						start = din.readInt();
 						end   = din.readInt();
