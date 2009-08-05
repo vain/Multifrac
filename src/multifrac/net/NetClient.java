@@ -450,6 +450,10 @@ public class NetClient
 
 			return;
 		}
+		else
+		{
+			msg(out, -1, "Running clients: " + numClients + ". Waiting.");
+		}
 
 		// Wait for them to finish
 		try
