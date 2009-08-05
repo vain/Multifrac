@@ -69,7 +69,7 @@ public class TIFFWriter
 	/**
 	 * Seek to the given position relative to image start.
 	 */
-	synchronized public void seek(long pos) throws IOException
+	public void seek(long pos) throws IOException
 	{
 		fos.getChannel().position(IMAGE_START + pos);
 	}
@@ -77,7 +77,7 @@ public class TIFFWriter
 	/**
 	 * Seek to the given row relative to image start.
 	 */
-	synchronized public void seekRow(int row) throws IOException
+	public void seekRow(int row) throws IOException
 	{
 		seek(w * row * 3);
 	}
@@ -85,7 +85,7 @@ public class TIFFWriter
 	/**
 	 * Close the file stream.
 	 */
-	synchronized public void close() throws IOException
+	public void close() throws IOException
 	{
 		fos.close();
 	}
@@ -93,7 +93,7 @@ public class TIFFWriter
 	/**
 	 * Flush the buffered stream.
 	 */
-	synchronized public void flush() throws IOException
+	public void flush() throws IOException
 	{
 		bos.flush();
 	}
@@ -101,7 +101,7 @@ public class TIFFWriter
 	/**
 	 * Write data of an image (may be partial) using a buffered stream.
 	 */
-	synchronized public void writeRGBData(int[] img) throws IOException
+	public void writeRGBData(int[] img) throws IOException
 	{
 		// Image Data
 		// ----------
@@ -117,7 +117,7 @@ public class TIFFWriter
 	/**
 	 * Write a single pixel.
 	 */
-	synchronized public void writePixel(int p) throws IOException
+	public void writePixel(int p) throws IOException
 	{
 		bos.write((p >> 16) & 0xFF);
 		bos.write((p >>  8) & 0xFF);
@@ -128,7 +128,7 @@ public class TIFFWriter
 	/**
 	 * Internal use: Write TIFF header.
 	 */
-	synchronized private void writeHeader() throws IOException
+	private void writeHeader() throws IOException
 	{
 		// First thing to do: Write the header
 		// -----------------------------------
