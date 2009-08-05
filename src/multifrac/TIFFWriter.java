@@ -91,6 +91,14 @@ public class TIFFWriter
 	}
 
 	/**
+	 * Flush the buffered stream.
+	 */
+	synchronized public void flush() throws IOException
+	{
+		bos.flush();
+	}
+
+	/**
 	 * Write data of an image (may be partial) using a buffered stream.
 	 */
 	synchronized public void writeRGBData(int[] img) throws IOException
@@ -104,6 +112,16 @@ public class TIFFWriter
 			bos.write((img[i]      ) & 0xFF);
 		}
 		bos.flush();
+	}
+
+	/**
+	 * Write a single pixel.
+	 */
+	synchronized public void writePixel(int p) throws IOException
+	{
+		bos.write((p >> 16) & 0xFF);
+		bos.write((p >>  8) & 0xFF);
+		bos.write((p      ) & 0xFF);
 	}
 
 
