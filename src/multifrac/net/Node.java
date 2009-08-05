@@ -24,13 +24,15 @@ import multifrac.*;
 import java.net.*;
 import java.io.*;
 import java.awt.*;
+import java.util.*;
+import java.text.*;
 
 public class Node
 {
 	public static final int defaultPort = 7331;
 
 	protected FractalParameters params = null;
-	protected int start, end;
+	protected int start, end, ID;
 	protected FractalRenderer.Job job  = null;
 
 	public static final int CMD_CLOSE   = 0;
@@ -42,12 +44,12 @@ public class Node
 	public static final int CMD_ROWS  = 1010;
 	public static final int CMD_JOB   = 1100;
 
-
 	/**
 	 * Main node loop, receiving commands.
 	 */
-	public Node(Socket c, int bunch, int numthreads)
+	public Node(int ID, Socket c, int bunch, int numthreads)
 	{
+		this.ID = ID;
 		msg("Connected: " + c);
 
 		try
@@ -119,21 +121,20 @@ public class Node
 						msg("Receiving TokenSettings...");
 						start = din.readInt();
 						end   = din.readInt();
-						msg("Done: " + start + ", " + end);
+						msg("Okay. Rendering: " + start + ", " + end);
 
-						msg("Starting render process.");
 						FractalRenderer rend =
 							new FractalRenderer(job, null);
 						rend.renderPass(start, end);
 
-						msg("Done, sending image...");
+						msg("Rendering done, sending image...");
 						int at = 0;
 						int[] px = job.getPixels();
 						for (int y = start; y < end; y++)
 							for (int x = 0; x < job.getWidth(); x++)
 								bout.writeInt(px[at++]);
 						bout.flush();
-						msg("Done.");
+						msg("Finished this token.");
 						break;
 
 					default:
@@ -166,14 +167,20 @@ public class Node
 		}
 	}
 
+	public static String st()
+	{
+		SimpleDateFormat sdf = new SimpleDateFormat("[yyyy-MM-dd, HH:mm:ss]");
+		return sdf.format(new Date());
+	}
+
 	protected void msg(String m)
 	{
-		System.out.println("(II) [" + hashCode() + "] " + m);
+		System.out.println("(II) " + st() + " [" + ID + "] " + m);
 	}
 
 	protected void err(String m)
 	{
-		System.err.println("(EE) [" + hashCode() + "] " + m);
+		System.err.println("(EE) " + st() + " [" + ID + "] " + m);
 	}
 
 	/**
@@ -234,15 +241,17 @@ public class Node
 				return;
 			}
 
+			int ID = 1;
 			while (true)
 			{
 				final Socket client = s.accept();
+				final int thisID = ID++;
 				Thread t = new Thread()
 				{
 					@Override
 					public void run()
 					{
-						new Node(client, finalbunch, finalthreads);
+						new Node(thisID, client, finalbunch, finalthreads);
 					}
 				};
 				t.start();

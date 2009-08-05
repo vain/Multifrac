@@ -282,9 +282,9 @@ public class NetClient
 			return;
 
 		if (who != -1)
-			con.println("[" + who + "] " + msg);
+			con.println(Node.st() + " [" + who + "] " + msg);
 		else
-			con.println("[main] " + msg);
+			con.println(Node.st() + " [main] " + msg);
 	}
 
 	/**
