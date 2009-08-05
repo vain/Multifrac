@@ -57,7 +57,9 @@ public class NetClient
 			final LinkedBlockingQueue<Integer> messenger,
 			final NetConsole con,
 			final NetBarDriver bar,
-			final int bunch)
+			final int bunch,
+			final int[] px,
+			final TIFFWriter tiffStream)
 	{
 		Thread t = new Thread()
 		{
@@ -84,11 +86,14 @@ public class NetClient
 
 					msg(con, ID, "Connected!");
 
-					// Init
-					dout.writeInt(1000);
+					// Send parameters and size
+					dout.writeInt(Node.CMD_PARAM);
 					job.param.writeToStream(dout);
 					dout.writeInt(job.getWidth());
 					dout.writeInt(job.getHeight());
+
+					// Send row count
+					dout.writeInt(Node.CMD_ROWS);
 					dout.writeInt(szBunch * bunch);
 
 					// Do the tokens
@@ -181,18 +186,18 @@ public class NetClient
 
 						// Now render this particular token.
 						msg(con, ID, "Rows " + start + " -> " + end);
-						dout.writeInt(1001);
+						dout.writeInt(Node.CMD_JOB);
 						dout.writeInt(start);
 						dout.writeInt(end);
 
 						msg(con, ID, "Rendering...");
 
 						// Receive
-						int at = start * job.getWidth();
-						int[] px = job.getPixels();
-						boolean first = true;
-						for (int y = start; y < end; y++)
+						if (tiffStream == null)
 						{
+							int at = start * job.getWidth();
+							boolean first = true;
+							for (int y = start; y < end; y++)
 							for (int x = 0; x < job.getWidth(); x++)
 							{
 								px[at++] = bin.readInt();
@@ -202,8 +207,32 @@ public class NetClient
 									msg(con, ID, "Receiving...");
 								}
 							}
+							msg(con, ID, "Receiving done.");
 						}
-						msg(con, ID, "Receiving done.");
+						else
+						{
+							// Don't save to an explicit buffer but stream
+							// "directly" to disk.
+							synchronized (tiffStream)
+							{
+								tiffStream.seekRow(start);
+
+								boolean first = true;
+								for (int y = start; y < end; y++)
+								for (int x = 0; x < job.getWidth(); x++)
+								{
+									tiffStream.writePixel(bin.readInt());
+									if (first)
+									{
+										first = false;
+										msg(con, ID, "Receiving...");
+									}
+								}
+								msg(con, ID, "Receiving done.");
+
+								tiffStream.flush();
+							}
+						}
 					}
 
 					// Send message depending on state
@@ -219,7 +248,7 @@ public class NetClient
 					}
 
 					// The famous last words.
-					dout.writeInt(0);
+					dout.writeInt(Node.CMD_CLOSE);
 				}
 				catch (Exception e)
 				{
@@ -279,9 +308,9 @@ public class NetClient
 			return;
 
 		if (who != -1)
-			con.println("[" + who + "] " + msg);
+			con.println(Node.st() + " [" + who + "] " + msg);
 		else
-			con.println("[main] " + msg);
+			con.println(Node.st() + " [main] " + msg);
 	}
 
 	/**
@@ -300,7 +329,7 @@ public class NetClient
 			dout = new DataOutputStream(s.getOutputStream());
 
 			int challenge = (int)(Math.random() * Integer.MAX_VALUE * 0.5);
-			dout.writeInt(1);
+			dout.writeInt(Node.CMD_PING);
 			dout.writeInt(challenge);
 
 			int response = din.readInt();
@@ -308,7 +337,7 @@ public class NetClient
 			if (response != challenge + 1)
 				return "Invalid ping reply: " + response;
 
-			dout.writeInt(0);
+			dout.writeInt(Node.CMD_CLOSE);
 
 			return "Remote host did respond properly.";
 		}
@@ -343,11 +372,46 @@ public class NetClient
 		setCanceled(false);
 
 		// Create new job item
-		FractalRenderer.Job job = new FractalRenderer.Job(
-				nset.param,
-				nset.supersampling,
-				-1,
-				null);
+		FractalRenderer.Job job = null;
+		TIFFWriter tiffStream = null;
+		if (nset.directStream)
+		{
+			// Crop the buffer to 0 rows --> no buffer
+			job = new FractalRenderer.Job(
+					nset.param,
+					nset.supersampling,
+					-1,
+					null,
+					0);
+
+			try
+			{
+				tiffStream = new TIFFWriter(nset.tfile,
+						nset.param.size.width * nset.supersampling,
+						nset.param.size.height * nset.supersampling);
+			}
+			catch (IOException e)
+			{
+				msg(out, -1, "Stream target could not be initialized: "
+						+ e.getClass().getSimpleName() + ", "
+						+ "\"" + e.getMessage() + "\"");
+
+				// Callback
+				if (callback != null)
+					SwingUtilities.invokeLater(callback);
+
+				return;
+			}
+		}
+		else
+		{
+			// The job's buffer will be used by the clients.
+			job = new FractalRenderer.Job(
+					nset.param,
+					nset.supersampling,
+					-1,
+					null);
+		}
 
 		// Local coordinator to maintain the bunches.
 		int numbunch = (int)Math.ceil(job.getHeight() / (double)szBunch);
@@ -389,13 +453,13 @@ public class NetClient
 
 				// Query bunch size
 				msg(out, -1, "Getting bunch count...");
-				dout.writeInt(3);
+				dout.writeInt(Node.CMD_ADBUNCH);
 				int bunch = din.readInt();
 				msg(out, -1, "Got it: " + bunch);
 
 				// Query number of processors
 				msg(out, -1, "Getting number of CPUs...");
-				dout.writeInt(2);
+				dout.writeInt(Node.CMD_ADCPUS);
 				int cpus = din.readInt();
 				msg(out, -1, "Got it: " + cpus);
 
@@ -403,7 +467,7 @@ public class NetClient
 						+ nset.hosts[i]
 						+ ":"
 						+ nset.ports[i]);
-				dout.writeInt(0);
+				dout.writeInt(Node.CMD_CLOSE);
 
 				// Launch clients for this host
 				for (int k = 0; k < cpus; k++)
@@ -424,7 +488,9 @@ public class NetClient
 							messenger,
 							out,
 							bar,
-							bunch);
+							bunch,
+							job.getPixels(),
+							tiffStream);
 
 					numClients++;
 				}
@@ -446,6 +512,10 @@ public class NetClient
 				SwingUtilities.invokeLater(callback);
 
 			return;
+		}
+		else
+		{
+			msg(out, -1, "Running clients: " + numClients + ". Waiting.");
 		}
 
 		// Wait for them to finish
@@ -507,64 +577,71 @@ public class NetClient
 		msg(out, -1, "Job done!");
 		msg(out, -1, ((endTime - startTime) / 1000.0) + " seconds.");
 
-		msg(out, -1, "Downscaling...");
-		job.resizeBack();
-
-		msg(out, -1, "Saving the image...");
-		try
+		if (!nset.directStream)
 		{
-			int w = job.getWidth();
-			int h = job.getHeight();
-			int[] px = job.getPixels();
+			msg(out, -1, "Downscaling...");
+			job.resizeBack();
 
-			// Determine which writer to use
-			String a = nset.tfile.getName();
-			String ext = a.substring(a.lastIndexOf('.') + 1).toUpperCase();
-
-			if (ext.equals("TIF") || ext.equals("TIFF"))
+			msg(out, -1, "Saving the image...");
+			try
 			{
-				// Use own tiff writer
-				TIFFWriter.writeRGBImage(nset.tfile, px, w, h);
+				int w = job.getWidth();
+				int h = job.getHeight();
+				int[] px = job.getPixels();
+
+				// Determine which writer to use
+				String a = nset.tfile.getName();
+				String ext = a.substring(a.lastIndexOf('.') + 1).toUpperCase();
+
+				if (ext.equals("TIF") || ext.equals("TIFF"))
+				{
+					// Use own tiff writer
+					TIFFWriter.writeRGBImage(nset.tfile, px, w, h);
+				}
+				else
+				{
+					// Use Java-Libraries
+
+					// Create an image resource from the int[]
+					Image img = Toolkit.getDefaultToolkit().createImage(
+							new MemoryImageSource(w, h, px, 0, w));
+
+					// ImageIO.write() demands a RenderedImage.
+					// BufferedImage implements this interface.
+					BufferedImage rendered = new BufferedImage(
+							w, h, BufferedImage.TYPE_INT_ARGB);
+
+					// That buffer is still empty. We need to write the
+					// actual image into that buffer. To do so, we need its
+					// Graphics2D object.
+					Graphics2D g2 = (Graphics2D)rendered.createGraphics();
+
+					// Draw the image into our buffer
+					g2.drawImage(img, new java.awt.geom.AffineTransform(
+								1f, 0f, 0f, 1f, 0, 0), null);
+
+					// Save the image to disk.
+					ImageIO.write(rendered, ext, nset.tfile);
+				}
+
+				msg(out, -1, "We're done. Have a nice day!");
 			}
-			else
+			catch (Exception e)
 			{
-				// Use Java-Libraries
-
-				// Create an image resource from the int[]
-				Image img = Toolkit.getDefaultToolkit().createImage(
-						new MemoryImageSource(w, h, px, 0, w));
-
-				// ImageIO.write() demands a RenderedImage.
-				// BufferedImage implements this interface.
-				BufferedImage rendered = new BufferedImage(
-						w, h, BufferedImage.TYPE_INT_ARGB);
-
-				// That buffer is still empty. We need to write the
-				// actual image into that buffer. To do so, we need its
-				// Graphics2D object.
-				Graphics2D g2 = (Graphics2D)rendered.createGraphics();
-
-				// Draw the image into our buffer
-				g2.drawImage(img, new java.awt.geom.AffineTransform(
-							1f, 0f, 0f, 1f, 0, 0), null);
-
-				// Save the image to disk.
-				ImageIO.write(rendered, ext, nset.tfile);
+				msg(out, -1, "Oops while saving: "
+						+ e.getClass().getSimpleName() + ", "
+						+ "\"" + e.getMessage() + "\"");
+				e.printStackTrace();
 			}
-
+		}
+		else
+		{
 			msg(out, -1, "We're done. Have a nice day!");
+		}
 
-			// Callback
-			if (callback != null)
-				SwingUtilities.invokeLater(callback);
-		}
-		catch (Exception e)
-		{
-			msg(out, -1, "Oops while saving: "
-					+ e.getClass().getSimpleName() + ", "
-					+ "\"" + e.getMessage() + "\"");
-			e.printStackTrace();
-		}
+		// Callback
+		if (callback != null)
+			SwingUtilities.invokeLater(callback);
 	}
 
 	/**
@@ -598,13 +675,15 @@ public class NetClient
 	 */
 	public static void main(String[] args)
 	{
+		System.out.println(NetClient.ping("localhost", 7331));
+
 		NetRenderSettings nset = new NetRenderSettings();
 
 		// Remotes
 		nset.hosts = new String[]
-			{ "192.168.0.234", "localhost", "localhost" };
+			{ "localhost" };
 		nset.ports = new Integer[]
-			{ 7331, 7331, 7332 };
+			{ 7331 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
@@ -617,6 +696,8 @@ public class NetClient
 
 		nset.supersampling = new Integer(args[3]);
 		nset.tfile = new File(args[4]);
+
+		//nset.directStream = true;
 
 		// System.out as a NetConsole
 		final NetConsole out = new NetConsole()

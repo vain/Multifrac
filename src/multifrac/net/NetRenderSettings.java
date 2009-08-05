@@ -30,4 +30,6 @@ public class NetRenderSettings
 	public FractalParameters param         = null;
 	public int               supersampling = 1;
 	public File              tfile         = null;
+
+	public boolean directStream = false;
 }
