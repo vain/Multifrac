@@ -192,12 +192,16 @@ public class NetClient
 
 						msg(con, ID, "Rendering...");
 
-						// Receive
+						// Receive to local buffer
+						int at;
 						if (tiffStream == null)
+							at = start * job.getWidth();
+						else
+							at = 0;
+
+						boolean first = true;
+						for (int y = start; y < end; y++)
 						{
-							int at = start * job.getWidth();
-							boolean first = true;
-							for (int y = start; y < end; y++)
 							for (int x = 0; x < job.getWidth(); x++)
 							{
 								px[at++] = bin.readInt();
@@ -207,30 +211,18 @@ public class NetClient
 									msg(con, ID, "Receiving...");
 								}
 							}
-							msg(con, ID, "Receiving done.");
 						}
-						else
+						msg(con, ID, "Receiving done.");
+
+						// Do streaming if desired.
+						if (tiffStream != null)
 						{
-							// Don't save to an explicit buffer but stream
-							// "directly" to disk.
 							synchronized (tiffStream)
 							{
+								msg(con, ID, "Streaming TIFF data...");
 								tiffStream.seekRow(start);
-
-								boolean first = true;
-								for (int y = start; y < end; y++)
-								for (int x = 0; x < job.getWidth(); x++)
-								{
-									tiffStream.writePixel(bin.readInt());
-									if (first)
-									{
-										first = false;
-										msg(con, ID, "Receiving...");
-									}
-								}
-								msg(con, ID, "Receiving done.");
-
-								tiffStream.flush();
+								tiffStream.writeRGBData(px);
+								msg(con, ID, "Done.");
 							}
 						}
 					}
@@ -374,16 +366,12 @@ public class NetClient
 		// Create new job item
 		FractalRenderer.Job job = null;
 		TIFFWriter tiffStream = null;
+
 		if (nset.directStream)
 		{
-			// Crop the buffer to 0 rows --> no buffer
-			job = new FractalRenderer.Job(
-					nset.param,
-					nset.supersampling,
-					-1,
-					null,
-					0);
-
+			// Streaming: All clients will share the same target stream
+			// for now, but they'll have separate int[]-buffers (see
+			// below).
 			try
 			{
 				tiffStream = new TIFFWriter(nset.tfile,
@@ -414,7 +402,10 @@ public class NetClient
 		}
 
 		// Local coordinator to maintain the bunches.
-		int numbunch = (int)Math.ceil(job.getHeight() / (double)szBunch);
+		int numbunch = (int)Math.ceil(
+				(nset.param.size.height * nset.supersampling)
+				/ (double)szBunch);
+
 		msg(out, -1, "Number of bunches: " + numbunch);
 		int[] coord = new int[numbunch];
 
@@ -472,6 +463,18 @@ public class NetClient
 				// Launch clients for this host
 				for (int k = 0; k < cpus; k++)
 				{
+					// Setup local buffer for each client if streaming
+					if (nset.directStream)
+					{
+						// Crop the buffer
+						job = new FractalRenderer.Job(
+								nset.param,
+								nset.supersampling,
+								-1,
+								null,
+								bunch * szBunch);
+					}
+
 					msg(out, -1, "Launch client number " + (k + 1)
 							+ " for "
 							+ nset.hosts[i]
@@ -636,7 +639,19 @@ public class NetClient
 		}
 		else
 		{
-			msg(out, -1, "We're done. Have a nice day!");
+			try
+			{
+				tiffStream.flush();
+				tiffStream.close();
+				msg(out, -1, "We're done. Have a nice day!");
+			}
+			catch (IOException e)
+			{
+				msg(out, -1, "Oops while closing stream: "
+						+ e.getClass().getSimpleName() + ", "
+						+ "\"" + e.getMessage() + "\"");
+				e.printStackTrace();
+			}
 		}
 
 		// Callback
@@ -681,9 +696,9 @@ public class NetClient
 
 		// Remotes
 		nset.hosts = new String[]
-			{ "localhost" };
+			{ "localhost", "192.168.0.234" };
 		nset.ports = new Integer[]
-			{ 7331 };
+			{ 7331, 7331 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
@@ -697,7 +712,7 @@ public class NetClient
 		nset.supersampling = new Integer(args[3]);
 		nset.tfile = new File(args[4]);
 
-		//nset.directStream = true;
+		nset.directStream = true;
 
 		// System.out as a NetConsole
 		final NetConsole out = new NetConsole()
