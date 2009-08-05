@@ -26,21 +26,92 @@ import java.io.*;
  */
 public class TIFFWriter
 {
+	public static final int SIZE_HEADER = 8;
+	public static final int IFD_ENTRIES = 8;
+	public static final int SIZE_IFD    = 2 + IFD_ENTRIES * 12 + 4;
+	public static final int IMAGE_START = SIZE_HEADER + SIZE_IFD + 8 + 32;
+
 	/**
 	 * Write the image to the file. It'll be uncompressed.
 	 */
 	public static void writeRGBImage(File f, int[] img, int w, int h) throws IOException
 	{
+		TIFFWriter stream = new TIFFWriter(f, w, h);
+		stream.seek(0);
+		stream.writeRGBData(img);
+		stream.close();
+	}
+
+
+	private FileOutputStream fos = null;
+	private DataOutputStream dos = null;
+	private BufferedOutputStream bos = null;
+	private int w = 0;
+	private int h = 0;
+
+	/**
+	 * Create a new TIFF-Streamer.
+	 */
+	public TIFFWriter(File f, int w, int h) throws IOException
+	{
+		this.w = w;
+		this.h = h;
+
 		// Try to open the file
-		FileOutputStream fos = new FileOutputStream(f);
-		DataOutputStream dos = new DataOutputStream(fos);
+		fos = new FileOutputStream(f);
+		dos = new DataOutputStream(fos);
+		bos = new BufferedOutputStream(fos);
+
+		// Init the target: Write the header.
+		writeHeader();
+	}
+
+	/**
+	 * Seek to the given position relative to image start.
+	 */
+	synchronized public void seek(long pos) throws IOException
+	{
+		fos.getChannel().position(IMAGE_START + pos);
+	}
+
+	/**
+	 * Seek to the given row relative to image start.
+	 */
+	synchronized public void seekRow(int row) throws IOException
+	{
+		seek(w * row * 3);
+	}
+
+	/**
+	 * Close the file stream.
+	 */
+	synchronized public void close() throws IOException
+	{
+		fos.close();
+	}
+
+	/**
+	 * Write data of an image (may be partial) using a buffered stream.
+	 */
+	synchronized public void writeRGBData(int[] img) throws IOException
+	{
+		// Image Data
+		// ----------
+		for (int i = 0; i < img.length; i++)
+		{
+			bos.write((img[i] >> 16) & 0xFF);
+			bos.write((img[i] >>  8) & 0xFF);
+			bos.write((img[i]      ) & 0xFF);
+		}
+		bos.flush();
+	}
 
 
-		final int SIZE_HEADER = 8;
-		final int IFD_ENTRIES = 8;
-		final int SIZE_IFD    = 2 + IFD_ENTRIES * 12 + 4;
-		final int IMAGE_START = SIZE_HEADER + SIZE_IFD + 8 + 32;
-
+	/**
+	 * Internal use: Write TIFF header.
+	 */
+	synchronized private void writeHeader() throws IOException
+	{
 		// First thing to do: Write the header
 		// -----------------------------------
 
@@ -106,21 +177,5 @@ public class TIFFWriter
 		// Padding
 		for (int i = 0; i < 8; i++)
 			dos.writeInt(0);
-
-
-		// Image Data
-		// ----------
-		BufferedOutputStream buf = new BufferedOutputStream(fos);
-		for (int i = 0; i < img.length; i++)
-		{
-			buf.write((img[i] >> 16) & 0xFF);
-			buf.write((img[i] >>  8) & 0xFF);
-			buf.write((img[i]      ) & 0xFF);
-		}
-		buf.flush();
-
-
-		// Close the file and we're done.
-		fos.close();
 	}
 }
