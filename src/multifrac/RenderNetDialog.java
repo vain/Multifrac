@@ -351,6 +351,102 @@ public class RenderNetDialog extends JDialog
 	}
 
 	/**
+	 * Clear list of remotes.
+	 */
+	protected void clearRemoteList()
+	{
+		remoteListModel.clear();
+	}
+
+	/**
+	 * Load list of remotes from a file.
+	 */
+	protected void loadRemoteList()
+	{
+		// Fire up a dialog
+		File choice = CompHelp.commonFileDialog(this, false);
+		if (choice != null)
+		{
+			try
+			{
+				Scanner sin = new Scanner(choice);
+
+				// Don't clear before the file has been opened
+				remoteListModel.clear();
+
+				// Read the file line by line
+				while (sin.hasNextLine())
+					remoteListModel.addElement(sin.nextLine());
+				sin.close();
+			}
+			catch (Exception e)
+			{
+				String err = "Error while reading \""
+					+ choice.getAbsolutePath() + "\":\n"
+					+ e.getClass().getSimpleName() + ", "
+					+ "\"" + e.getMessage() + "\"";
+				e.printStackTrace();
+
+				JOptionPane.showMessageDialog(this,
+						err, "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
+	/**
+	 * Save list of remotes to a file.
+	 */
+	protected void saveRemoteList()
+	{
+		// Do nothing if the list is empty
+		if (remoteListModel.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this,
+				"No remote hosts entered.",
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		// Fire up a dialog
+		File choice = CompHelp.commonFileDialog(this, true);
+		if (choice != null)
+		{
+			// Don't blindly overwrite files
+			if (choice.exists())
+			{
+				int ret = JOptionPane.showConfirmDialog(this,
+					choice.getAbsolutePath() + "\n" +
+					"File already exists. Overwrite?",
+					"File exists",
+					JOptionPane.YES_NO_OPTION);
+				if (ret != JOptionPane.YES_OPTION)
+					return;
+			}
+
+			// Dump the list of remotes as strings
+			try
+			{
+				PrintWriter pw = new PrintWriter(choice);
+				for (Object o : remoteListModel.toArray())
+					pw.println((String)o);
+				pw.close();
+			}
+			catch (Exception e)
+			{
+				String err = "Error while writing \""
+					+ choice.getAbsolutePath() + "\":\n"
+					+ e.getClass().getSimpleName() + ", "
+					+ "\"" + e.getMessage() + "\"";
+				e.printStackTrace();
+
+				JOptionPane.showMessageDialog(this,
+						err, "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
+	/**
 	 * Construct the panel which contains the remote host list
 	 */
 	protected JPanel buildListPanel()
@@ -393,6 +489,7 @@ public class RenderNetDialog extends JDialog
 
 		// Popup menu for the list
 		final JPopupMenu pop = buildPopup();
+		final JPopupMenu pop2 = buildPopupShort();
 		remoteList.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -412,11 +509,17 @@ public class RenderNetDialog extends JDialog
 				JList comp = (JList)e.getComponent();
 				Point p    = e.getPoint();
 
-				if (e.isPopupTrigger()
-					&& !comp.isSelectionEmpty()
-					&& comp.isSelectedIndex(comp.locationToIndex(p)))
+				if (e.isPopupTrigger())
 				{
-					pop.show(comp, (int)p.getX(), (int)p.getY());
+					if (!comp.isSelectionEmpty()
+						&& comp.isSelectedIndex(comp.locationToIndex(p)))
+					{
+						pop.show(comp, (int)p.getX(), (int)p.getY());
+					}
+					else
+					{
+						pop2.show(comp, (int)p.getX(), (int)p.getY());
+					}
 				}
 			}
 		});
@@ -532,7 +635,7 @@ public class RenderNetDialog extends JDialog
 
 		out.addSeparator();
 
-		mi = new JMenuItem("Edit");
+		mi = new JMenuItem("Edit...");
 		mi.addActionListener(new ActionListener()
 		{
 			@Override
@@ -579,6 +682,90 @@ public class RenderNetDialog extends JDialog
 				{
 					remoteListModel.removeElement(o);
 				}
+			}
+		});
+		out.add(mi);
+
+		out.addSeparator();
+
+		mi = new JMenuItem("Load list...");
+		mi.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				loadRemoteList();
+			}
+		});
+		out.add(mi);
+
+		mi = new JMenuItem("Save list...");
+		mi.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				saveRemoteList();
+			}
+		});
+		out.add(mi);
+
+		out.addSeparator();
+
+		mi = new JMenuItem("Clear");
+		mi.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				clearRemoteList();
+			}
+		});
+		out.add(mi);
+
+		return out;
+	}
+
+	/**
+	 * Build popup menu which appears over the remoteList if nothing is
+	 * selected.
+	 */
+	protected JPopupMenu buildPopupShort()
+	{
+		JPopupMenu out = new JPopupMenu();
+		JMenuItem mi;
+
+		mi = new JMenuItem("Load list...");
+		mi.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				loadRemoteList();
+			}
+		});
+		out.add(mi);
+
+		mi = new JMenuItem("Save list...");
+		mi.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				saveRemoteList();
+			}
+		});
+		out.add(mi);
+
+		out.addSeparator();
+
+		mi = new JMenuItem("Clear");
+		mi.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				clearRemoteList();
 			}
 		});
 		out.add(mi);

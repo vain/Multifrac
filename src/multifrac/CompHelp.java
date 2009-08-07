@@ -27,6 +27,8 @@ import java.io.*;
 
 public class CompHelp
 {
+	public static File commonFileDialogDir = null;
+
 	/**
 	 * Add a focusGained-listener to this textfield which selects
 	 * all text once the component has gained focus.
@@ -164,5 +166,27 @@ public class CompHelp
 				}
 			}
 		});
+	}
+
+	public static File commonFileDialog(JDialog parent, boolean save)
+	{
+		JFileChooser chooser = new JFileChooser();
+
+		// try to set the old directory
+		if (commonFileDialogDir != null)
+			chooser.setCurrentDirectory(commonFileDialogDir);
+
+		// fire up the dialog
+		int returnVal;
+		if (save)
+			returnVal = chooser.showSaveDialog(parent);
+		else
+			returnVal = chooser.showOpenDialog(parent);
+
+		commonFileDialogDir = chooser.getCurrentDirectory();
+		if (returnVal == JFileChooser.APPROVE_OPTION)
+			return chooser.getSelectedFile();
+		else
+			return null;
 	}
 }
