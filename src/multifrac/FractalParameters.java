@@ -27,6 +27,7 @@ import java.io.*;
 public class FractalParameters
 {
 	private static final int VERSION = 0x13380001;
+	private static final int VERSION_LEGACY = 0x13380000;
 
 	protected static final double ZOOM_STEP = 0.9;
 
@@ -280,7 +281,14 @@ public class FractalParameters
 
 	private void readFromStream(DataInputStream in) throws Exception
 	{
-		if (in.readInt() != VERSION)
+		boolean legacy = false;
+		int version = in.readInt();
+
+		if (version == VERSION_LEGACY)
+		{
+			legacy = true;
+		}
+		else if (version != VERSION)
 		{
 			throw new InstantiationException("FractalParameters: Header mismatch.");
 		}
@@ -292,6 +300,13 @@ public class FractalParameters
 		nmax     = in.readInt();
 		adaptive = in.readBoolean();
 		zoom     = in.readDouble();
+
+		if (legacy)
+		{
+			// Read the old two int's that saved the size
+			in.readInt();
+			in.readInt();
+		}
 
 		double dx = in.readDouble();
 		double dy = in.readDouble();
