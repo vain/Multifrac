@@ -38,7 +38,6 @@ public class Node
 	public static final int CMD_CLOSE   = 0;
 	public static final int CMD_PING    = 1;
 	public static final int CMD_ADCPUS  = 2;
-	public static final int CMD_ADBUNCH = 3;
 
 	public static final int CMD_PARAM = 1000;
 	public static final int CMD_ROWS  = 1010;
@@ -47,7 +46,7 @@ public class Node
 	/**
 	 * Main node loop, receiving commands.
 	 */
-	public Node(int ID, Socket c, int bunch, int numthreads)
+	public Node(int ID, Socket c, int numthreads)
 	{
 		this.ID = ID;
 		msg("Connected: " + c);
@@ -81,11 +80,6 @@ public class Node
 					case CMD_ADCPUS:
 						msg("Advertising number of processors.");
 						dout.writeInt(numthreads);
-						break;
-
-					case CMD_ADBUNCH:
-						msg("Advertising bunch-size.");
-						dout.writeInt(bunch);
 						break;
 
 					case CMD_PARAM:
@@ -190,7 +184,6 @@ public class Node
 	{
 		String host = "localhost";
 		int    port = defaultPort;
-		int   bunch = 10;
 		int threads = Multifrac.numthreads;
 
 		try
@@ -201,14 +194,12 @@ public class Node
 					host = args[++i];
 				else if (args[i].toUpperCase().equals("-P"))
 					port = new Integer(args[++i]);
-				else if (args[i].toUpperCase().equals("-B"))
-					bunch = new Integer(args[++i]);
 				else if (args[i].toUpperCase().equals("-T"))
 					threads = new Integer(args[++i]);
 				else if (args[i].toUpperCase().equals("--HELP"))
 				{
 					System.out.println(
-							"Arguments: [-h host] [-p port] [-b bunch]"
+							"Arguments: [-h host] [-p port]"
 							+ " [-t threads] [--help]");
 					return;
 				}
@@ -226,18 +217,16 @@ public class Node
 		ServerSocket s = null;
 		try
 		{
-			final int finalbunch = bunch;
 			final int finalthreads = threads;
 
 			s = new ServerSocket(port, 0, InetAddress.getByName(host));
 			System.out.println("ServerSocket up: " + s);
 			System.out.println("Configured options:\n"
-					+ "\tbunch   = " + finalbunch + "\n"
 					+ "\tthreads = " + finalthreads);
 
-			if (finalbunch < 1 || finalthreads < 1)
+			if (finalthreads < 1)
 			{
-				System.err.println("Those options are not useful.");
+				System.err.println("Less than 1 thread is not useful.");
 				return;
 			}
 
@@ -251,7 +240,7 @@ public class Node
 					@Override
 					public void run()
 					{
-						new Node(thisID, client, finalbunch, finalthreads);
+						new Node(thisID, client, finalthreads);
 					}
 				};
 				t.start();

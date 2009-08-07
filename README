@@ -84,11 +84,6 @@ For now, no downscaling is done when streaming directly to disk -- that is, no
 "anti aliasing" will happen. You can use a tool like ImageMagick to do the
 actual downscaling.
 
-About "bunch sizes": Each node advertises how many bunches of rows per job
-it'll render. Faster nodes will need larger bunch sizes, you have to set them
-manually with the "-b" argument. In the future, there will be an automatic
-mechanism that will determine the bunch size by itself.
-
 
 Contact
 =======

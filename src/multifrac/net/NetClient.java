@@ -33,6 +33,8 @@ import java.util.concurrent.*;
 public class NetClient
 {
 	protected static final int szBunch = 10;
+	protected static final int bunchMin = 1;
+	protected static final int bunchMax = 20;
 	protected static       int lastID  = 10;
 	public static final int CONST_FREE = 0;
 	public static final int CONST_DONE = 1;
@@ -57,8 +59,7 @@ public class NetClient
 			final LinkedBlockingQueue<Integer> messenger,
 			final NetConsole con,
 			final NetBarDriver bar,
-			final int bunch,
-			final int[] px,
+			final int[] initpx,
 			final TIFFWriter tiffStream)
 	{
 		Thread t = new Thread()
@@ -69,6 +70,9 @@ public class NetClient
 				int i      = 0;
 				int bstart = -1;
 				int bend   = -1;
+				int bunch  = 1;
+				int[] px   = null;
+				boolean bufferPresent = false;
 				boolean aborted = false;
 				Socket s = null;
 
@@ -91,10 +95,6 @@ public class NetClient
 					job.param.writeToStream(dout);
 					dout.writeInt(job.getWidth());
 					dout.writeInt(job.getHeight());
-
-					// Send row count
-					dout.writeInt(Node.CMD_ROWS);
-					dout.writeInt(szBunch * bunch);
 
 					// Do the tokens
 					int start, end, max;
@@ -176,6 +176,28 @@ public class NetClient
 								bar.update(coordinator);
 						}
 
+						// Allocate buffers if needed
+						if (!bufferPresent)
+						{
+							// Remote buffer
+							dout.writeInt(Node.CMD_ROWS);
+							dout.writeInt(szBunch * bunch);
+
+							// Local buffer
+							if (tiffStream == null)
+								px = initpx;
+							else
+							{
+								px = new int[szBunch * bunch
+									* job.param.getWidth()];
+
+								msg(con, ID, "Local buffer length: "
+										+ px.length);
+							}
+
+							bufferPresent = true;
+						}
+
 						// Calc real rows.
 						msg(con, ID, "Bunch " + bstart + " -> " + bend);
 						start = bstart * szBunch;
@@ -190,6 +212,7 @@ public class NetClient
 						dout.writeInt(start);
 						dout.writeInt(end);
 
+						long startTime = System.currentTimeMillis();
 						msg(con, ID, "Rendering...");
 
 						// Receive to local buffer
@@ -212,7 +235,10 @@ public class NetClient
 								}
 							}
 						}
-						msg(con, ID, "Receiving done.");
+						long endTime = System.currentTimeMillis();
+						long diffTime = endTime - startTime;
+						msg(con, ID, "Receiving done. Token time: "
+								+ diffTime);
 
 						// Do streaming if desired.
 						if (tiffStream != null)
@@ -224,6 +250,27 @@ public class NetClient
 								tiffStream.writeRGBData(px);
 								msg(con, ID, "Done.");
 							}
+						}
+
+						// Try to adjust the bunch size so that it
+						// takes about 5 seconds:
+						//     bunch / diff = nbunch / 5000
+						int nbunch;
+						nbunch = (int)((5000.0 * bunch) / (double)diffTime);
+
+						// Clip
+						if (nbunch < bunchMin)
+							nbunch = bunchMin;
+						else if (nbunch > bunchMax)
+							nbunch = bunchMax;
+
+						if (bunch != nbunch)
+						{
+							bunch = nbunch;
+							msg(con, ID, "New bunch size: " + bunch);
+
+							// Mark buffers as deleted
+							bufferPresent = false;
 						}
 					}
 
@@ -390,10 +437,19 @@ public class NetClient
 
 				return;
 			}
+
+			// Create a job item with an empty buffer (it'll be
+			// created by the client threads).
+			job = new FractalRenderer.Job(
+					nset.param,
+					nset.supersampling,
+					-1,
+					null,
+					0);
 		}
 		else
 		{
-			// The job's buffer will be used by the clients.
+			// The job's buffer will be used by all clients.
 			job = new FractalRenderer.Job(
 					nset.param,
 					nset.supersampling,
@@ -442,12 +498,6 @@ public class NetClient
 				din  = new DataInputStream(s.getInputStream());
 				dout = new DataOutputStream(s.getOutputStream());
 
-				// Query bunch size
-				msg(out, -1, "Getting bunch count...");
-				dout.writeInt(Node.CMD_ADBUNCH);
-				int bunch = din.readInt();
-				msg(out, -1, "Got it: " + bunch);
-
 				// Query number of processors
 				msg(out, -1, "Getting number of CPUs...");
 				dout.writeInt(Node.CMD_ADCPUS);
@@ -463,18 +513,6 @@ public class NetClient
 				// Launch clients for this host
 				for (int k = 0; k < cpus; k++)
 				{
-					// Setup local buffer for each client if streaming
-					if (nset.directStream)
-					{
-						// Crop the buffer
-						job = new FractalRenderer.Job(
-								nset.param,
-								nset.supersampling,
-								-1,
-								null,
-								bunch * szBunch);
-					}
-
 					msg(out, -1, "Launch client number " + (k + 1)
 							+ " for "
 							+ nset.hosts[i]
@@ -491,7 +529,6 @@ public class NetClient
 							messenger,
 							out,
 							bar,
-							bunch,
 							job.getPixels(),
 							tiffStream);
 
@@ -696,9 +733,9 @@ public class NetClient
 
 		// Remotes
 		nset.hosts = new String[]
-			{ "localhost", "192.168.0.234" };
+			{ "localhost", "192.168.0.234", "192.168.0.5", "192.168.0.1" };
 		nset.ports = new Integer[]
-			{ 7331, 7331 };
+			{ 7331, 7331, 7331, 7331 };
 
 		// Image parameters
 		nset.param = loadParameters(args[0]);
