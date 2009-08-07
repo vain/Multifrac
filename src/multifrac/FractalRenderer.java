@@ -205,9 +205,6 @@ public class FractalRenderer extends Thread
 	 */
 	public void renderPass(int tstart, int tend)
 	{
-		// This is where the magic happens.
-		//System.out.println("Executing " + myJob + " (" + myToken + ") on " + Thread.currentThread());
-		
 		// Mandelbrot Parameters
 		double x, y;
 		double Re_c, Im_c;

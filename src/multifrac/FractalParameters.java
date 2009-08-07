@@ -172,12 +172,10 @@ public class FractalParameters
 		if (w > h)
 		{
 			zoom /= cw / dw;
-			//System.out.println("Zoom: cw / dw = " + cw + " / " + dw + " = " + (cw / dw) + ", " + zoom);
 		}
 		else
 		{
 			zoom /= ch / dh;
-			//System.out.println("Zoom: ch / dh = " + ch + " / " + dh + " = " + (ch / dh) + ", " + zoom);
 		}
 
 		adjustAdaptive();
@@ -188,8 +186,6 @@ public class FractalParameters
 		double dx = XtoWorld(to.x) - XtoWorld(from.x);
 		double dy = YtoWorld(to.y) - YtoWorld(from.y);
 
-		//System.out.println(dx + ", " + dy);
-
 		centerOffset.setLocation(centerOffset.getX() - dx, centerOffset.getY() - dy);
 	}
 
@@ -197,8 +193,6 @@ public class FractalParameters
 	{
 		double dx = XtoWorld(p.x);
 		double dy = YtoWorld(p.y);
-
-		//System.out.println(dx + ", " + dy);
 
 		centerOffset.setLocation(dx, dy);
 	}

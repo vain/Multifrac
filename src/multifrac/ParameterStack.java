@@ -30,8 +30,6 @@ public class ParameterStack
 
 	public FractalParameters get()
 	{
-		//dump();
-
 		return current;
 	}
 
@@ -45,8 +43,6 @@ public class ParameterStack
 
 		// Create a copy of it and set this copy as the current element
 		current = new FractalParameters(current);
-
-		dump();
 	}
 
 	public void pop()
@@ -59,8 +55,6 @@ public class ParameterStack
 
 		// Restore the last saved element
 		current = undo.pollFirst();
-
-		dump();
 	}
 
 	public void unpop()
@@ -73,8 +67,6 @@ public class ParameterStack
 		
 		// Re-activate first redo-item
 		current = redo.pollFirst();
-
-		dump();
 	}
 
 	public void clear(FractalParameters top)
@@ -82,22 +74,5 @@ public class ParameterStack
 		undo.clear();
 		redo.clear();
 		current = top;
-
-		dump();
-	}
-
-	private void dump()
-	{
-		System.out.println("UNDO: " + undo.size());
-		System.out.println("REDO: " + redo.size());
-
-		/*
-		System.out.println("CURRENT:" + current);
-		System.out.println("UNDO STACK:");
-		System.out.println(undo);
-		System.out.println("REDO STACK:");
-		System.out.println(redo);
-		System.out.println();
-		*/
 	}
 }

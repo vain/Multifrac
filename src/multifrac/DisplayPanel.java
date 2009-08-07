@@ -101,8 +101,6 @@ public class DisplayPanel extends JPanel
 				if (e.getButton() == MouseEvent.BUTTON1)
 				{
 					// Start creating a zooming-box.
-
-					//System.out.println(e);
 					mouseStart = e.getPoint();
 
 					typeOfDrag = DRAG_ZOOM_BOX;
@@ -110,8 +108,6 @@ public class DisplayPanel extends JPanel
 				else if (e.getButton() == MouseEvent.BUTTON2)
 				{
 					// Start dragging the viewport.
-					
-					//System.out.println(e);
 					mouseStart = e.getPoint();
 
 					typeOfDrag = DRAG_PAN;
@@ -137,8 +133,6 @@ public class DisplayPanel extends JPanel
 				// Zoom-Box
 				if (typeOfDrag == DRAG_ZOOM_BOX)
 				{
-					//System.out.println(e);
-
 					// Only update if the mouse has been dragged *inside* the window
 					if (mouseEnd != null
 							&& mouseEnd.getX() >= 0 && mouseEnd.getX() < getWidth()
@@ -173,7 +167,6 @@ public class DisplayPanel extends JPanel
 					// Update LiveCH
 					mousePoint = e.getPoint();
 
-					//System.out.println(e);
 					mouseEnd = e.getPoint();
 					calcZoomBox();
 					repaint();
@@ -202,7 +195,6 @@ public class DisplayPanel extends JPanel
 			{
 				paramStack.push();
 
-				//System.out.println(e.getWheelRotation());
 				if (e.getWheelRotation() == 1)
 					paramStack.get().zoomIn();
 				else

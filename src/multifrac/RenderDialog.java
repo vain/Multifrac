@@ -274,7 +274,6 @@ public class RenderDialog extends JDialog
 		public void run()
 		{
 			int v = getValue();
-			//System.out.println(this + ", " + getID() + ", " + getValue());
 			parent.bar.setValue(v);
 
 			int elapsed  = (int)((System.currentTimeMillis() - parent.time_start) / 1000);
@@ -353,29 +352,22 @@ public class RenderDialog extends JDialog
 								if (ext.equals("TIF") || ext.equals("TIFF"))
 								{
 									// Use own tiff writer
-									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 									TIFFWriter.writeRGBImage(rset.tfile, px, w, h);
-									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 								}
 								else
 								{
 									// Use Java-Libraries
 
 									// Create an image from the int-array
-									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
 									// Construct containers
 									BufferedImage img = (BufferedImage)createImage(w, h);
 									Image buf = createImage(new MemoryImageSource(w, h, px, 0, w));
 
-									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
-
 									// Write int[] -> Graphics2D
 									Graphics2D g2 = (Graphics2D)img.getGraphics();
 									g2.drawImage(buf,
 										new java.awt.geom.AffineTransform(1f, 0f, 0f, 1f, 0, 0), null);
-
-									System.out.println(Runtime.getRuntime().totalMemory() / 1000.0 / 1000.0);
 
 									ImageIO.write(img, ext, rset.tfile);
 								}

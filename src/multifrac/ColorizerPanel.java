@@ -65,8 +65,6 @@ public class ColorizerPanel extends JPanel
 		// Apply offset
 		x += offsetX;
 
-		//System.out.println("toWorld() = " + x);
-
 		return x;
 	}
 
@@ -82,8 +80,6 @@ public class ColorizerPanel extends JPanel
 
 		// [0, 1] --> Pixel
 		x *= (float)getWidth();
-
-		//System.out.println("toScreen() = " + x);
 
 		return x;
 	}
@@ -211,7 +207,7 @@ public class ColorizerPanel extends JPanel
 			b = t;
 		}
 
-		System.out.println("Selecting from " + a + " to " + b);
+		// Selecting from a to b
 		for (int i = 0; i < gg().size(); i++)
 		{
 			float p = gg().get(i).pos;
@@ -292,7 +288,6 @@ public class ColorizerPanel extends JPanel
 					// Right mouse and nothing selected? Then insert a new handle.
 					if (selector.nothingSelected())
 					{
-						//System.out.println("INSERT");
 						int i = 1;
 						float relative = toWorld(e.getPoint().x);
 
@@ -306,7 +301,7 @@ public class ColorizerPanel extends JPanel
 						while (i < gg().size() && relative > gg().get(i).pos)
 							i++;
 
-						//System.out.println("Insert with index: " + i);
+						// Insert with index i
 						paramStack.push();
 						gg().add(i, new ColorStep(relative, Color.red));
 
@@ -328,8 +323,6 @@ public class ColorizerPanel extends JPanel
 				{
 					int from = selector.pair(lastPicked);
 					int to   = lastPicked;
-
-					//System.out.println(from + " --> " + to);
 
 					// Save current status
 					paramStack.push();
