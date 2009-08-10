@@ -34,7 +34,7 @@
 			free(ni);								\
 			free(param.grad);						\
 			free(param.buf);						\
-			return NULL;							\
+			pthread_exit(NULL);						\
 		}
 
 #define CHECKRET			\
@@ -209,28 +209,36 @@ static int readParams(struct FractalParameters *p, int s)
 
 	/* Color gradient */
 	res = readInt(s, &(p->gradLen));		CHECKRET;
-	p->grad = (struct ColorStep *)malloc(
-			sizeof(struct ColorStep) * p->gradLen);
-
-	for (i = 0; i < p->gradLen; i++)
+	if (p->gradLen > 0)
 	{
-		/* ColorStep version -- ignore */
-		res = readInt(s, &dummy);			CHECKRET;
+		p->grad = (struct ColorStep *)malloc(
+				sizeof(struct ColorStep) * p->gradLen);
 
-		/* Position, RGB color */
-		res = readFloat(s, &(p->grad[i].pos));	CHECKRET;
-		res = readInt(s, &dummy);				CHECKRET;
-		p->grad[i].R = ((dummy & 0x00FF0000) >> 16);
-		p->grad[i].G = ((dummy & 0x0000FF00) >> 8);
-		p->grad[i].B =  (dummy & 0x000000FF);
+		for (i = 0; i < p->gradLen; i++)
+		{
+			/* ColorStep version -- ignore */
+			res = readInt(s, &dummy);			CHECKRET;
+
+			/* Position, RGB color */
+			res = readFloat(s, &(p->grad[i].pos));	CHECKRET;
+			res = readInt(s, &dummy);				CHECKRET;
+			p->grad[i].R = ((dummy & 0x00FF0000) >> 16);
+			p->grad[i].G = ((dummy & 0x0000FF00) >> 8);
+			p->grad[i].B =  (dummy & 0x000000FF);
+		}
+
+		/* Cache last color as BGRA. */
+		p->colorLastBGRA =
+			  (p->grad[p->gradLen - 1].B << 24)
+			+ (p->grad[p->gradLen - 1].G << 16)
+			+ (p->grad[p->gradLen - 1].R << 8)
+			+ 0xFF;
 	}
-
-	/* Cache last color as BGRA. */
-	p->colorLastBGRA =
-		  (p->grad[p->gradLen - 1].B << 24)
-		+ (p->grad[p->gradLen - 1].G << 16)
-		+ (p->grad[p->gradLen - 1].R << 8)
-		+ 0xFF;
+	else
+	{
+		p->grad = NULL;
+		p->colorLastBGRA = 0;
+	}
 
 	/* Read image size */
 	res = readInt(s, &(p->w));			CHECKRET;
@@ -257,15 +265,18 @@ static void dumpParams(struct FractalParameters *p)
 	printf("\tcolI = %X\n", p->colorInsideBGRA);
 	printf("\tcolL = %X\n", p->colorLastBGRA);
 
-	printf("\n");
-	for (i = 0; i < p->gradLen; i++)
+	if (p->grad != NULL && p->gradLen > 0)
 	{
-		printf("\tpos = %lf\n", p->grad[i].pos);
-		printf("\tR   = %X\n", p->grad[i].R);
-		printf("\tG   = %X\n", p->grad[i].G);
-		printf("\tB   = %X\n", p->grad[i].B);
+		printf("\n");
+		for (i = 0; i < p->gradLen; i++)
+		{
+			printf("\tpos = %lf\n", p->grad[i].pos);
+			printf("\tR   = %X\n", p->grad[i].R);
+			printf("\tG   = %X\n", p->grad[i].G);
+			printf("\tB   = %X\n", p->grad[i].B);
+		}
+		printf("\n");
 	}
-	printf("\n");
 
 	printf("\tw = %d, h = %d\n", p->w, p->h);
 }
@@ -276,6 +287,9 @@ static void *renderthread(void *info)
 	int res, cmd, buf;
 	struct nodeinfo *ni = (struct nodeinfo *)info;
 	struct FractalParameters param;
+
+	/* Detach yourself so no one waits for your return. */
+	pthread_detach(pthread_self());
 
 	/* Init */
 	param.gradLen = 0;
@@ -294,8 +308,9 @@ static void *renderthread(void *info)
 		{
 			case CMD_CLOSE:
 				M(); printf("Closing as requested.\n");
-				res = -1; CHECKDIE;
-				return NULL;
+				res = -1;
+				CHECKDIE;
+				break;
 
 			case CMD_PING:
 				res = readInt(ni->sock, &buf);
@@ -328,16 +343,43 @@ static void *renderthread(void *info)
 				printf("%d rows.\n", param.rows);
 
 				if (param.buf != NULL)
+				{
 					free(param.buf);
+					param.buf = NULL;
+				}
 
-				param.buf = (int *)malloc(
-						sizeof(int) * param.w * param.rows);
+				if (param.rows * param.w > 0)
+				{
+					param.buf = (int *)malloc(
+							sizeof(int) * param.w * param.rows);
+					M(); printf("Done. Buffer size: %d\n",
+							sizeof(int) * param.w * param.rows);
+				}
+				else
+				{
+					E(); fprintf(stderr,
+							"Oops. Buffer would be 0 bytes long.\n");
+				}
 
-				M(); printf("Done. Buffer size: %d\n",
-						sizeof(int) * param.w * param.rows);
 				break;
 
 			case CMD_JOB:
+				if (param.buf == NULL)
+				{
+					E(); fprintf(stderr, "Fatal: Job received but "
+							"you haven't allocated a buffer.\n");
+					res = -1;
+					CHECKDIE;
+				}
+
+				if (param.grad == NULL)
+				{
+					E(); fprintf(stderr, "Fatal: Job received but "
+							"you haven't allocated a gradient.\n");
+					res = -1;
+					CHECKDIE;
+				}
+
 				M(); printf("Receiving TokenSettings...\n");
 				res = readInt(ni->sock, &(param.start));
 				CHECKDIE;
@@ -365,8 +407,6 @@ static void *renderthread(void *info)
 				E(); fprintf(stderr, "Unknown command.\n");
 		}
 	}
-
-	return NULL;
 }
 
 /* Launch a new node for this socket. */
