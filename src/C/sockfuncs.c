@@ -30,12 +30,52 @@ int readInt(int sock, int *buf)
 	return 0;
 }
 
+/* Read 4 bytes as an int and do NOT convert endianess. */
+int readIntKeep(int sock, int *buf)
+{
+	ssize_t res;
+
+	res = recv(sock, buf, 4, MSG_WAITALL);
+	if (res <= 0)
+		return -1;
+
+	return 0;
+}
+
 /* Write 4 bytes with the right endianess. */
 int writeInt(int sock, int val)
 {
 	int buf = htobe32(val);
 
 	if (send(sock, &buf, 4, MSG_NOSIGNAL) == -1)
+		return -1;
+	else
+		return 0;
+}
+
+/* Write a bunch of int's. */
+int writeIntBulk(int sock, int *buf, int len)
+{
+	int i;
+
+	/* Convert endianess. */
+	for (i = 0; i < len; i++)
+	{
+		buf[i] = htobe32(buf[i]);
+	}
+
+	/* Send. */
+	if (send(sock, buf, len * 4, MSG_NOSIGNAL) == -1)
+		return -1;
+	else
+		return 0;
+}
+
+/* Write a bunch of int's but do NOT convert endianess. */
+int writeIntBulkKeep(int sock, int *buf, int len)
+{
+	/* Send. */
+	if (send(sock, buf, len * 4, MSG_NOSIGNAL) == -1)
 		return -1;
 	else
 		return 0;

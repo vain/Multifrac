@@ -1,7 +1,10 @@
 #include <stdbool.h>
 
 int readInt(int sock, int *buf);
+int readIntKeep(int sock, int *buf);
 int writeInt(int sock, int val);
+int writeIntBulk(int sock, int *buf, int len);
+int writeIntBulkKeep(int sock, int *buf, int len);
 
 int readDouble(int sock, double *buf);
 int writeDouble(int sock, double val);
