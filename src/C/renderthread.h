@@ -5,6 +5,7 @@ struct nodeinfo
 {
 	int sock;
 	int ID;
+	int numthreads;
 };
 
 /* Port of ColorStep. */
@@ -48,4 +49,4 @@ struct FractalParameters
 };
 
 /* Launch a new node for this socket. */
-int launchNode(int sock);
+int launchNode(int sock, int numthreads);

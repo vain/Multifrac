@@ -1,6 +1,7 @@
 /* Standard */
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
 /* Sockets */
 #include <sys/types.h>
@@ -16,6 +17,15 @@
 /* Project related */
 #include "renderthread.h"
 
+
+static int server;
+
+static void cleanup(int sig)
+{
+	shutdown(server, SHUT_RDWR);
+	close(server);
+	exit(EXIT_SUCCESS);
+}
 
 /* Print a sockaddr struct as "host", "service". */
 static void print_sockaddr(struct sockaddr *sa, size_t salen)
@@ -61,12 +71,17 @@ static int createSocket(char *host, char *port)
 	printf("Binding...\n");
 	for (ai_ptr = ai_res; ai_ptr != NULL; ai_ptr = ai_ptr->ai_next)
 	{
+		print_sockaddr(ai_ptr->ai_addr, ai_ptr->ai_addrlen);
+
 		sock = socket(ai_ptr->ai_family,
 				ai_ptr->ai_socktype,
 				ai_ptr->ai_protocol);
 
 		if (sock == -1)
+		{
+			perror("Failed");
 			continue;
+		}
 
 		if (bind(sock, ai_ptr->ai_addr, ai_ptr->ai_addrlen) != -1)
 			break;
@@ -97,11 +112,55 @@ static int createSocket(char *host, char *port)
 
 int main(int argc, char **argv)
 {
-	int server, client;
+	int client;
 	struct sockaddr client_addr;
 	size_t client_addr_len = sizeof(client_addr);
 
-	server = createSocket(argv[1], argv[2]);
+	/* Arguments */
+	char *host = "localhost";
+	char *port = "7331";
+	int threads = sysconf(_SC_NPROCESSORS_ONLN);
+	int i;
+
+	/* sysconf succeeded? */
+	if (threads < 1)
+		threads = 1;
+
+	for (i = 1; i < argc; i++)
+	{
+		if (strncmp(argv[i], "-h", 2) == 0)
+			host = argv[++i];
+		else if (strncmp(argv[i], "-p", 2) == 0)
+			port = argv[++i];
+		else if (strncmp(argv[i], "-t", 2) == 0)
+			threads = atoi(argv[++i]);
+		else
+		{
+			fprintf(stderr,
+					"Usage: %s [-h host] [-p port] [-t threads] [--help]\n",
+					argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (threads < 1)
+	{
+		fprintf(stderr,
+				"You requested less than 1 thread. That's not useful.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	printf("Configured options:\n"
+			"\tthreads = %d\n", threads);
+
+	/* Add signal handler */
+	if (signal(SIGINT, cleanup) == SIG_ERR)
+	{
+		perror("Could not add signal handler for SIGINT");
+	}
+
+	/* Create server socket */
+	server = createSocket(host, port);
 	if (server == -1)
 		exit(EXIT_FAILURE);
 
@@ -118,7 +177,7 @@ int main(int argc, char **argv)
 
 		printf("New client, launching node:\n");
 		print_sockaddr(&client_addr, client_addr_len);
-		launchNode(client);
+		launchNode(client, threads);
 	}
 
 	exit(EXIT_SUCCESS);

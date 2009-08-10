@@ -32,10 +32,8 @@
 			killSock(ni->sock);						\
 			M(); printf("Thread quitting.\n");		\
 			free(ni);								\
-			if (param.grad != NULL)					\
-				free(param.grad);					\
-			if (param.buf != NULL)					\
-				free(param.buf);					\
+			free(param.grad);						\
+			free(param.buf);						\
 			return NULL;							\
 		}
 
@@ -296,7 +294,7 @@ static void *renderthread(void *info)
 		{
 			case CMD_CLOSE:
 				M(); printf("Closing as requested.\n");
-				killSock(ni->sock);
+				res = -1; CHECKDIE;
 				return NULL;
 
 			case CMD_PING:
@@ -310,7 +308,7 @@ static void *renderthread(void *info)
 
 			case CMD_ADCPUS:
 				M(); printf("Advertising number of processors.\n");
-				res = writeInt(ni->sock, 1);
+				res = writeInt(ni->sock, ni->numthreads);
 				CHECKDIE;
 				break;
 
@@ -363,53 +361,6 @@ static void *renderthread(void *info)
 
 				break;
 
-			/*
-			case 8:
-			{
-				double d;
-
-				M(); printf("DOUBLE TEST\n");
-				res = readDouble(ni->sock, &d);
-				CHECKDIE;
-
-				printf("%.64lf\n", d);
-
-				res = writeDouble(ni->sock, d);
-				CHECKDIE;
-				break;
-			}
-
-			case 9:
-			{
-				bool b;
-
-				M(); printf("BOOLEAN TEST, %d\n", sizeof(bool));
-				res = readBoolean(ni->sock, &b);
-				CHECKDIE;
-
-				printf("%d\n", b);
-
-				res = writeBoolean(ni->sock, b);
-				CHECKDIE;
-				break;
-			}
-
-			case 10:
-			{
-				float f;
-
-				M(); printf("FLOAT TEST\n");
-				res = readFloat(ni->sock, &f);
-				CHECKDIE;
-
-				printf("%.64f\n", f);
-
-				res = writeFloat(ni->sock, f);
-				CHECKDIE;
-				break;
-			}
-			*/
-
 			default:
 				E(); fprintf(stderr, "Unknown command.\n");
 		}
@@ -419,7 +370,7 @@ static void *renderthread(void *info)
 }
 
 /* Launch a new node for this socket. */
-int launchNode(int sock)
+int launchNode(int sock, int numthreads)
 {
 	int res;
 	pthread_t child;
@@ -429,6 +380,7 @@ int launchNode(int sock)
 	ni = (struct nodeinfo *)malloc(sizeof(struct nodeinfo));
 	ni->sock = sock;
 	ni->ID = newID++;
+	ni->numthreads = numthreads;
 
 	res = pthread_create(&child, NULL, renderthread, (void *)ni);
 	if (res != 0)
