@@ -34,6 +34,9 @@ public class Node
 	protected FractalParameters params = null;
 	protected int start, end, ID;
 	protected FractalRenderer.Job job  = null;
+	protected int xfers = 0;
+	protected double xfertime = 0.0;
+	protected double rendtime = 0.0;
 
 	public static final int CMD_CLOSE   = 0;
 	public static final int CMD_PING    = 1;
@@ -69,6 +72,14 @@ public class Node
 				{
 					case CMD_CLOSE:
 						msg("Closing as requested.");
+						if (xfers > 0)
+							msg("Statistics:\n"
+									+ "\tXFers: " + xfers + "\n"
+									+ "\tXTime: " + xfertime + "\n"
+									+ "\tAvgXf: " + (xfertime/xfers) + "\n"
+									+ "\tRTime: " + rendtime + "\n"
+									+ "\tAvgRe: " + (rendtime/xfers));
+
 						c.close();
 						return;
 
@@ -119,15 +130,30 @@ public class Node
 
 						FractalRenderer rend =
 							new FractalRenderer(job, null);
+
+						// Start Timing: Rendering
+						long ns = System.nanoTime();
 						rend.renderPass(start, end);
 
-						msg("Rendering done, sending image...");
+						double nd = (double)(System.nanoTime() - ns) / 1e9;
+						msg("Rendered. Time: " + nd + " seconds.");
+						rendtime += nd;
+
+						// Start Timing: Transmission
+						ns = System.nanoTime();
+						msg("Sending image...");
 						int at = 0;
 						int[] px = job.getPixels();
 						for (int y = start; y < end; y++)
 							for (int x = 0; x < job.getWidth(); x++)
 								bout.writeInt(px[at++]);
 						bout.flush();
+						nd = (double)(System.nanoTime() - ns) / 1e9;
+						msg("Sent. Time: " + nd + " seconds.");
+
+						xfertime += nd;
+						xfers++;
+
 						msg("Finished this token.");
 						break;
 
