@@ -571,6 +571,15 @@ public class NetClient
 				{
 					msg(out, -1, "Aborted!");
 
+					if (nset.directStream)
+					{
+						msg(out, -1, "Closing TIFF stream.");
+						msg(out, -1, "It's okay if you see "
+								+ "\"ClosedChannelExceptions\" in the "
+								+ "next few lines.");
+						tiffStream.close();
+					}
+
 					// Callback
 					if (callback != null)
 						SwingUtilities.invokeLater(callback);
@@ -604,6 +613,17 @@ public class NetClient
 		catch (InterruptedException e)
 		{
 			msg(out, -1, "Uhuh. Interrupted while waiting.");
+			e.printStackTrace();
+
+			// Callback
+			if (callback != null)
+				SwingUtilities.invokeLater(callback);
+
+			return;
+		}
+		catch (IOException e)
+		{
+			// This can happen when the tiffStream is closed on an abort.
 			e.printStackTrace();
 
 			// Callback
