@@ -85,6 +85,29 @@ For now, no downscaling is done when streaming directly to disk -- that is, no
 actual downscaling.
 
 
+Building and using the C-node
+=============================
+
+When doing distributed rendering: On slow nodes, it can be worth using the
+C-node. It's an almost exact clone (as far as rendering is concerned) of the
+Java rendernode written in C. It runs a little faster -- the speedup ranges
+from 1.05 to 2.35.
+
+Building it with GNU autotools:
+
+ $ ./configure
+ $ make
+
+Be aware, though, that glibc >= 2.9 is required for now if building on Linux
+(byte swapping functions, be32toh and similiar). However, the C-node compiled
+successfully on Arch Linux (as of August 2009) and FreeBSD 7.1. I'm going to
+remove that dependency in the near future (well, on my machines, there's no
+need to do so...).
+
+The C-node accepts the same command line arguments as the Java node, "--help"
+gives a short overview.
+
+
 Contact
 =======
 
