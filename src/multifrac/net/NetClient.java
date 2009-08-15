@@ -247,7 +247,8 @@ public class NetClient
 							{
 								msg(con, ID, "Streaming TIFF data...");
 								tiffStream.seekRow(start);
-								tiffStream.writeRGBData(px);
+								tiffStream.writeRGBData(px,
+										(end - start) * job.getWidth());
 								msg(con, ID, "Done.");
 							}
 						}
@@ -322,7 +323,12 @@ public class NetClient
 					try
 					{
 						if (s != null)
+						{
+							s.shutdownOutput();
+							s.shutdownInput();
 							s.close();
+							s = null;
+						}
 					}
 					catch (IOException ignore) {}
 				}
@@ -509,6 +515,10 @@ public class NetClient
 						+ ":"
 						+ nset.ports[i]);
 				dout.writeInt(Node.CMD_CLOSE);
+				s.shutdownOutput();
+				s.shutdownInput();
+				s.close();
+				s = null;
 
 				// Launch clients for this host
 				for (int k = 0; k < cpus; k++)
@@ -570,6 +580,15 @@ public class NetClient
 				{
 					msg(out, -1, "Aborted!");
 
+					if (nset.directStream)
+					{
+						msg(out, -1, "Closing TIFF stream.");
+						msg(out, -1, "It's okay if you see "
+								+ "\"ClosedChannelExceptions\" in the "
+								+ "next few lines.");
+						tiffStream.close();
+					}
+
 					// Callback
 					if (callback != null)
 						SwingUtilities.invokeLater(callback);
@@ -603,6 +622,17 @@ public class NetClient
 		catch (InterruptedException e)
 		{
 			msg(out, -1, "Uhuh. Interrupted while waiting.");
+			e.printStackTrace();
+
+			// Callback
+			if (callback != null)
+				SwingUtilities.invokeLater(callback);
+
+			return;
+		}
+		catch (IOException e)
+		{
+			// This can happen when the tiffStream is closed on an abort.
 			e.printStackTrace();
 
 			// Callback

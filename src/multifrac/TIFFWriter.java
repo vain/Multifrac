@@ -103,9 +103,18 @@ public class TIFFWriter
 	 */
 	public void writeRGBData(int[] img) throws IOException
 	{
+		writeRGBData(img, img.length);
+	}
+
+	/**
+	 * Write data of an image (may be partial) using a buffered stream
+	 * but don't exceed the given limit.
+	 */
+	public void writeRGBData(int[] img, int num) throws IOException
+	{
 		// Image Data
 		// ----------
-		for (int i = 0; i < img.length; i++)
+		for (int i = 0; i < num; i++)
 		{
 			bos.write((img[i] >> 16) & 0xFF);
 			bos.write((img[i] >>  8) & 0xFF);
