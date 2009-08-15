@@ -1,3 +1,11 @@
+#ifndef RENDERTHREAD_H
+#define RENDERTHREAD_H 1
+
+/* autotools */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdbool.h>
 
 /* To carry informations from the main thread to a node. */
@@ -50,3 +58,5 @@ struct FractalParameters
 
 /* Launch a new node for this socket. */
 int launchNode(int sock, int numthreads);
+
+#endif /* !RENDERTHREAD_H */

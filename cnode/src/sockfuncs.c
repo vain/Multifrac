@@ -1,3 +1,8 @@
+/* autotools */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 /* Sockets */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -7,13 +12,17 @@
 #include <unistd.h>
 
 /* Endianess */
+#ifdef HAVE_ENDIAN_H
 #include <endian.h>
+#elif HAVE_SYS_ENDIAN_H
+#include <sys/endian.h>
+#endif
 
 /* memcpy() */
 #include <string.h>
 
 /* Project related */
-#include "sockfuncs.h"
+#include <sockfuncs.h>
 
 
 /* Read 4 bytes and convert their endianess. Java writes big endian, so

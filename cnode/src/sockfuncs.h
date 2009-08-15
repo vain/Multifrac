@@ -1,3 +1,11 @@
+#ifndef SOCKFUNCS_H
+#define SOCKFUNCS_H 1
+
+/* autotools */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdbool.h>
 
 int readInt(int sock, int *buf);
@@ -16,3 +24,5 @@ int readBoolean(int sock, bool *buf);
 int writeBoolean(int sock, bool val);
 
 void killSock(int sock);
+
+#endif /* !SOCKFUNCS_H */

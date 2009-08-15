@@ -1,3 +1,8 @@
+/* autotools */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 /* Standard */
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,8 +13,8 @@
 #include <errno.h>
 
 /* Project related */
-#include "renderthread.h"
-#include "sockfuncs.h"
+#include <renderthread.h>
+#include <sockfuncs.h>
 
 
 #define CMD_CLOSE  0
