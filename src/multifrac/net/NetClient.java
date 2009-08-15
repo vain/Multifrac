@@ -247,7 +247,8 @@ public class NetClient
 							{
 								msg(con, ID, "Streaming TIFF data...");
 								tiffStream.seekRow(start);
-								tiffStream.writeRGBData(px);
+								tiffStream.writeRGBData(px,
+										(end - start) * job.getWidth());
 								msg(con, ID, "Done.");
 							}
 						}
