@@ -323,7 +323,12 @@ public class NetClient
 					try
 					{
 						if (s != null)
+						{
+							s.shutdownOutput();
+							s.shutdownInput();
 							s.close();
+							s = null;
+						}
 					}
 					catch (IOException ignore) {}
 				}
@@ -510,6 +515,10 @@ public class NetClient
 						+ ":"
 						+ nset.ports[i]);
 				dout.writeInt(Node.CMD_CLOSE);
+				s.shutdownOutput();
+				s.shutdownInput();
+				s.close();
+				s = null;
 
 				// Launch clients for this host
 				for (int k = 0; k < cpus; k++)

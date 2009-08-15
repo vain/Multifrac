@@ -80,7 +80,10 @@ public class Node
 									+ "\tRTime: " + rendtime + "\n"
 									+ "\tAvgRe: " + (rendtime/xfers));
 
+						c.shutdownOutput();
+						c.shutdownInput();
 						c.close();
+						c = null;
 						return;
 
 					case CMD_PING:
@@ -181,7 +184,12 @@ public class Node
 			try
 			{
 				if (c != null)
+				{
+					c.shutdownOutput();
+					c.shutdownInput();
 					c.close();
+					c = null;
+				}
 			}
 			catch (IOException ignore) {}
 		}
@@ -283,7 +291,12 @@ public class Node
 			try
 			{
 				if (s != null)
+				{
+					// A ServerSocket has never been "connected", so there's no
+					// need to shut it down.
 					s.close();
+					s = null;
+				}
 			}
 			catch (IOException ignore) {}
 		}
