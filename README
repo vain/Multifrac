@@ -99,10 +99,16 @@ Building it with GNU autotools:
  $ make
 
 Be aware, though, that glibc >= 2.9 is required for now if building on Linux
-(byte swapping functions, be32toh and similiar). However, the C-node compiled
-successfully on Arch Linux (as of August 2009) and FreeBSD 7.1. I'm going to
-remove that dependency in the near future (well, on my machines, there's no
-need to do so...).
+(byte swapping functions, be32toh and similiar), so it probably won't build on
+Ubuntu older than 9.04 or Fedora older than 10 (according to distrowatch.com).
+However, I tested the C-node successfully on the following platforms:
+
+ - Arch Linux (as of August 2009)
+ - FreeBSD 7.1 and 7.2
+ - NetBSD 5.0
+
+I'm going to remove that dependency in the near future (well, on my machines,
+there's no need to do so...).
 
 The C-node accepts the same command line arguments as the Java node, "--help"
 gives a short overview.
