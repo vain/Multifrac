@@ -118,7 +118,7 @@ static int createSocket(char *host, char *port)
 int main(int argc, char **argv)
 {
 	int client;
-	struct sockaddr client_addr;
+	struct sockaddr_storage client_addr;
 	size_t client_addr_len = sizeof(client_addr);
 
 	/* Arguments */
@@ -172,7 +172,8 @@ int main(int argc, char **argv)
 	/* Main server loop. */
 	while (1)
 	{
-		if ((client = accept(server, &client_addr, &client_addr_len)) == -1)
+		if ((client = accept(server, (struct sockaddr *)&client_addr,
+						&client_addr_len)) == -1)
 		{
 			perror("Could not accept");
 			close(client);
@@ -181,7 +182,7 @@ int main(int argc, char **argv)
 		}
 
 		printf("New client, launching node:\n");
-		print_sockaddr(&client_addr, client_addr_len);
+		print_sockaddr((struct sockaddr *)&client_addr, client_addr_len);
 		launchNode(client, threads);
 	}
 
