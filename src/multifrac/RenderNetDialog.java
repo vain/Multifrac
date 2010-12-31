@@ -26,6 +26,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class RenderNetDialog extends JDialog
 {
@@ -323,31 +325,26 @@ public class RenderNetDialog extends JDialog
 			String[] oneS,
 			int[]    oneI)
 	{
-		String[] split = remote.split(":");
+		try
+		{
+			// "muf" is our scheme. It doesn't really matter, though.
+			URI u = new URI("muf://" + remote);
 
-		if (split.length == 0)
+			if (u.getHost() == null)
+				return false;
+			oneS[0] = u.getHost();
+
+			if (u.getPort() == -1)
+				oneI[0] = Node.defaultPort;
+			else
+				oneI[0] = u.getPort();
+
+			return true;
+		}
+		catch (java.net.URISyntaxException e)
 		{
 			return false;
 		}
-		else if (split.length == 1)
-		{
-			oneS[0] = split[0];
-			oneI[0] = Node.defaultPort;
-		}
-		else if (split.length == 2)
-		{
-			try
-			{
-				oneI[0] = new Integer(split[1]);
-				oneS[0] = split[0];
-			}
-			catch (NumberFormatException e)
-			{
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	/**
