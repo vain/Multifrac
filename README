@@ -72,6 +72,10 @@ You may most probably want to add "localhost" as well to include your local
 machine (but keep in mind that you have to start a render node on this machine,
 too).
 
+Since commit bf217dd, Multifrac is ready for IPv6. Remember that you have to
+put IPv6 addresses in square brackets. So, "[::1]:4201" is valid and means port
+4201 on your localhost.
+
 Usually, the master node (the one on which the main Multifrac instance is
 running) creates a big buffer where it stores the results of the rendering
 nodes. Once all jobs are done, that buffer is saved to disk after downscaling.
@@ -112,6 +116,12 @@ there's no need to do so...).
 
 The C-node accepts the same command line arguments as the Java node, "--help"
 gives a short overview.
+
+
+TODO
+====
+
+ - What happens with the C-node on x86_64? :)
 
 
 Contact
