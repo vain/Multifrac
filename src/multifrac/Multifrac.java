@@ -49,6 +49,7 @@ public class Multifrac extends JFrame
 	protected JTextField c_loc_re = new JTextField(10);
 	protected JTextField c_loc_im = new JTextField(10);
 	protected JTextField c_zoom = new JTextField(10);
+	protected JTextField gradientPow = new JTextField(5);
 
 	protected ParameterStack paramStack = new ParameterStack();
 	protected FractalParameters saved = null;
@@ -99,6 +100,8 @@ public class Multifrac extends JFrame
 
 		df = new DecimalFormat("##0.#####E0");
 		c_zoom.setText(df.format(p.zoom));
+
+		gradientPow.setText(Double.toString(p.gradientPow));
 	}
 
 	protected FractalParameters loadParametersFromScene()
@@ -715,6 +718,20 @@ public class Multifrac extends JFrame
 				catch (NumberFormatException ignore) {}
 			}
 		});
+		gradientPow.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				try
+				{
+					paramStack.push();
+					paramStack.get().gradientPow = new Double(gradientPow.getText());
+					rend.dispatchRedraw();
+				}
+				catch (NumberFormatException ignore) {}
+			}
+		});
 
 
 		// =========================================================
@@ -856,7 +873,14 @@ public class Multifrac extends JFrame
 		// --- PanicPanel - well, it's more like a "ButtonPanel" now...
 
 		JPanel panicpanel = new JPanel();
+
+		// TODO: Left-align the "Power" field.
 		panicpanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 2, 2));
+
+		panicpanel.add(new JLabel("Power:"));
+		panicpanel.add(gradientPow);
+
+		panicpanel.add(new JSeparator(SwingConstants.VERTICAL));
 
 		JButton undo = new JButton("Undo");
 		undo.addActionListener(new ActionListener()

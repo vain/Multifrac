@@ -26,7 +26,8 @@ import java.io.*;
 
 public class FractalParameters
 {
-	private static final int VERSION = 0x13380001;
+	private static final int VERSION = 0x13380002;
+	private static final int VERSION_NO_GRADIENT_POW = 0x13380001;
 	private static final int VERSION_LEGACY = 0x13380000;
 
 	protected static final double ZOOM_STEP = 0.9;
@@ -46,6 +47,7 @@ public class FractalParameters
 	public double julia_im;
 	public Point2D centerOffset;
 	public ArrayList<ColorStep> gradient;
+	public double gradientPow;
 	public Color colorInside;
 	public Dimension size = new Dimension(100, 100);
 
@@ -106,6 +108,8 @@ public class FractalParameters
 		gradient = new ArrayList<ColorStep>();
 		for (ColorStep cs : p.gradient)
 			gradient.add(new ColorStep(cs));
+
+		gradientPow = p.gradientPow;
 	}
 
 	public FractalParameters(DataInputStream in) throws Exception
@@ -120,6 +124,7 @@ public class FractalParameters
 		escape = 32.0;
 		adaptive = true;
 		centerOffset = new Point2D.Double(0.0, 0.0);
+		gradientPow = 1.0;
 	}
 
 	public void updateSize(Dimension s)
@@ -277,16 +282,23 @@ public class FractalParameters
 		out.writeInt(gradient.size());
 		for (int i = 0; i < gradient.size(); i++)
 			gradient.get(i).writeToStream(out);
+
+		out.writeDouble(gradientPow);
 	}
 
 	private void readFromStream(DataInputStream in) throws Exception
 	{
-		boolean legacy = false;
+		boolean readDummySize = false;
+		boolean omitGradientPow = false;
 		int version = in.readInt();
 
 		if (version == VERSION_LEGACY)
 		{
-			legacy = true;
+			readDummySize = true;
+		}
+		else if (version == VERSION_NO_GRADIENT_POW)
+		{
+			omitGradientPow = true;
 		}
 		else if (version != VERSION)
 		{
@@ -301,7 +313,7 @@ public class FractalParameters
 		adaptive = in.readBoolean();
 		zoom     = in.readDouble();
 
-		if (legacy)
+		if (readDummySize)
 		{
 			// Read the old two int's that saved the size
 			in.readInt();
@@ -322,5 +334,10 @@ public class FractalParameters
 		int num = in.readInt();
 		for (int i = 0; i < num; i++)
 			gradient.add(new ColorStep(in));
+
+		if (!omitGradientPow)
+			gradientPow = in.readDouble();
+		else
+			gradientPow = 1.0;
 	}
 }

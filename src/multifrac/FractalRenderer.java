@@ -216,6 +216,10 @@ public class FractalRenderer extends Thread
 		double w = myJob.getWidth();
 		double muh = 0.0;
 
+		// ColorPower. This allows you to "move" the gradient as a
+		// whole.
+		double gradientPow = myJob.param.gradientPow;
+
 		// Choose starting index depending on buffer type
 		int index = 0;
 		if (!myJob.isCropped)
@@ -280,6 +284,7 @@ public class FractalRenderer extends Thread
 					// Idea: http://linas.org/art-gallery/escape/smooth.html
 					muh = (double)n + 1.0f - Math.log10(Math.log10(Math.sqrt(sqr_abs_z))) / logTwoBaseTen;
 					muh /= nmax;
+					muh = Math.pow(muh, gradientPow);
 
 					// Linear interpolation between marks
 					if (muh >= 1.0)
