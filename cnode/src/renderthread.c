@@ -63,6 +63,7 @@ void renderFractal(struct FractalParameters *param)
 	double w = param->w;
 	double muh = 0.0;
 	int index = 0;
+	double gradientPow = param->gradientPow;
 
 	int coord_y, coord_x, i;
 
@@ -137,6 +138,7 @@ void renderFractal(struct FractalParameters *param)
 				muh = (double)n + 1.0f -
 					log10(log10(sqrt(sqr_abs_z))) / logTwoBaseTen;
 				muh /= nmax;
+				muh = pow(muh, gradientPow);
 
 				// Linear interpolation between marks
 				if (muh >= 1.0)
@@ -245,6 +247,9 @@ static int readParams(struct FractalParameters *p, int s)
 		p->colorLastBGRA = 0;
 	}
 
+	/* Read gradient power. */
+	res = readDouble(s, &(p->gradientPow)); CHECKRET;
+
 	/* Read image size */
 	res = readInt(s, &(p->w));			CHECKRET;
 	res = readInt(s, &(p->h));			CHECKRET;
@@ -282,6 +287,8 @@ static void dumpParams(struct FractalParameters *p)
 		}
 		printf("\n");
 	}
+
+	printf("\tgradientPow = %lf\n", p->gradientPow);
 
 	printf("\tw = %d, h = %d\n", p->w, p->h);
 }

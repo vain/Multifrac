@@ -46,6 +46,7 @@ struct FractalParameters
 	int gradLen;
 	struct ColorStep *grad;
 	int colorLastBGRA;
+	double gradientPow;
 
 	/* Size and buffer. */
 	int w, h;
