@@ -112,21 +112,15 @@ won't build on Ubuntu older than 9.04 or Fedora older than 10 (according
 to distrowatch.com). However, I tested the C-node successfully on the
 following platforms:
 
-* Arch Linux (as of August 2009)
-* FreeBSD 7.1 and 7.2
-* NetBSD 5.0
+* Arch Linux i686 and x86\_64
+* FreeBSD 7.1 and 7.2 (i386)
+* NetBSD 5.0 (i386)
 
 I'm going to remove that dependency in the near future (well, on my
 machines, there's no need to do so...).
 
 The C-node accepts the same command line arguments as the Java node,
 "--help" gives a short overview.
-
-
-TODO
-====
-
-* What happens with the C-node on x86\_64? :)
 
 
 Contact
