@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 {
 	int client;
 	struct sockaddr_storage client_addr;
-	size_t client_addr_len = sizeof(client_addr);
+	socklen_t client_addr_len = sizeof(client_addr);
 
 	/* Arguments */
 	char *host = "localhost";
