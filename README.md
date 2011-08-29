@@ -55,7 +55,7 @@ Distributed Rendering
 =====================
 
 As each pixel in a Mandelbrot or Julia image is independent from all
-other pixels, the rendering process can be split up into seperate jobs.
+other pixels, the rendering process can be split up into separate jobs.
 Internally, this is already done when running Multifrac on a
 multiprocessor system -- since version 1.1, you can also distribute that
 process among a network.
@@ -107,7 +107,7 @@ Building it with GNU autotools:
 	$ make
 
 Be aware, though, that glibc &gt;= 2.9 is required for now if building
-on Linux (byte swapping functions, be32toh and similiar), so it probably
+on Linux (byte swapping functions, be32toh and similar ), so it probably
 won't build on Ubuntu older than 9.04 or Fedora older than 10 (according
 to distrowatch.com). However, I tested the C-node successfully on the
 following platforms:
